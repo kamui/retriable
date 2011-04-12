@@ -19,12 +19,12 @@ Code wrapped in a Retryable block will be retried if a failure occurs.  As such,
     # Include Retryable into your class
     class Api
       include Retryable
-    end
     
-    # Use it in methods that interact with unreliable services
-    def get
-      retryable do
-        # code here...
+      # Use it in methods that interact with unreliable services
+      def get
+        retryable do
+          # code here...
+        end
       end
     end
     
@@ -34,7 +34,7 @@ By default, Retryable will rescue any exception inherited from `Exception`, retr
       # code here...
     end
 
-This example will only retry on a `Timeout::Error`, retry 3 times (for a total of 4 attempts) and sleep for a full second.  You can also specify multiple errors to retry on by passing an array.
+This example will only retry on a `Timeout::Error`, retry 3 times (for a total of 4 attempts) and sleep for a full second before each retry.  You can also specify multiple errors to retry on by passing an array.
 
     retryable :on => [Timeout::Error, Errno::ECONNRESET] do
       # code here...
@@ -50,10 +50,10 @@ Retryable also allows for callbacks to be defined, which is useful to log failur
 
 The `then` and `finally` callbacks pass the exception raised, which can be used for logging or error control.  All three callbacks also have a `handler`, which provides an interface to pass data between the code wrapped in the Retryable block and the callbacks defined.
 
-Furthermore, each callback provides the number of `attempts`, `retries` and `times` that the wrapped code should be retried.  As these are specified in in a `Proc`, unnecessary variables can be left out of the parameter list.
+Furthermore, each callback provides the number of `attempts`, `retries` and `times` that the wrapped code should be retried.  As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
     then_cb = Proc.new do |exception, handler, attempts, retries, times|
-      log "#{exception.class} raised with message '#{exception.message}' -  #{attempts} failed attempts, #{retries} out of #{times} retries left."}
+      log "#{exception.class}: '#{exception.message}' - #{attempts} attempts, #{retries} out of #{times} retries left."}
     end
     
     finally_cb = Proc.new do |exception, handler|
@@ -64,7 +64,7 @@ Furthermore, each callback provides the number of `attempts`, `retries` and `tim
       log "total time for #{attempts} attempts: #{Time.now - handler[:start]}"
     end
 
-    retryable :then => then_cb do, :finally => finally, :always => always_cb |handler|
+    retryable :then => then_cb do, :finally => finally_cb, :always => always_cb |handler|
       handler[:start] ||= Time.now
     
       # code here...
