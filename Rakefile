@@ -6,7 +6,7 @@ Rake::TestTask.new do |t|
   t.libs << "test"
 end
 
-Echoe.new("retryable") do |p|
+Echoe.new("retryable-rb") do |p|
   p.author = "Robert Sosinski"
   p.email = "email@robertsosinski.com"
   p.url = "http://github.com/robertsosinski/retryable"

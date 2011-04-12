@@ -6,7 +6,7 @@ Retryable is an easy to use DSL to retry code if an exception is raised.  This i
 Installation
 ------------
 
-    gem install retryable
+    gem install retryable-rb
 
     # In your ruby application
     require 'retryable'
