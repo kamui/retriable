@@ -28,7 +28,7 @@ Code wrapped in a Retryable block will be retried if a failure occurs.  As such,
       end
     end
     
-By default, Retryable will rescue any exception inherited from `Exception`, retry once (for a total of two attempts) and sleep for 100 milliseconds.  You can choose additional options by passing them via an options `Hash`.
+By default, Retryable will rescue any exception inherited from `Exception`, retry once (for a total of two attempts) and sleep for a random amount time (between 0 to 100 milliseconds, in 10 millisecond increments).  You can choose additional options by passing them via an options `Hash`.
 
     retryable :on => Timeout::Error, :times => 3, :sleep => 1 do
       # code here...
@@ -37,6 +37,12 @@ By default, Retryable will rescue any exception inherited from `Exception`, retr
 This example will only retry on a `Timeout::Error`, retry 3 times (for a total of 4 attempts) and sleep for a full second before each retry.  You can also specify multiple errors to retry on by passing an array.
 
     retryable :on => [Timeout::Error, Errno::ECONNRESET] do
+      # code here...
+    end
+
+You can also have Ruby retry immediately after a failure by passing `false` as the sleep option.
+
+    retryable :sleep => false do
       # code here...
     end
 
