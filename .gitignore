@@ -1,4 +1,6 @@
 .DS_Store
-*.swp
-*.swo
-pkg
+.rvmrc
+*.gem
+.bundle
+Gemfile.lock
+pkg/*
