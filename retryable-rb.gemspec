@@ -1,13 +1,13 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "version"
+require "retryable-rb/version"
 
 Gem::Specification.new do |s|
   s.name        = "retryable-rb"
   s.version     = RetryableRb::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Robert Sosinski"]
-  s.email       = ["email@robertsosinski.com"]
+  s.authors     = ["Robert Sosinski", "Jack Chu"]
+  s.email       = ["email@robertsosinski.com", "jack@jackchu.com"]
   s.homepage = %q{http://github.com/robertsosinski/retryable}
   s.summary = %q{Easy to use DSL to retry code if an exception is raised.}
   s.description = %q{Easy to use DSL to retry code if an exception is raised.}
