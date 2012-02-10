@@ -1,4 +1,4 @@
 source "http://rubygems.org"
 
-# Specify your gem's dependencies in retryable-rb.gemspec
+# Specify your gem's dependencies in retriable.gemspec
 gemspec

@@ -1,13 +1,13 @@
 $:.unshift(File.dirname(__FILE__) + "../lib")
 
 require 'test/unit'
-require 'retryable-rb'
+require 'retriable'
 
-class RetryableRbTest < Test::Unit::TestCase
+class RetriableTest < Test::Unit::TestCase
   def test_without_arguments
     i = 0
 
-    retryable do
+    retriable do
       i += 1
 
       raise Exception.new
@@ -19,7 +19,7 @@ class RetryableRbTest < Test::Unit::TestCase
   def test_with_one_exception_and_two_times
     i = 0
 
-    retryable :on => EOFError, :times => 2 do
+    retriable :on => EOFError, :times => 2 do
       i += 1
 
       raise EOFError.new
@@ -58,7 +58,7 @@ class RetryableRbTest < Test::Unit::TestCase
         assert_equal t, 5
       end
 
-      retryable :on => [EOFError, ArgumentError], :then => then_cb, :finally => finally_cb, :always => always_cb, :times => 5, :sleep => 0.2 do |h|
+      retriable :on => [EOFError, ArgumentError], :then => then_cb, :finally => finally_cb, :always => always_cb, :times => 5, :sleep => 0.2 do |h|
         i += 1
 
         h[:value] = true

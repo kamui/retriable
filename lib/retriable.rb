@@ -1,7 +1,7 @@
-require 'retryable-rb/version'
+require 'retriable/version'
 
 module Kernel
-  def retryable(options = {})
+  def retriable(options = {})
     opts    = {:on => Exception, :times => 1}.merge(options)
     handler = {}
 
