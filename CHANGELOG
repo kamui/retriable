@@ -1,1 +1,0 @@
-v1.2.0. Fork the retryable-rb repo. Extend the Kernel module with the retriable method so you can use it anywhere without having to include it in every class. Update gemspec, Gemfile, and Raketask. Remove echoe dependency.

@@ -1,84 +1,125 @@
-Introduction
+Retriable
 ============
 
-Retriable is an easy to use DSL to retry code if an exception is raised.  This is especially useful when interacting with unreliable services that fail randomly.
+[![Build Status](https://secure.travis-ci.org/kamui/retriable.png)](http://travis-ci.org/kamui/retriable)
+
+Retriable is an simple DSL to retry code if an exception is raised.  This is especially useful when interacting external api/services or file system calls.
 
 Installation
 ------------
+Via command line:
 
-    gem install retriable
+```ruby
+gem install retriable
+```
 
-    # In your ruby application
-    require 'retriable'
+In your ruby script:
 
-    # In your Gemfile
-    gem 'retriable'
+```ruby
+require 'retriable'
+```
 
-Using Retriable
+In your Gemfile:
+
+```ruby
+gem 'retriable'
+```
+
+By default, requiring 'retriable' will include the #retriable method into th Kernel so that you can use it anywhere. If you don't want this behaviour, you can load a non-kernel included version:
+
+```ruby
+gem 'retriable', require => 'retriable/no_kernel'
+```
+
+Or in your ruby script:
+
+```ruby
+require 'retriable/no_kernel'
+```
+
+Usage
 ---------------
 
-Code wrapped in a retriable block will be retried if a failure occurs.  As such, code attempted once, will be retried again for another attempt if it fails to run.
+Code in a retriable block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `Exception` and make 3 retry attempts before raising the last exception.
 
-    require 'retriable'
+```ruby
+require 'retriable'
 
-    class Api
-      # Use it in methods that interact with unreliable services
-      def get
-        retriable do
-          # code here...
-        end
-      end
-    end
-
-By default, Retriable will rescue any exception inherited from `Exception`, retry once (for a total of two attempts) and sleep for a random amount time (between 0 to 100 milliseconds, in 10 millisecond increments).  You can choose additional options by passing them via an options `Hash`.
-
-    retriable :on => Timeout::Error, :times => 3, :sleep => 1 do
+class Api
+  # Use it in methods that interact with unreliable services
+  def get
+    retriable do
       # code here...
     end
+  end
+end
+```
 
-This example will only retry on a `Timeout::Error`, retry 3 times (for a total of 4 attempts) and sleep for a full second before each retry.  You can also specify multiple errors to retry on by passing an array.
+Here are the available options:
 
-    retriable :on => [Timeout::Error, Errno::ECONNRESET] do
-      # code here...
-    end
+`tries` (default: 3) - Number of attempts to make at running your code block
+`interval` (default: 0) - Number of seconds to sleep between attempts
+`timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
+`on` (default: Exception) - Exception or array of exceptions to rescue for each attempt
+`on_retry` - (default: nil) - Proc to call after each attempt is rescued
 
-You can also have Ruby retry immediately after a failure by passing `false` as the sleep option.
+You can pass options via an options `Hash`. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each attempt.
 
-    retriable :sleep => false do
-      # code here...
-    end
+```ruby
+retriable :on => Timeout::Error, :tries => 3, :interval => 1 do
+  # code here...
+end
+```
 
-Retriable also allows for callbacks to be defined, which is useful to log failures for analytics purposes or cleanup after repeated failures.  Retriable has three types of callbacks: `then`, `finally`, and `always`.
+You can also specify multiple errors to retry on by passing an array of exceptions.
 
-`then`: Run every time a failure occurs.
+```ruby
+retriable :on => [Timeout::Error, Errno::ECONNRESET] do
+  # code here...
+end
+```
 
-`finally`: Run when the number of retries runs out.
+You can also specify a timeout if you want the code block to only make an attempt for X amount of seconds. This timeout is per attempt.
 
-`always`: Run when the code wrapped in a retriable block passes or when the number of retries runs out.
+```ruby
+retriable :timeout => 1 do
+  # code here...
+end
+```
 
-The `then` and `finally` callbacks pass the exception raised, which can be used for logging or error control.  All three callbacks also have a `handler`, which provides an interface to pass data between the code wrapped in the retriable block and the callbacks defined.
+If you need millisecond units of time for the sleep or the timeout:
 
-Furthermore, each callback provides the number of `attempts`, `retries` and `times` that the wrapped code should be retried.  As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
+```ruby
+retriable :interval => (200/1000.0), :timeout => (500/1000.0) do
+  # code here...
+end
+```
 
-    then_cb = Proc.new do |exception, handler, attempts, retries, times|
-      log "#{exception.class}: '#{exception.message}' - #{attempts} attempts, #{retries} out of #{times} retries left."}
-    end
+Retriable also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the number of `tries`, and the `exception` that was raised in the current attempt. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
-    finally_cb = Proc.new do |exception, handler|
-      log "#{exception.class} raised too many times. First attempt at #{handler[:start]} and final attempt at #{Time.now}"
-    end
+```ruby
+on_retry = Proc.new do |exception, tries|
+  log "#{exception.class}: '#{exception.message}' - #{tries} attempts."}
+end
+```
 
-    always_cb = Proc.new do |handler, attempts|
-      log "total time for #{attempts} attempts: #{Time.now - handler[:start]}"
-    end
+What if I want to execute a code block at the end, whether or not an exception was rescued ([ensure](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure))? Or, what if I want to execute a code block if no exception is raised ([else](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else))? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:
 
-    retriable :then => then_cb do, :finally => finally_cb, :always => always_cb |handler|
-      handler[:start] ||= Time.now
-
-      # code here...
-    end
+```ruby
+begin
+  retriable do
+    # some code
+  end
+rescue Exception => e
+  # run this if retriable ends up re-rasing the exception
+else
+  # run this if retriable doesn't raise any exceptions
+ensure
+  # run this no matter what, exception or no exception
+end
+```
 
 Credits
 -------
 
-Retriable was originally forked from the retryable-rb gem by [Robert Sosinski](https://github.com/robertsosinski), which in turn originally inspired by code written by [Michael Celona](http://github.com/mcelona) and later assisted by [David Malin](http://github.com/dmalin).
+Retriable was originally forked from the retryable-rb gem by [Robert Sosinski](https://github.com/robertsosinski), which in turn originally inspired by code written by [Michael Celona](http://github.com/mcelona) and later assisted by [David Malin](http://github.com/dmalin). The [attempt](https://rubygems.org/gems/attempt) gem by Daniel J. Berger was also an inspiration.
