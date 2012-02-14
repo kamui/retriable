@@ -1,3 +1,7 @@
+## 1.3.1
+* Add `rake` dependency for travis-ci.
+* Update gemspec summary and description.
+
 ## 1.3.0
 
 * Rewrote a lot of the code with inspiration from [attempt](https://rubygems.org/gems/attempt).
