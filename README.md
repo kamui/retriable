@@ -25,18 +25,6 @@ In your Gemfile:
 gem 'retriable'
 ```
 
-By default, requiring 'retriable' will include the #retriable method into th Kernel so that you can use it anywhere. If you don't want this behaviour, you can load a non-kernel included version:
-
-```ruby
-gem 'retriable', require => 'retriable/no_kernel'
-```
-
-Or in your ruby script:
-
-```ruby
-require 'retriable/no_kernel'
-```
-
 Usage
 ---------------
 
@@ -58,9 +46,13 @@ end
 Here are the available options:
 
 `tries` (default: 3) - Number of attempts to make at running your code block
+
 `interval` (default: 0) - Number of seconds to sleep between attempts
+
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
+
 `on` (default: Exception) - Exception or array of exceptions to rescue for each attempt
+
 `on_retry` - (default: nil) - Proc to call after each attempt is rescued
 
 You can pass options via an options `Hash`. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each attempt.
@@ -98,8 +90,12 @@ end
 Retriable also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the number of `tries`, and the `exception` that was raised in the current attempt. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
 ```ruby
-on_retry = Proc.new do |exception, tries|
+do_this_on_each_retry = Proc.new do |exception, tries|
   log "#{exception.class}: '#{exception.message}' - #{tries} attempts."}
+end
+
+retriable :on_retry => do_this_on_each_retry do
+  # code here...
 end
 ```
 
@@ -118,6 +114,29 @@ ensure
   # run this no matter what, exception or no exception
 end
 ```
+
+Non Kernel included version
+---------------------------
+By default, requiring 'retriable' will include the #retriable method into th Kernel so that you can use it anywhere. If you don't want this behaviour, you can load a non-kernel included version:
+
+```ruby
+gem 'retriable', require => 'retriable/no_kernel'
+```
+
+Or in your ruby script:
+
+```ruby
+require 'retriable/no_kernel'
+```
+
+In this case, you'll just execute a retriable block from the Retriable module:
+
+```ruby
+Retriable.retriable do
+  # code here...
+end
+```
+
 
 Credits
 -------
