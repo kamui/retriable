@@ -1,8 +1,10 @@
-# encoding: utf-8
+ # encoding: utf-8
 
 require 'timeout'
 
 module Retriable
+  extend self
+
   class Retry
     attr_accessor :tries
     attr_accessor :interval
