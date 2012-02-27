@@ -70,7 +70,7 @@ Furthermore, each callback provides the number of `attempts`, `retries` and `tim
       log "total time for #{attempts} attempts: #{Time.now - handler[:start]}"
     end
 
-    retryable :then => then_cb do, :finally => finally_cb, :always => always_cb |handler|
+    retryable :then => then_cb, :finally => finally_cb, :always => always_cb do |handler|
       handler[:start] ||= Time.now
     
       # code here...
