@@ -16,7 +16,7 @@ module Retriable
       @tries      = 3
       @interval   = 0
       @timeout    = nil
-      @on         = Exception
+      @on         = [StandardError, Timeout::Error]
       @on_retry   = nil
 
       yield self if block_given?
@@ -44,21 +44,13 @@ module Retriable
     end
   end
 
-  def retriable(options = {}, &block)
-    opts = {
-      :tries => 3,
-      :on => Exception,
-      :interval => 1
-    }
-
-    opts.merge!(options)
-
-    raise 'No block given' unless block_given?
+  def retriable(opts = {}, &block)
+    raise 'no block given' unless block_given?
 
     Retry.new do |r|
-      r.tries      = opts[:tries]
-      r.on         = opts[:on]
-      r.interval   = opts[:interval]
+      r.tries      = opts[:tries] if opts[:tries]
+      r.on         = opts[:on] if opts[:on]
+      r.interval   = opts[:interval] if opts[:interval]
       r.timeout    = opts[:timeout] if opts[:timeout]
       r.on_retry   = opts[:on_retry] if opts[:on_retry]
     end.perform(&block)

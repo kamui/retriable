@@ -9,9 +9,9 @@ class RetriableTest < MiniTest::Unit::TestCase
 
     retriable do
       i += 1
-      raise Exception.new
+      raise StandardError.new
     end
-  rescue Exception
+  rescue StandardError
     assert_equal 3, i
   end
 

@@ -1,3 +1,7 @@
+## 1.3.2
+* Clean up option defaults.
+* By default, rescue StandardError and Timeout::Error instead of [Exception](http://www.mikeperham.com/2012/03/03/the-perils-of-rescue-exception).
+
 ## 1.3.1
 * Add `rake` dependency for travis-ci.
 * Update gemspec summary and description.
