@@ -28,7 +28,7 @@ gem 'retriable'
 Usage
 ---------------
 
-Code in a retriable block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `Exception` and make 3 retry attempts before raising the last exception.
+Code in a retriable block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError` (and `Timeout::Error`, which does not inherit from `StandardError` in ruby 1.8) and make 3 retry attempts before raising the last exception.
 
 ```ruby
 require 'retriable'
@@ -51,7 +51,7 @@ Here are the available options:
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
-`on` (default: Exception) - Exception or array of exceptions to rescue for each attempt
+`on` (default: [StandardError, Timeout::Error]) - `StandardError` and `Timeout::Error` or array of exceptions to rescue for each attempt
 
 `on_retry` - (default: nil) - Proc to call after each attempt is rescued
 
@@ -106,7 +106,7 @@ begin
   retriable do
     # some code
   end
-rescue Exception => e
+rescue => e
   # run this if retriable ends up re-rasing the exception
 else
   # run this if retriable doesn't raise any exceptions
