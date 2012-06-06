@@ -13,7 +13,7 @@ module Retriable
     attr_accessor :on_retry
 
     def initialize
-      @tries      = 3
+      @tries      = 0
       @interval   = 0
       @timeout    = nil
       @on         = [StandardError, Timeout::Error]
