@@ -32,7 +32,7 @@ module Retriable
         end
       rescue *[*on] => exception
         @tries -= 1
-        if @tries > 0
+        if @tries > 0 or @tries < 0
           count += 1
           sleep @interval if @interval > 0
           @on_retry.call(exception, count) if @on_retry
