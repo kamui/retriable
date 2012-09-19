@@ -3,7 +3,7 @@ Retriable
 
 [![Build Status](https://secure.travis-ci.org/kamui/retriable.png)](http://travis-ci.org/kamui/retriable)
 
-Retriable is an simple DSL to retry code if an exception is raised.  This is especially useful when interacting external api/services or file system calls.
+Retriable is an simple DSL to retry a code block if an exception should be raised.  This is especially useful when interacting external api/services or file system calls.
 
 Installation
 ------------
@@ -115,9 +115,9 @@ ensure
 end
 ```
 
-Non Kernel included version
----------------------------
-By default, requiring 'retriable' will include the #retriable method into th Kernel so that you can use it anywhere. If you don't want this behaviour, you can load a non-kernel included version:
+Non Kernel version
+------------------
+By default, `require 'retriable'` will include the `#retriable` method into the `Kernel` so that you can use it everywhere. If you don't want this behaviour, you can load a non-kernel version:
 
 ```ruby
 gem 'retriable', require => 'retriable/no_kernel'
@@ -129,7 +129,7 @@ Or in your ruby script:
 require 'retriable/no_kernel'
 ```
 
-In this case, you'll just execute a retriable block from the Retriable module:
+In this case, you'll just execute a retriable block from the `Retriable` module:
 
 ```ruby
 Retriable.retriable do

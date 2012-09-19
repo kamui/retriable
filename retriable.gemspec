@@ -10,8 +10,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Jack Chu"]
   s.email       = ["jack@jackchu.com"]
   s.homepage    = %q{http://github.com/kamui/retriable}
-  s.summary     = %q{Retriable is an simple DSL to retry code if an exception is raised.}
-  s.description = %q{Retriable is an simple DSL to retry code if an exception is raised. This is especially useful when interacting external api/services or file system calls.}
+  s.summary     = %q{Retriable is an simple DSL to retry a code block if an exception should be raised.}
+  s.description = %q{Retriable is an simple DSL to retry a code block if an exception should be raised. This is especially useful when interacting external api/services or file system calls.}
 
   s.rubyforge_project = "retriable"
 
