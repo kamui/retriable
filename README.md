@@ -51,7 +51,9 @@ Here are the available options:
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
-`on` (default: [StandardError, Timeout::Error]) - `StandardError` and `Timeout::Error` or array of exceptions to rescue for each attempt
+`on` (default: [StandardError, Timeout::Error]) - `StandardError` and
+`Timeout::Error`, array of exceptions to rescue for each attempt, or
+and array of exception & regex pairs.
 
 `on_retry` - (default: nil) - Proc to call after each attempt is rescued
 
@@ -67,6 +69,25 @@ You can also specify multiple errors to retry on by passing an array of exceptio
 
 ```ruby
 retriable :on => [Timeout::Error, Errno::ECONNRESET] do
+  # code here...
+end
+```
+
+You can also provide a regex pattern to further narrow down the range of
+exceptions. In this example, it will retry if the exception is a Timeout::Error
+or if it's a StandardError containing "HTTP":
+
+```ruby
+retriable :on => [Timeout::Error, [StandardError, /HTTP/]] do
+  # code here...
+end
+```
+
+Note, that when you're specifying a single item, you need to nest the
+exception-regex pair in an array:
+
+```ruby
+retriable :on => [[StandardError, /HTTP/]] do
   # code here...
 end
 ```

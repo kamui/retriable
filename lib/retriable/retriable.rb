@@ -30,17 +30,37 @@ module Retriable
         else
           yield
         end
-      rescue *[*on] => exception
-        @tries -= 1
-        if @tries > 0
-          count += 1
-          sleep @interval if @interval > 0
-          @on_retry.call(exception, count) if @on_retry
-          retry
+      rescue Exception => exception
+        if matches_exception_spec? exception
+          @tries -= 1
+          if @tries > 0
+            count += 1
+            sleep @interval if @interval > 0
+            @on_retry.call(exception, count) if @on_retry
+            retry
+          else
+            raise
+          end
         else
           raise
         end
       end
+    end
+
+    def matches_exception_spec? exception
+      [*on].any?{|exception_spec|
+        pattern = nil
+        if exception_spec.is_a? Array
+          spec_exception, pattern = exception_spec
+        else
+          spec_exception = exception_spec
+        end
+        match = exception.is_a?(spec_exception)
+        if pattern
+          match &&= exception.message =~ pattern
+        end
+        match
+      }
     end
   end
 
