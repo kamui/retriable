@@ -4,6 +4,8 @@ require 'retriable'
 require 'minitest/autorun'
 
 class RetriableTest < MiniTest::Unit::TestCase
+  TestError = Class.new StandardError
+
   def test_without_arguments
     i = 0
 
@@ -42,5 +44,29 @@ class RetriableTest < MiniTest::Unit::TestCase
 
   rescue ArgumentError
     assert_equal 5, i
+  end
+
+  def test_with_exception_regex
+    begin
+      i = 0
+      retriable :on => [[TestError, /abc/]], :tries => 2 do
+        i += 1
+        raise TestError.new('abc')
+      end
+    rescue TestError
+    ensure
+      assert_equal i, 2
+    end
+
+    begin
+      i = 0
+      retriable :on => [[TestError, /abc/]], :tries => 2 do
+        i += 1
+        raise TestError.new('xyz')
+      end
+    rescue TestError
+    ensure
+      assert_equal i, 1
+    end
   end
 end
