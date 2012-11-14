@@ -13,7 +13,7 @@ module Retriable
     attr_accessor :on_retry
 
     def initialize
-      @tries      = 3
+      @tries      = 0
       @interval   = 0
       @timeout    = nil
       @on         = [StandardError, Timeout::Error]
@@ -32,7 +32,7 @@ module Retriable
         end
       rescue *[*on] => exception
         @tries -= 1
-        if @tries > 0
+        if @tries > 0 or @tries < 0
           count += 1
           @on_retry.call(exception, count) if @on_retry
           sleep @interval if @interval > 0
