@@ -1,3 +1,6 @@
+## 1.3.3
+* sleep after executing the retry block, so there's no wait on the first call (molfar)
+
 ## 1.3.2
 * Clean up option defaults.
 * By default, rescue StandardError and Timeout::Error instead of [Exception](http://www.mikeperham.com/2012/03/03/the-perils-of-rescue-exception).
