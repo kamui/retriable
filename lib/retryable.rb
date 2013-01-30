@@ -17,7 +17,12 @@ module Retryable
       opts[:then].call(exception, handler, attempts, retries, times) if opts[:then]
 
       if attempts <= times
-        sleep(opts[:sleep] || (rand(11) / 100.0)) unless opts[:sleep] == false
+        if opts[:sleep].respond_to?(:call)
+          sleep_for = opts[:sleep].call(attempts)
+          sleep(sleep_for)
+        else
+          sleep(opts[:sleep] || (rand(11) / 100.0)) unless opts[:sleep] == false
+        end
         retries -= 1
         retry
       else

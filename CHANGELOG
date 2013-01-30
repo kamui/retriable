@@ -1,3 +1,5 @@
+v1.1.0.1 Allow sleep parameter to be a proc/lambda to allow for exponential backoff.
+
 v1.1.0. Setting default retry sleep period to random.
 
 v1.0.0. First release.

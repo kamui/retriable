@@ -29,6 +29,35 @@ class RetryableTest < Test::Unit::TestCase
     assert_equal i, 3
   end
 
+  def test_with_exponential_sleep_proc
+    was_called = false
+    sleeper = Proc.new do |attempts|
+      was_called = true
+      attempts
+    end
+    Retryable.retryable :sleep => sleeper do |h|
+      raise EOFError.new
+    end
+  rescue
+    assert_equal was_called, true
+  end
+
+  def test_with_exponential_sleep_lambda
+    was_called = false
+    slept_for = 0
+    sleeper = lambda do |attempts|
+      was_called = true
+      slept_for += 4**attempts
+      0
+    end
+    Retryable.retryable :sleep => sleeper, :times => 4 do |h|
+      raise EOFError.new
+    end
+  rescue
+    assert_equal was_called, true
+    assert_equal slept_for, 340
+  end
+
   def test_with_arguments_and_handler
       i = 0
 

@@ -34,6 +34,11 @@ By default, Retryable will rescue any exception inherited from `Exception`, retr
       # code here...
     end
 
+    # with exponential back-off - sleep 4, 16, 64, 256, give up
+    retryable :on => Timeout::Error, :times => 4, :sleep => lambda {|attempts| 4 ** attempts} do
+      # code here...
+    end
+
 This example will only retry on a `Timeout::Error`, retry 3 times (for a total of 4 attempts) and sleep for a full second before each retry.  You can also specify multiple errors to retry on by passing an array.
 
     retryable :on => [Timeout::Error, Errno::ECONNRESET] do
