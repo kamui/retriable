@@ -19,7 +19,7 @@ Code wrapped in a Retryable block will be retried if a failure occurs.  As such,
     # Include Retryable into your class
     class Api
       include Retryable
-    
+
       # Use it in methods that interact with unreliable services
       def get
         retryable do
@@ -27,7 +27,7 @@ Code wrapped in a Retryable block will be retried if a failure occurs.  As such,
         end
       end
     end
-    
+
 By default, Retryable will rescue any exception inherited from `Exception`, retry once (for a total of two attempts) and sleep for a random amount time (between 0 to 100 milliseconds, in 10 millisecond increments).  You can choose additional options by passing them via an options `Hash`.
 
     retryable :on => Timeout::Error, :times => 3, :sleep => 1 do
@@ -61,18 +61,18 @@ Furthermore, each callback provides the number of `attempts`, `retries` and `tim
     then_cb = Proc.new do |exception, handler, attempts, retries, times|
       log "#{exception.class}: '#{exception.message}' - #{attempts} attempts, #{retries} out of #{times} retries left."}
     end
-    
+
     finally_cb = Proc.new do |exception, handler|
       log "#{exception.class} raised too many times. First attempt at #{handler[:start]} and final attempt at #{Time.now}"
     end
-    
+
     always_cb = Proc.new do |handler, attempts|
       log "total time for #{attempts} attempts: #{Time.now - handler[:start]}"
     end
 
     retryable :then => then_cb, :finally => finally_cb, :always => always_cb do |handler|
       handler[:start] ||= Time.now
-    
+
       # code here...
     end
 
