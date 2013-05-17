@@ -35,7 +35,10 @@ module Retriable
         if @tries > 0
           count += 1
           @on_retry.call(exception, count) if @on_retry
-          sleep @interval if @interval > 0
+
+          sleep_for = @interval.respond_to?(:call) ? @interval.call(count) : @interval
+          sleep sleep_for if sleep_for > 0
+
           retry
         else
           raise

@@ -43,4 +43,19 @@ class RetriableTest < MiniTest::Unit::TestCase
   rescue ArgumentError
     assert_equal 5, i
   end
+
+  def test_with_interval_proc
+    was_called = false
+
+    sleeper = Proc.new do |attempts|
+      was_called = true
+      attempts
+    end
+
+    retriable :on => EOFError, :interval => sleeper do |h|
+      raise EOFError.new
+    end
+  rescue
+    assert_equal was_called, true
+  end
 end

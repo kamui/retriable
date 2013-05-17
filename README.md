@@ -87,6 +87,15 @@ retriable :interval => (200/1000.0), :timeout => (500/1000.0) do
 end
 ```
 
+If you'd like exponential backoff, interval can take a Proc
+
+```ruby
+# with exponential back-off - sleep 4, 16, 64, 256, give up
+retryable :times => 4, :interval => lambda {|attempts| 4 ** attempts} do
+  # code here...
+end
+```
+
 Retriable also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the number of `tries`, and the `exception` that was raised in the current attempt. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
 ```ruby
