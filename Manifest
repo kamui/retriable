@@ -1,8 +1,0 @@
-CHANGELOG
-LICENSE
-Manifest
-README.markdown
-Rakefile
-lib/retryable.rb
-retryable-rb.gemspec
-test/retryable_test.rb
