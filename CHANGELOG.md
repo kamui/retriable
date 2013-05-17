@@ -1,3 +1,6 @@
+## 1.3.3.1
+* Allow sleep parameter to be a proc/lambda to allow for exponential backoff.
+
 ## 1.3.3
 * sleep after executing the retry block, so there's no wait on the first call (molfar)
 
