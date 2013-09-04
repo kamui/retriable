@@ -1,9 +1,6 @@
-# encoding: utf-8
+require 'retriable'
 
 module Kernel
-  include Retriable
-end
-
-class Object
-  include Kernel
+  include Retriable::DSL
+  private :retriable
 end

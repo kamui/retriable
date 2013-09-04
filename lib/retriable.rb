@@ -1,4 +1,5 @@
-# encoding: utf-8
+require 'retriable/retry'
+require 'retriable/dsl'
 
-require 'retriable/no_kernel'
-require 'retriable/core_ext/kernel'
+module Retriable
+end

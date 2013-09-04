@@ -1,9 +1,14 @@
-# encoding: utf-8
-
 require 'retriable'
+require 'retriable/core_ext/kernel'
 require 'minitest/autorun'
 
-class RetriableTest < MiniTest::Unit::TestCase
+class RetriableTest < Minitest::Test
+  def test_raise_no_block
+    assert_raises LocalJumpError do
+      retriable :on => StandardError
+    end
+  end
+
   def test_without_arguments
     i = 0
 
