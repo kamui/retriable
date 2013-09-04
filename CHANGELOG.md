@@ -1,3 +1,9 @@
+## 1.4.0
+* By default, retriable doesn't monkey patch `Kernel`. If you want this functionality,
+you can `require 'retriable/core_ext/kernel'.
+* Upgrade minitest to 5.x.
+* Refactor the DSL into it's own class.
+
 ## 1.3.3.1
 * Allow sleep parameter to be a proc/lambda to allow for exponential backoff.
 
