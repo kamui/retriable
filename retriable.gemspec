@@ -1,6 +1,6 @@
-# encoding: utf-8
-
-$:.push File.expand_path("../lib", __FILE__)
+# coding: utf-8
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "retriable/version"
 
 Gem::Specification.new do |s|
@@ -22,5 +22,5 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_development_dependency 'rake'
-  s.add_development_dependency 'minitest'
+  s.add_development_dependency 'minitest', '>= 5.0'
 end
