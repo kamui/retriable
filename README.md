@@ -1,6 +1,6 @@
 #Retriable
 
-[![Build Status](https://secure.travis-ci.org/kamui/retriable.png)](http://travis-ci.org/kamui/retriable)
+[![Build Status](https://secure.travis-ci.org/mkrogemann/retriable.png)](http://travis-ci.org/mkrogemann/retriable)
 
 Retriable is an simple DSL to retry a code block if an exception should be raised.  This is especially useful when interacting external api/services or file system calls.
 
