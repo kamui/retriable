@@ -1,6 +1,6 @@
 require 'retriable'
 
 module Kernel
-  include Retriable::DSL
+  include Retriable
   private :retriable
 end
