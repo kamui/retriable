@@ -1,3 +1,6 @@
+## 1.4.1
+* Fixes non kernel mode bug. Remove DSL class, move `#retriable` into Retriable module. Thanks @mkrogemann.
+
 ## 1.4.0
 * By default, retriable doesn't monkey patch `Kernel`. If you want this functionality,
 you can `require 'retriable/core_ext/kernel'.

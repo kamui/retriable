@@ -1,34 +1,33 @@
 require 'retriable'
-require 'retriable/core_ext/kernel'
 require 'minitest/autorun'
 
 class RetriableTest < Minitest::Test
   def test_raise_no_block
     assert_raises LocalJumpError do
-      retriable :on => StandardError
+      Retriable.retriable :on => StandardError
     end
   end
 
   def test_without_arguments
     i = 0
 
-    retriable do
+    Retriable.retriable do
       i += 1
       raise StandardError.new
     end
-  rescue StandardError
+    rescue StandardError
     assert_equal 3, i
   end
 
   def test_with_one_exception_and_two_tries
     i = 0
 
-    retriable :on => EOFError, :tries => 2 do
+    Retriable.retriable :on => EOFError, :tries => 2 do
       i += 1
       raise EOFError.new
     end
 
-  rescue EOFError
+    rescue EOFError
     assert_equal i, 2
   end
 
@@ -40,7 +39,7 @@ class RetriableTest < Minitest::Test
       assert_equal i, tries
     end
 
-    retriable :on => [EOFError, ArgumentError], :on_retry => on_retry, :tries => 5, :sleep => 0.2 do |h|
+    Retriable.retriable :on => [EOFError, ArgumentError], :on_retry => on_retry, :tries => 5, :sleep => 0.2 do |h|
       i += 1
       raise ArgumentError.new
     end
@@ -57,10 +56,29 @@ class RetriableTest < Minitest::Test
       attempts
     end
 
-    retriable :on => EOFError, :interval => sleeper do |h|
+    Retriable.retriable :on => EOFError, :interval => sleeper do |h|
       raise EOFError.new
     end
-  rescue
+    rescue
     assert_equal was_called, true
+  end
+
+  def test_kernel_ext
+    assert_raises NoMethodError do
+      retriable do
+        puts 'should raise NoMethodError'
+      end
+    end
+
+    require 'retriable/core_ext/kernel'
+    i = 0
+
+    retriable do
+      i += 1
+      raise StandardError.new
+    end
+
+    rescue StandardError
+    assert_equal 3, i
   end
 end
