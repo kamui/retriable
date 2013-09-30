@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Retriable by kamui</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <script src="javascripts/scale.fix.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1 class="header">Retriable</h1>
+        <p class="header">Retriable is an simple DSL to retry code when an exception is raised. This is especially useful when interacting external api/services or file system calls.</p>
+
+        <ul>
+          <li class="download"><a class="buttons" href="https://github.com/kamui/retriable/zipball/master">Download ZIP</a></li>
+          <li class="download"><a class="buttons" href="https://github.com/kamui/retriable/tarball/master">Download TAR</a></li>
+          <li><a class="buttons github" href="https://github.com/kamui/retriable">View On GitHub</a></li>
+        </ul>
+
+        <p class="header">This project is maintained by <a class="header name" href="https://github.com/kamui">kamui</a></p>
+
+
+      </header>
+      <section>
+        <h1>
+<a name="retriable" class="anchor" href="#retriable"><span class="octicon octicon-link"></span></a>Retriable</h1>
+
+<p><a href="http://travis-ci.org/kamui/retriable"><img src="https://secure.travis-ci.org/kamui/retriable.png" alt="Build Status"></a></p>
+
+<p>Retriable is an simple DSL to retry a code block when an exception is raised.  This is especially useful when interacting external api/services or file system calls.</p>
+
+<h2>
+<a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>via command line:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">gem</span> <span class="n">install</span> <span class="n">retriable</span>
+</pre></div>
+
+<p>In your ruby script:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'retriable'</span>
+</pre></div>
+
+<p>In your Gemfile:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">gem</span> <span class="s1">'retriable'</span>
+</pre></div>
+
+<h2>
+<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Code in a retriable block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from <code>StandardError</code> (and <code>Timeout::Error</code>, which does not inherit from <code>StandardError</code> in ruby 1.8) and make 3 retry attempts before raising the last exception.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'retriable'</span>
+
+<span class="k">class</span> <span class="nc">Api</span>
+  <span class="c1"># Use it in methods that interact with unreliable services</span>
+  <span class="k">def</span> <span class="nf">get</span>
+    <span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="k">do</span>
+      <span class="c1"># code here...</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
+
+<h3>
+<a name="options" class="anchor" href="#options"><span class="octicon octicon-link"></span></a>Options</h3>
+
+<p>Here are the available options:</p>
+
+<p><code>tries</code> (default: 3) - Number of attempts to make at running your code block</p>
+
+<p><code>interval</code> (default: 0) - Number of seconds to sleep between attempts</p>
+
+<p><code>timeout</code> (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error</p>
+
+<p><code>on</code> (default: [StandardError, Timeout::Error]) - <code>StandardError</code> and <code>Timeout::Error</code> or array of exceptions to rescue for each attempt</p>
+
+<p><code>on_retry</code> - (default: nil) - Proc to call after each attempt is rescued</p>
+
+<p>You can pass options via an options <code>Hash</code>. This example will only retry on a <code>Timeout::Error</code>, retry 3 times and sleep for a full second before each attempt.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">:on</span> <span class="o">=&gt;</span> <span class="ss">Timeout</span><span class="p">:</span><span class="ss">:Error</span><span class="p">,</span> <span class="ss">:tries</span> <span class="o">=&gt;</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">:interval</span> <span class="o">=&gt;</span> <span class="mi">1</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can also specify multiple errors to retry on by passing an array of exceptions.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">:on</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="ss">Timeout</span><span class="p">:</span><span class="ss">:Error</span><span class="p">,</span> <span class="ss">Errno</span><span class="p">:</span><span class="ss">:ECONNRESET</span><span class="o">]</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>You can also specify a timeout if you want the code block to only make an attempt for X amount of seconds. This timeout is per attempt.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">:timeout</span> <span class="o">=&gt;</span> <span class="mi">1</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<p>If you need millisecond units of time for the sleep or the timeout:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">:interval</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="mi">200</span><span class="o">/</span><span class="mi">1000</span><span class="o">.</span><span class="mi">0</span><span class="p">),</span> <span class="ss">:timeout</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="mi">500</span><span class="o">/</span><span class="mi">1000</span><span class="o">.</span><span class="mi">0</span><span class="p">)</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<h3>
+<a name="exponential-backoff" class="anchor" href="#exponential-backoff"><span class="octicon octicon-link"></span></a>Exponential Backoff</h3>
+
+<p>If you'd like exponential backoff, interval can take a Proc</p>
+
+<div class="highlight highlight-ruby"><pre><span class="c1"># with exponential back-off - sleep 4, 16, 64, 256, give up</span>
+<span class="no">Retriable</span><span class="o">.</span><span class="n">retryable</span> <span class="ss">:times</span> <span class="o">=&gt;</span> <span class="mi">4</span><span class="p">,</span> <span class="ss">:interval</span> <span class="o">=&gt;</span> <span class="nb">lambda</span> <span class="p">{</span><span class="o">|</span><span class="n">attempts</span><span class="o">|</span> <span class="mi">4</span> <span class="o">**</span> <span class="n">attempts</span><span class="p">}</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<h3>
+<a name="callbacks" class="anchor" href="#callbacks"><span class="octicon octicon-link"></span></a>Callbacks</h3>
+
+<p>Retriable also provides a callback called <code>:on_retry</code> that will run after an exception is rescued. This callback provides the number of <code>tries</code>, and the <code>exception</code> that was raised in the current attempt. As these are specified in a <code>Proc</code>, unnecessary variables can be left out of the parameter list.</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">do_this_on_each_retry</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">exception</span><span class="p">,</span> <span class="n">tries</span><span class="o">|</span>
+  <span class="n">log</span> <span class="s2">"</span><span class="si">#{</span><span class="n">exception</span><span class="o">.</span><span class="n">class</span><span class="si">}</span><span class="s2">: '</span><span class="si">#{</span><span class="n">exception</span><span class="o">.</span><span class="n">message</span><span class="si">}</span><span class="s2">' - </span><span class="si">#{</span><span class="n">tries</span><span class="si">}</span><span class="s2"> attempts."</span><span class="p">}</span>
+<span class="k">end</span>
+
+<span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">:on_retry</span> <span class="o">=&gt;</span> <span class="n">do_this_on_each_retry</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<h3>
+<a name="ensureelse" class="anchor" href="#ensureelse"><span class="octicon octicon-link"></span></a>Ensure/Else</h3>
+
+<p>What if I want to execute a code block at the end, whether or not an exception was rescued (<a href="http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure">ensure</a>)? Or, what if I want to execute a code block if no exception is raised (<a href="http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else">else</a>)? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="k">begin</span>
+  <span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="k">do</span>
+    <span class="c1"># some code</span>
+  <span class="k">end</span>
+<span class="k">rescue</span> <span class="o">=&gt;</span> <span class="n">e</span>
+  <span class="c1"># run this if retriable ends up re-rasing the exception</span>
+<span class="k">else</span>
+  <span class="c1"># run this if retriable doesn't raise any exceptions</span>
+<span class="k">ensure</span>
+  <span class="c1"># run this no matter what, exception or no exception</span>
+<span class="k">end</span>
+</pre></div>
+
+<h2>
+<a name="kernel-extension" class="anchor" href="#kernel-extension"><span class="octicon octicon-link"></span></a>Kernel Extension</h2>
+
+<p>If you want to call <code>Retriable.retriable</code> without the <code>Retriable</code> module prefix and you don't mind extending <code>Kernel</code>,
+there is a kernel extension available for this.</p>
+
+<p>In your ruby script:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="nb">require</span> <span class="s1">'retriable/core_ext/kernel'</span>
+</pre></div>
+
+<p>or in your Gemfile:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">gem</span> <span class="s1">'retriable'</span><span class="p">,</span> <span class="nb">require</span><span class="p">:</span> <span class="s1">'retriable/core_ext/kernel'</span>
+</pre></div>
+
+<p>and then you can call <code>retriable</code> in any context like this:</p>
+
+<div class="highlight highlight-ruby"><pre><span class="n">retriable</span> <span class="k">do</span>
+  <span class="c1"># code here...</span>
+<span class="k">end</span>
+</pre></div>
+
+<h2>
+<a name="credits" class="anchor" href="#credits"><span class="octicon octicon-link"></span></a>Credits</h2>
+
+<p>Retriable was originally forked from the retryable-rb gem by <a href="https://github.com/robertsosinski">Robert Sosinski</a>, which in turn originally inspired by code written by <a href="http://github.com/mcelona">Michael Celona</a> and later assisted by <a href="http://github.com/dmalin">David Malin</a>. The <a href="https://rubygems.org/gems/attempt">attempt</a> gem by Daniel J. Berger was also an inspiration.</p>
+      </section>
+      <footer>
+        <p><small>Hosted on <a href="https://pages.github.com">GitHub Pages</a> using the Dinky theme</small></p>
+      </footer>
+    </div>
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+		
+  </body>
+</html>
