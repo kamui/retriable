@@ -9,17 +9,16 @@ module Retriable
     attr_accessor :on_retry
 
     def initialize
-      @tries      = 3
-      @interval   = 0
-      @timeout    = nil
-      @on         = [StandardError, Timeout::Error]
-      @on_retry   = nil
-
       yield self if block_given?
+
+      @on       ||= [StandardError, Timeout::Error]
+      @tries    ||= interval.is_a?(Enumerable) ? interval.count : 3
+      @interval ||= 0
     end
 
-    def perform
+    def perform(&block)
       count = 0
+
       begin
         if @timeout
           Timeout::timeout(@timeout) { yield }
@@ -27,17 +26,28 @@ module Retriable
           yield
         end
       rescue *[*on] => exception
-        @tries -= 1
-        if @tries > 0
-          count += 1
-          @on_retry.call(exception, count) if @on_retry
-          sleep_for = @interval.respond_to?(:call) ? @interval.call(count) : @interval
-          sleep sleep_for if sleep_for > 0
+        raise if count >= @tries
+        count += 1
 
-          retry
-        else
-          raise
-        end
+        @on_retry.call(exception, count) if @on_retry
+        sleep sleep_for(count)
+
+        retry
+      end
+    end
+
+  private
+
+    # @param try [Integer] current try number (1..)
+    # @return [Numeric]
+    def sleep_for(try)
+      if @interval.respond_to?(:call)
+        @interval.call(try)
+      elsif @interval.is_a?(Enumerable)
+        # because we start from the first try
+        @interval[(try - 1) % @interval.count]
+      else
+        @interval
       end
     end
   end
