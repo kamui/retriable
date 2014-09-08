@@ -47,7 +47,7 @@ Here are the available options:
 
 `tries` (default: 3) - Number of attempts to make at running your code block
 
-`interval` (default: 0) - Number of seconds to sleep between attempts
+`interval` (default: 0) - Number of seconds to sleep between attempts, or code block, or array
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
@@ -83,6 +83,14 @@ If you need millisecond units of time for the sleep or the timeout:
 
 ```ruby
 Retriable.retriable :interval => (200/1000.0), :timeout => (500/1000.0) do
+  # code here...
+end
+```
+
+Or you can supply a list of values for the intervals:
+
+```ruby
+Retriable.retriable :interval => [3, 5, 8, 13, 21] do
   # code here...
 end
 ```
