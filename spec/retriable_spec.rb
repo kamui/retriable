@@ -147,4 +147,34 @@ describe Retriable do
       i.must_equal 3
     end
   end
+
+  it 'retry runs for a max elapsed time of 2 seconds' do
+    subject.configure do |c|
+      c.sleep_disabled = false
+    end
+
+    subject.config.sleep_disabled.must_equal false
+
+    attempts = 0
+    time_table = {}
+
+    handler = Proc.new do |exception, attempt, elapsed_time, next_interval|
+      time_table[attempt] = elapsed_time
+    end
+
+    lambda do
+      subject.retry(
+        base_interval: 1.0,
+        multiplier: 1.0,
+        rand_factor: 0.0,
+        max_elapsed_time: 2.0,
+        on_retry: handler
+      ) do
+        attempts += 1
+        raise EOFError.new
+      end
+    end.must_raise EOFError
+
+    attempts.must_equal 2
+  end
 end
