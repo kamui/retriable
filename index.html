@@ -149,8 +149,10 @@
 
 <p><code>max_interval</code> (default: 60) - The maximum interval in seconds that any attempt can climb to.</p>
 
-<p><code>rand_factor</code> (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this: <code>randomized_interval =
-      retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])</code></p>
+<p><code>rand_factor</code> (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this:</p>
+
+<pre><code>randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])
+</code></pre>
 
 <p><code>multiplier</code> (default: 1.5) - Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.</p>
 
@@ -209,14 +211,14 @@
 
 <p>Exponential backoff is enabled by default, if you want to simply execute code every second, you can do this:</p>
 
-<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retryable</span> <span class="ss">base_interval</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">multiplier</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">rand_factor</span><span class="p">:</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span> <span class="k">do</span>
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retry</span> <span class="ss">base_interval</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">multiplier</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">rand_factor</span><span class="p">:</span> <span class="mi">0</span><span class="o">.</span><span class="mi">0</span> <span class="k">do</span>
   <span class="c1"># code here...</span>
 <span class="k">end</span>
 </pre></div>
 
 <p>If you don't want exponential backoff, but you still want some randomization between intervals, this code will run every 1 seconds with a randomization factor of 0.2, which means each interval will be a random value between 0.8 and 1.2 (1 second +/- 0.2):</p>
 
-<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retryable</span> <span class="ss">base_interval</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">multiplier</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">rand_factor</span><span class="p">:</span> <span class="mi">0</span><span class="o">.</span><span class="mi">2</span> <span class="k">do</span>
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retry</span> <span class="ss">base_interval</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">multiplier</span><span class="p">:</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="ss">rand_factor</span><span class="p">:</span> <span class="mi">0</span><span class="o">.</span><span class="mi">2</span> <span class="k">do</span>
   <span class="c1"># code here...</span>
 <span class="k">end</span>
 </pre></div>
