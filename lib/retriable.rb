@@ -27,8 +27,9 @@ module Retriable
     raise LocalJumpError unless block_given?
 
     attempt = 0
-    start_time = Time.now
     interval = base_interval
+    start_time = Time.now
+    elapsed_time = lambda { Time.now - start_time }
 
     begin
       attempt += 1
@@ -40,11 +41,11 @@ module Retriable
     rescue *[*on] => exception
       raise if attempt >= max_tries
 
-      return if (Time.now - start_time) > max_elapsed_time
-
       interval = randomized_interval(rand_factor, interval)
 
       on_retry.call(exception, attempt, Time.now - start_time, interval) if on_retry
+
+      raise if elapsed_time.call > max_elapsed_time || (elapsed_time.call + interval) > max_elapsed_time
 
       sleep interval if interval > 0 && config.sleep_disabled != true
 
