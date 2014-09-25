@@ -136,7 +136,7 @@ end
 Exponential backoff is enabled by default, if you want to simply execute code every second, you can do this:
 
 ```ruby
-Retriable.retryable base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0 do
+Retriable.retry base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0 do
   # code here...
 end
 ```
@@ -144,7 +144,7 @@ end
 If you don't want exponential backoff, but you still want some randomization between intervals, this code will run every 1 seconds with a randomization factor of 0.2, which means each interval will be a random value between 0.8 and 1.2 (1 second +/- 0.2):
 
 ```ruby
-Retriable.retryable base_interval: 1.0, multiplier: 1.0, rand_factor: 0.2 do
+Retriable.retry base_interval: 1.0, multiplier: 1.0, rand_factor: 0.2 do
   # code here...
 end
 ```
