@@ -1,6 +1,7 @@
 require 'retriable'
 
 module Kernel
-  include Retriable
-  private :retriable
+  def retriable(opts={}, &block)
+    Retriable.retry(opts, &block)
+  end
 end

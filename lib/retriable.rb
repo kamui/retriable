@@ -1,17 +1,69 @@
-require 'retriable/retry'
+require 'timeout'
+require 'retriable/config'
+require 'retriable/version'
 
 module Retriable
   extend self
 
-  def retriable(opts = {}, &block)
+  attr_accessor :config
+
+  def self.configure
+    self.config ||= Config.new
+    yield(config)
+  end
+
+  def retry(
+    max_tries:         config.max_tries,
+    base_interval:     config.base_interval,
+    max_interval:      config.max_interval,
+    rand_factor:       config.rand_factor,
+    multiplier:        config.multiplier,
+    max_elapsed_time:  config.max_elapsed_time,
+    timeout:           config.timeout,
+    on:                config.on,
+    on_retry:          config.on_retry,
+    &block)
+
     raise LocalJumpError unless block_given?
 
-    Retry.new do |r|
-      r.tries    = opts[:tries] if opts[:tries]
-      r.on       = opts[:on] if opts[:on]
-      r.interval = opts[:interval] if opts[:interval]
-      r.timeout  = opts[:timeout] if opts[:timeout]
-      r.on_retry = opts[:on_retry] if opts[:on_retry]
-    end.perform(&block)
+    attempt = 0
+    start_time = Time.now
+    interval = base_interval
+
+    begin
+      attempt += 1
+      if timeout
+        Timeout::timeout(timeout) { return block.call(attempt) }
+      else
+        return block.call(attempt)
+      end
+    rescue *[*on] => exception
+      raise if attempt >= max_tries
+
+      return if (Time.now - start_time) > max_elapsed_time
+
+      interval = randomized_interval(rand_factor, interval)
+
+      on_retry.call(exception, attempt, Time.now - start_time, interval) if on_retry
+
+      sleep interval if interval > 0 && config.sleep_disabled != true
+
+      interval = if interval >= (max_interval / multiplier)
+        max_interval
+      else
+        interval * multiplier
+      end
+
+      retry
+    end
+  end
+
+  private
+  def randomized_interval(rand_factor, interval)
+    return interval if rand_factor == 0
+    delta = rand_factor * interval * 1.0
+    min_interval = interval - delta
+    max_interval = interval + delta
+    rand(min_interval..max_interval)
   end
 end

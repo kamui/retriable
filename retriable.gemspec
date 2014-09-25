@@ -10,8 +10,9 @@ Gem::Specification.new do |s|
   s.authors     = ["Jack Chu"]
   s.email       = ["jack@jackchu.com"]
   s.homepage    = %q{http://github.com/kamui/retriable}
-  s.summary     = %q{Retriable is an simple DSL to retry a code block if an exception should be raised.}
-  s.description = %q{Retriable is an simple DSL to retry a code block if an exception should be raised. This is especially useful when interacting external api/services or file system calls.}
+  s.summary     = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff}
+  s.description = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff. This is especially useful when interacting external api/services or file system calls.
+}
   s.license       = "MIT"
 
   s.rubyforge_project = "retriable"
@@ -23,4 +24,8 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency 'rake'
   s.add_development_dependency 'minitest', '>= 5.0'
+  s.add_development_dependency 'minitest-focus'
+  s.add_development_dependency 'pry'
+  s.add_development_dependency 'guard'
+  s.add_development_dependency 'guard-minitest'
 end

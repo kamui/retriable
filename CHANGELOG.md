@@ -1,3 +1,10 @@
+## 2.0.0.beta1
+* Require ruby 2.0+.
+* Default to random exponential backoff, removes the `interval` option. Exponential backoff is configurable via arguments.
+* Allow configurable defaults via `#configure`.
+* Change `Retriable.retriable` to `Retriable.retry`
+* Support `max_elapsed_time` termination.
+
 ## 1.4.1
 * Fixes non kernel mode bug. Remove DSL class, move `#retriable` into Retriable module. Thanks @mkrogemann.
 

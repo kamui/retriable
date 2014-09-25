@@ -2,9 +2,15 @@
 
 [![Build Status](https://secure.travis-ci.org/kamui/retriable.png)](http://travis-ci.org/kamui/retriable)
 
-Retriable is an simple DSL to retry a code block if an exception should be raised.  This is especially useful when interacting external api/services or file system calls.
+Retriable is an simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff). This is especially useful when interacting external api/services or file system calls.
 
-##Installation
+## Requirements
+
+Ruby 2.0+
+
+If you need 1.9.x support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x).
+
+## Installation
 
 via command line:
 
@@ -24,9 +30,22 @@ In your Gemfile:
 gem 'retriable'
 ```
 
-##Usage
+## Usage
 
-Code in a retriable block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError` (and `Timeout::Error`, which does not inherit from `StandardError` in ruby 1.8) and make 3 retry attempts before raising the last exception.
+Code in a `Retriable.retry` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 retry attempts before raising the last exception, and also use randomized exponential backoff to calculate each succeeding attempt interval. The default interval table with 10 attempts looks like this (in seconds):
+
+| request# | retry interval | randomized interval |
+| -------- | -------------- | ------------------- |
+| 1        |    0.5         |   [0.25,   0.75]    |
+| 2        |    0.75        |   [0.375,  1.125]   |
+| 3        |    1.125       |   [0.562,  1.687]   |
+| 4        |    1.687       |   [0.8435, 2.53]    |
+| 5        |    2.53        |   [1.265,  3.795]   |
+| 6        |    3.795       |   [1.897,  5.692]   |
+| 7        |    5.692       |   [2.846,  8.538]   |
+| 8        |    8.538       |   [4.269, 12.807]   |
+| 9        |   12.807       |   [6.403, 19.210]   |
+| 10       |   19.210       |   stop              |
 
 ```ruby
 require 'retriable'
@@ -34,31 +53,53 @@ require 'retriable'
 class Api
   # Use it in methods that interact with unreliable services
   def get
-    Retriable.retriable do
+    Retriable.retry do
       # code here...
     end
   end
 end
 ```
 
-###Options
+### Options
 
 Here are the available options:
 
-`tries` (default: 3) - Number of attempts to make at running your code block
+`max_tries` (default: 3) - Number of attempts to make at running your code block.
 
-`interval` (default: 0) - Number of seconds to sleep between attempts
+`base_interval` (default: 0.5) - The initial interval in seconds between attempts.
+
+`max_interval` (default: 60) - The maximum interval in seconds that any attempt can climb to.
+
+`rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this: `randomized_interval =
+      retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])`
+
+`multiplier` (default: 1.5) - Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.
+
+`max_elapsed_time`  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
-`on` (default: [StandardError, Timeout::Error]) - `StandardError` and `Timeout::Error` or array of exceptions to rescue for each attempt
+`on` (default: [StandardError]) - An array of exceptions to rescue for each attempt, also accepts a single Exception type
 
 `on_retry` - (default: nil) - Proc to call after each attempt is rescued
 
-You can pass options via an options `Hash`. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each attempt.
+### Config
+
+You can change the global defaults with a `#configure` block:
 
 ```ruby
-Retriable.retriable :on => Timeout::Error, :tries => 3, :interval => 1 do
+Retriable.configure do |c|
+  c.max_tries = 5
+  c.max_elapsed_time = 3600 # 1 hour
+end
+```
+
+### Examples
+
+`Retriable.retry` accepts custom arguments. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each attempt.
+
+```ruby
+Retriable.retry on: Timeout::Error, max_tries: 3, base_interval: 1 do
   # code here...
 end
 ```
@@ -66,7 +107,7 @@ end
 You can also specify multiple errors to retry on by passing an array of exceptions.
 
 ```ruby
-Retriable.retriable :on => [Timeout::Error, Errno::ECONNRESET] do
+Retriable.retry on: [Timeout::Error, Errno::ECONNRESET] do
   # code here...
 end
 ```
@@ -74,7 +115,7 @@ end
 You can also specify a timeout if you want the code block to only make an attempt for X amount of seconds. This timeout is per attempt.
 
 ```ruby
-Retriable.retriable :timeout => 1 do
+Retriable.retry timeout: 60 do
   # code here...
 end
 ```
@@ -82,42 +123,50 @@ end
 If you need millisecond units of time for the sleep or the timeout:
 
 ```ruby
-Retriable.retriable :interval => (200/1000.0), :timeout => (500/1000.0) do
+Retriable.retry base_interval: (200/1000.0), timeout: (500/1000.0) do
   # code here...
 end
 ```
 
-###Exponential Backoff
+### Turn off Exponential Backoff
 
-If you'd like exponential backoff, interval can take a Proc
+Exponential backoff is enabled by default, if you want to simply execute code every second, you can do this:
 
 ```ruby
-# with exponential back-off - sleep 4, 16, 64, 256, give up
-Retriable.retryable :times => 4, :interval => lambda {|attempts| 4 ** attempts} do
+Retriable.retryable base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0 do
   # code here...
 end
 ```
-###Callbacks
 
-Retriable also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the number of `tries`, and the `exception` that was raised in the current attempt. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
+If you don't want exponential backoff, but you still want some randomization between intervals, this code will run every 1 seconds with a randomization factor of 0.2, which means each interval will be a random value between 0.8 and 1.2 (1 second +/- 0.2):
 
 ```ruby
-do_this_on_each_retry = Proc.new do |exception, tries|
-  log "#{exception.class}: '#{exception.message}' - #{tries} attempts."}
-end
-
-Retriable.retriable :on_retry => do_this_on_each_retry do
+Retriable.retryable base_interval: 1.0, multiplier: 1.0, rand_factor: 0.2 do
   # code here...
 end
 ```
 
-###Ensure/Else
+### Callbacks
+
+Retriable.retry also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the `exception` that was raised in the current attempt, the `try_number`, the `elapsed_time` for all attempts so far, and the time in seconds of the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
+
+```ruby
+do_this_on_each_retry = Proc.new do |exception, try_number, elapsed_time, next_interval|
+  log "#{exception.class}: '#{exception.message}' - #{try_number} attempts in #{elapsed_time} seconds and #{next_interval} seconds until the next attempt."}
+end
+
+Retriable.retry on_retry: do_this_on_each_retry do
+  # code here...
+end
+```
+
+### Ensure/Else
 
 What if I want to execute a code block at the end, whether or not an exception was rescued ([ensure](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure))? Or, what if I want to execute a code block if no exception is raised ([else](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else))? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:
 
 ```ruby
 begin
-  Retriable.retriable do
+  Retriable.retry do
     # some code
   end
 rescue => e
@@ -129,9 +178,9 @@ ensure
 end
 ```
 
-##Kernel Extension
+## Kernel Extension
 
-If you want to call `Retriable.retriable` without the `Retriable` module prefix and you don't mind extending `Kernel`,
+If you want to call `Retriable.retry` without the `Retriable` module prefix and you don't mind extending `Kernel`,
 there is a kernel extension available for this.
 
 In your ruby script:
@@ -146,7 +195,7 @@ or in your Gemfile:
 gem 'retriable', require: 'retriable/core_ext/kernel'
 ```
 
-and then you can call `retriable` in any context like this:
+and then you can call `#retriable` in any context like this:
 
 ```ruby
 retriable do
@@ -154,6 +203,6 @@ retriable do
 end
 ```
 
-##Credits
+## Credits
 
 Retriable was originally forked from the retryable-rb gem by [Robert Sosinski](https://github.com/robertsosinski), which in turn originally inspired by code written by [Michael Celona](http://github.com/mcelona) and later assisted by [David Malin](http://github.com/dmalin). The [attempt](https://rubygems.org/gems/attempt) gem by Daniel J. Berger was also an inspiration.
