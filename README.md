@@ -70,8 +70,11 @@ Here are the available options:
 
 `max_interval` (default: 60) - The maximum interval in seconds that any attempt can climb to.
 
-`rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this: `randomized_interval =
-      retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])`
+`rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this:
+
+```
+randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])
+```
 
 `multiplier` (default: 1.5) - Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.
 
