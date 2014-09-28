@@ -10,6 +10,8 @@ Ruby 2.0+
 
 If you need 1.9.x support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x).
 
+WARNING: 2.x isn't API compatible with 1.x.
+
 ## Installation
 
 via command line:
