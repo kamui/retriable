@@ -1,12 +1,17 @@
+## 2.0.0.beta3
+* Accept `intervals` array argument to provide your own custom intervals.
+* Refactor the exponential backoff code into it's own class.
+* Add specs for exponential backoff, randomization, and config.
+
 ## 2.0.0.beta2
-* Raise not return on max elapsed time, also check for elapsed time after next interval is calculated and it goes over the max elapsed time
-* Add specs for max_elapsed_time and max_interval
+* Raise not return on max elapsed time, also check for elapsed time after next interval is calculated and it goes over the max elapsed time.
+* Add specs for `max_elapsed_time` and `max_interval`.
 
 ## 2.0.0.beta1
 * Require ruby 2.0+.
 * Default to random exponential backoff, removes the `interval` option. Exponential backoff is configurable via arguments.
 * Allow configurable defaults via `#configure`.
-* Change `Retriable.retriable` to `Retriable.retry`
+* Change `Retriable.retriable` to `Retriable.retry`.
 * Support `max_elapsed_time` termination.
 
 ## 1.4.1
