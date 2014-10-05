@@ -135,6 +135,16 @@ Retriable.retry base_interval: (200/1000.0), timeout: (500/1000.0) do
 end
 ```
 
+### Custom Interval Array
+
+You can also bypass the built-in interval generation and provide your own array of intervals. Supplying your own intervals overrides the `max_tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` parameters.
+
+```ruby
+Retriable.retry intervals: [0.5, 1.0, 2.0, 2.5] do
+  # code here...
+end
+```
+
 ### Turn off Exponential Backoff
 
 Exponential backoff is enabled by default, if you want to simply execute code every second, you can do this:
