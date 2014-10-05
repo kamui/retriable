@@ -1,4 +1,4 @@
-require 'retriable'
+require "retriable"
 
 module Kernel
   def retriable(opts={}, &block)

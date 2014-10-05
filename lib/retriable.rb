@@ -1,15 +1,19 @@
-require 'timeout'
-require 'retriable/config'
-require 'retriable/version'
+require "timeout"
+require "retriable/config"
+require "retriable/exponential_backoff"
+require "retriable/version"
 
 module Retriable
   extend self
 
-  attr_accessor :config
+  attr_reader :config
 
   def self.configure
-    self.config ||= Config.new
     yield(config)
+  end
+
+  def config
+    @config ||= Config.new
   end
 
   def retry(
@@ -19,52 +23,39 @@ module Retriable
     rand_factor:       config.rand_factor,
     multiplier:        config.multiplier,
     max_elapsed_time:  config.max_elapsed_time,
+    intervals:         config.intervals,
     timeout:           config.timeout,
     on:                config.on,
     on_retry:          config.on_retry,
-    &block)
+    &block
+    )
 
     raise LocalJumpError unless block_given?
 
-    attempt = 0
-    interval = base_interval
     start_time = Time.now
-    elapsed_time = lambda { Time.now - start_time }
+    elapsed_time = -> { Time.now - start_time }
 
-    begin
-      attempt += 1
-      if timeout
-        Timeout::timeout(timeout) { return block.call(attempt) }
-      else
-        return block.call(attempt)
+    max_tries = intervals.size if intervals
+    intervals ||= ExponentialBackoff.new(
+      max_tries: max_tries,
+      base_interval: base_interval,
+      multiplier: multiplier,
+      max_interval: max_interval,
+      rand_factor: rand_factor
+    ).intervals
+
+    intervals.each.with_index(1) do |interval, attempt|
+      begin
+        if timeout
+          Timeout::timeout(timeout) { return block.call(attempt) }
+        else
+          return block.call(attempt)
+        end
+      rescue *[*on] => exception
+        on_retry.call(exception, attempt, Time.now - start_time, interval) if on_retry
+        raise if attempt >= max_tries || (elapsed_time.call + interval) > max_elapsed_time
+        sleep interval if interval > 0 && config.sleep_disabled != true
       end
-    rescue *[*on] => exception
-      raise if attempt >= max_tries
-
-      interval = randomized_interval(rand_factor, interval)
-
-      on_retry.call(exception, attempt, Time.now - start_time, interval) if on_retry
-
-      raise if elapsed_time.call > max_elapsed_time || (elapsed_time.call + interval) > max_elapsed_time
-
-      sleep interval if interval > 0 && config.sleep_disabled != true
-
-      interval = if interval >= (max_interval / multiplier)
-        max_interval
-      else
-        interval * multiplier
-      end
-
-      retry
     end
-  end
-
-  private
-  def randomized_interval(rand_factor, interval)
-    return interval if rand_factor == 0
-    delta = rand_factor * interval * 1.0
-    min_interval = interval - delta
-    max_interval = interval + delta
-    rand(min_interval..max_interval)
   end
 end

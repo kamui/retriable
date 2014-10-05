@@ -82,6 +82,8 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `max_elapsed_time`  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried
 
+`intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `max_tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
+
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
 `on` (default: [StandardError]) - An array of exceptions to rescue for each attempt, also accepts a single Exception type

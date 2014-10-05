@@ -7,6 +7,7 @@ module Retriable
     attr_accessor :rand_factor
     attr_accessor :multiplier
     attr_accessor :max_elapsed_time
+    attr_accessor :intervals
     attr_accessor :timeout
     attr_accessor :on
     attr_accessor :on_retry
@@ -19,6 +20,7 @@ module Retriable
       @rand_factor       = 0.5
       @multiplier        = 1.5
       @max_elapsed_time  = 900 # 15 minn
+      @intervals         = nil
       @timeout           = nil
       @on                = [StandardError]
       @on_retry          = nil

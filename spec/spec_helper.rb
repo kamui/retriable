@@ -1,5 +1,5 @@
-require 'minitest/autorun'
-require 'minitest/focus'
-require 'pry'
+require "minitest/autorun"
+require "minitest/focus"
+require "pry"
 
-require_relative '../lib/retriable'
+require_relative "../lib/retriable"
