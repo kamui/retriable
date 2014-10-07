@@ -27,6 +27,10 @@ describe Retriable do
       -> do
         subject.retry on: EOFError
       end.must_raise LocalJumpError
+
+      -> do
+        subject.retry on: EOFError, timeout: 2
+      end.must_raise LocalJumpError
     end
 
     describe "retry block of code raising EOFError with no arguments" do

@@ -29,8 +29,6 @@ module Retriable
     on_retry:          config.on_retry
     )
 
-    raise LocalJumpError unless block_given?
-
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
