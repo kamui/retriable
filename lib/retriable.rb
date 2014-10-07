@@ -32,14 +32,17 @@ module Retriable
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
-    max_tries = intervals.size if intervals
-    intervals ||= ExponentialBackoff.new(
-      max_tries: max_tries,
-      base_interval: base_interval,
-      multiplier: multiplier,
-      max_interval: max_interval,
-      rand_factor: rand_factor
-    ).intervals
+    if intervals
+      max_tries = intervals.size
+    else
+      intervals = ExponentialBackoff.new(
+        max_tries: max_tries,
+        base_interval: base_interval,
+        multiplier: multiplier,
+        max_interval: max_interval,
+        rand_factor: rand_factor
+      ).intervals
+    end
 
     intervals.each.with_index(1) do |interval, attempt|
       begin
