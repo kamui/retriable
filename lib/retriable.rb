@@ -44,6 +44,8 @@ module Retriable
       ).intervals
     end
 
+    exception_list = on.kind_of?(Hash) ? on.keys : on
+
     intervals.each.with_index(1) do |interval, attempt|
       begin
         if timeout
@@ -51,7 +53,19 @@ module Retriable
         else
           return yield(attempt)
         end
-      rescue *[*on] => exception
+      rescue *[*exception_list] => exception
+        if on.kind_of?(Hash)
+          patterns = [*on[exception.class]]
+          message_match = patterns.empty? ? true : false
+          patterns.each do |pattern|
+            if !!(exception.message =~ pattern)
+              message_match = true
+              break
+            end
+          end
+          raise unless message_match
+        end
+
         on_retry.call(exception, attempt, elapsed_time.call, interval) if on_retry
         raise if attempt >= max_tries || (elapsed_time.call + interval) > max_elapsed_time
         sleep interval if config.sleep_disabled != true

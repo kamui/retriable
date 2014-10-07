@@ -86,7 +86,7 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
-`on` (default: [StandardError]) - An array of exceptions to rescue for each attempt, also accepts a single Exception type.
+`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each attempt, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type.
 
 `on_retry` - (default: nil) - Proc to call after each attempt is rescued.
 
@@ -115,6 +115,18 @@ You can also specify multiple errors to retry on by passing an array of exceptio
 
 ```ruby
 Retriable.retry on: [Timeout::Error, Errno::ECONNRESET] do
+  # code here...
+end
+```
+
+You can also specify a Hash of exceptions where the values are a list or single Regexp pattern.
+
+```ruby
+Retriable.retry on: {
+  ActiveRecord::RecordNotUnique => nil,
+  ActiveRecord::RecordInvalid => [/Email has already been taken/, /Username has already been taken/],
+  Mysql2::Error => /Duplicate entry/
+} do
   # code here...
 end
 ```

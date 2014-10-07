@@ -208,6 +208,47 @@ describe Retriable do
       })
     end
 
+    it "retries with a hash exception where the value is an exception message pattern" do
+      e = -> do
+        subject.retry on: { TestError => /something went wrong/ } do
+          raise TestError.new('something went wrong')
+        end
+      end.must_raise TestError
+
+      e.message.must_equal "something went wrong"
+    end
+
+    it "retries with a hash exception list where the values are exception message patterns" do
+      attempts = 0
+      tries = []
+      handler = ->(exception, attempt, elapsed_time, next_interval) do
+        tries[attempt] = exception
+      end
+
+      e = -> do
+        subject.retry max_tries: 4, on: { EOFError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
+          attempts += 1
+          case attempts
+          when 1
+            raise TestError.new('foo')
+          when 2
+            raise TestError.new('bar')
+          when 3
+            raise EOFError.new
+          else
+            raise TestError.new('crash')
+          end
+        end
+      end.must_raise TestError
+
+      e.message.must_equal "crash"
+      tries[1].class.must_equal TestError
+      tries[1].message.must_equal "foo"
+      tries[2].class.must_equal TestError
+      tries[2].message.must_equal "bar"
+      tries[3].class.must_equal EOFError
+    end
+
     it "can call #retriable in the global" do
       -> do
         retriable do
