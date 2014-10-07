@@ -49,7 +49,7 @@ module Retriable
           return yield(attempt)
         end
       rescue *[*on] => exception
-        on_retry.call(exception, attempt, Time.now - start_time, interval) if on_retry
+        on_retry.call(exception, attempt, elapsed_time.call, interval) if on_retry
         raise if attempt >= max_tries || (elapsed_time.call + interval) > max_elapsed_time
         sleep interval if config.sleep_disabled != true
       end
