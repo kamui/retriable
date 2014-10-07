@@ -52,6 +52,28 @@ describe Retriable do
       end.must_raise TestError
     end
 
+    it "re-raises immediately when given a regex that does not match" do
+      -> do
+        @attempts = 0
+        subject.retry(on: [{klass: TestError, regex: /foo bar/}]) do
+          @attempts += 1
+          raise TestError.new("no match")
+        end
+      end.must_raise TestError
+      @attempts.must_equal 1
+    end
+
+    it "retries when given a regex that does" do
+      -> do
+        @attempts = 0
+        subject.retry(on: [{klass: TestError, regex: /match/}]) do
+          @attempts += 1
+          raise TestError.new("does match")
+        end
+      end.must_raise TestError
+      @attempts.must_equal 3
+    end
+
     it "retry with 10 max tries" do
       attempts = 0
 
