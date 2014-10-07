@@ -26,8 +26,7 @@ module Retriable
     intervals:         config.intervals,
     timeout:           config.timeout,
     on:                config.on,
-    on_retry:          config.on_retry,
-    &block
+    on_retry:          config.on_retry
     )
 
     raise LocalJumpError unless block_given?
@@ -47,9 +46,9 @@ module Retriable
     intervals.each.with_index(1) do |interval, attempt|
       begin
         if timeout
-          Timeout::timeout(timeout) { return block.call(attempt) }
+          Timeout::timeout(timeout) { return yield(attempt) }
         else
-          return block.call(attempt)
+          return yield(attempt)
         end
       rescue *[*on] => exception
         on_retry.call(exception, attempt, Time.now - start_time, interval) if on_retry
