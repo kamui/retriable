@@ -145,7 +145,7 @@
 
 <p>Here are the available options:</p>
 
-<p><code>max_tries</code> (default: 3) - Number of attempts to make at running your code block.</p>
+<p><code>tries</code> (default: 3) - Number of attempts to make at running your code block.</p>
 
 <p><code>base_interval</code> (default: 0.5) - The initial interval in seconds between attempts.</p>
 
@@ -160,7 +160,7 @@
 
 <p><code>max_elapsed_time</code>  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried.</p>
 
-<p><code>intervals</code>  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore <code>max_tries</code>, <code>base_interval</code>, <code>max_interval</code>, <code>rand_factor</code>, and <code>multiplier</code> values.</p>
+<p><code>intervals</code>  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore <code>tries</code>, <code>base_interval</code>, <code>max_interval</code>, <code>rand_factor</code>, and <code>multiplier</code> values.</p>
 
 <p><code>timeout</code> (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error</p>
 
@@ -174,7 +174,7 @@
 <p>You can change the global defaults with a <code>#configure</code> block:</p>
 
 <div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">c</span><span class="o">|</span>
-  <span class="n">c</span><span class="o">.</span><span class="n">max_tries</span> <span class="o">=</span> <span class="mi">5</span>
+  <span class="n">c</span><span class="o">.</span><span class="n">tries</span> <span class="o">=</span> <span class="mi">5</span>
   <span class="n">c</span><span class="o">.</span><span class="n">max_elapsed_time</span> <span class="o">=</span> <span class="mi">3600</span> <span class="c1"># 1 hour</span>
 <span class="k">end</span>
 </pre></div>
@@ -184,7 +184,7 @@
 
 <p><code>Retriable.retriable</code> accepts custom arguments. This example will only retry on a <code>Timeout::Error</code>, retry 3 times and sleep for a full second before each attempt.</p>
 
-<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">on</span><span class="p">:</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span> <span class="ss">max_tries</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">base_interval</span><span class="p">:</span> <span class="mi">1</span> <span class="k">do</span>
+<div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">on</span><span class="p">:</span> <span class="no">Timeout</span><span class="o">::</span><span class="no">Error</span><span class="p">,</span> <span class="ss">tries</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="ss">base_interval</span><span class="p">:</span> <span class="mi">1</span> <span class="k">do</span>
   <span class="c1"># code here...</span>
 <span class="k">end</span>
 </pre></div>
@@ -224,7 +224,7 @@
 <h3>
 <a name="custom-interval-array" class="anchor" href="#custom-interval-array"><span class="octicon octicon-link"></span></a>Custom Interval Array</h3>
 
-<p>You can also bypass the built-in interval generation and provide your own array of intervals. Supplying your own intervals overrides the <code>max_tries</code>, <code>base_interval</code>, <code>max_interval</code>, <code>rand_factor</code>, and <code>multiplier</code> parameters.</p>
+<p>You can also bypass the built-in interval generation and provide your own array of intervals. Supplying your own intervals overrides the <code>tries</code>, <code>base_interval</code>, <code>max_interval</code>, <code>rand_factor</code>, and <code>multiplier</code> parameters.</p>
 
 <div class="highlight highlight-ruby"><pre><span class="no">Retriable</span><span class="o">.</span><span class="n">retriable</span> <span class="ss">intervals</span><span class="p">:</span> <span class="o">[</span><span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="o">.</span><span class="mi">5</span><span class="o">]</span> <span class="k">do</span>
   <span class="c1"># code here...</span>
