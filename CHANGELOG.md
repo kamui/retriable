@@ -1,5 +1,5 @@
 ## 2.0.0.beta5
-* Change :max_tries back to :tries.
+* Change `:max_tries` back to `:tries`.
 
 ## 2.0.0.beta4
 * Change #retry back to #retriable. Didn't like the idea of defining a method that is also a reserved word.
