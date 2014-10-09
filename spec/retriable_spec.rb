@@ -16,28 +16,28 @@ describe Retriable do
 
     it "stops at first attempt if the block does not raise an exception" do
       attempts = 0
-      subject.retry do
+      subject.retriable do
         attempts += 1
       end
 
       attempts.must_equal 1
     end
 
-    it "raises a LocalJumpError if retry is not given a block" do
+    it "raises a LocalJumpError if #retriable is not given a block" do
       -> do
-        subject.retry on: EOFError
+        subject.retriable on: EOFError
       end.must_raise LocalJumpError
 
       -> do
-        subject.retry on: EOFError, timeout: 2
+        subject.retriable on: EOFError, timeout: 2
       end.must_raise LocalJumpError
     end
 
-    describe "retry block of code raising EOFError with no arguments" do
+    describe "#retriable block of code raising EOFError with no arguments" do
       before do
         @attempts = 0
 
-        subject.retry do
+        subject.retriable do
           @attempts += 1
           raise EOFError.new if @attempts < 3
         end
@@ -48,18 +48,18 @@ describe Retriable do
       end
     end
 
-    it "retry on custom exception and re-raises the exception" do
+    it "#retriable on custom exception and re-raises the exception" do
       -> do
-        subject.retry on: TestError do
+        subject.retriable on: TestError do
           raise TestError.new
         end
       end.must_raise TestError
     end
 
-    it "retry with 10 max tries" do
+    it "#retriable with 10 max tries" do
       attempts = 0
 
-      subject.retry(
+      subject.retriable(
         max_tries: 10
       ) do
           attempts += 1
@@ -69,9 +69,9 @@ describe Retriable do
       attempts.must_equal 10
     end
 
-    it "retry will timeout after 1 second" do
+    it "#retriable will timeout after 1 second" do
       -> do
-        subject.retry timeout: 1 do
+        subject.retriable timeout: 1 do
           sleep 2
         end
       end.must_raise Timeout::Error
@@ -87,7 +87,7 @@ describe Retriable do
       end
 
       -> do
-        Retriable.retry(
+        Retriable.retriable(
           on: [EOFError, ArgumentError],
           on_retry: handler,
           rand_factor: 0.0,
@@ -109,7 +109,7 @@ describe Retriable do
       @time_table[9].between?(6.403, 19.210).must_equal true
     end
 
-    describe "retries with an on_retry handler, 6 max retries, and a 0.0 rand_factor" do
+    describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
       before do
         max_tries = 6
         @attempts = 0
@@ -120,7 +120,7 @@ describe Retriable do
           @time_table[attempt] = next_interval
         end
 
-        Retriable.retry(
+        Retriable.retriable(
           on: [EOFError, ArgumentError],
           on_retry: handler,
           rand_factor: 0.0,
@@ -146,7 +146,7 @@ describe Retriable do
       end
     end
 
-    it "retry has a max interval of 1.5 seconds" do
+    it "#retriable has a max interval of 1.5 seconds" do
       max_tries = 6
       attempts = 0
       time_table = {}
@@ -155,7 +155,7 @@ describe Retriable do
         time_table[attempt] = next_interval
       end
 
-      subject.retry(
+      subject.retriable(
         on: EOFError,
         on_retry: handler,
         rand_factor: 0.0,
@@ -175,7 +175,7 @@ describe Retriable do
       })
     end
 
-    it "retries with defined intervals" do
+    it "#retriable with defined intervals" do
       intervals = [
         0.5,
         0.75,
@@ -190,7 +190,7 @@ describe Retriable do
       end
 
       -> do
-        subject.retry(
+        subject.retriable(
           on: EOFError,
           on_retry: handler,
           intervals: intervals
@@ -208,9 +208,9 @@ describe Retriable do
       })
     end
 
-    it "retries with a hash exception where the value is an exception message pattern" do
+    it "#retriable with a hash exception where the value is an exception message pattern" do
       e = -> do
-        subject.retry on: { TestError => /something went wrong/ } do
+        subject.retriable on: { TestError => /something went wrong/ } do
           raise TestError.new('something went wrong')
         end
       end.must_raise TestError
@@ -218,7 +218,7 @@ describe Retriable do
       e.message.must_equal "something went wrong"
     end
 
-    it "retries with a hash exception list where the values are exception message patterns" do
+    it "#retriable with a hash exception list where the values are exception message patterns" do
       attempts = 0
       tries = []
       handler = ->(exception, attempt, elapsed_time, next_interval) do
@@ -226,7 +226,7 @@ describe Retriable do
       end
 
       e = -> do
-        subject.retry max_tries: 4, on: { EOFError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
+        subject.retriable max_tries: 4, on: { EOFError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
           attempts += 1
           case attempts
           when 1
@@ -249,7 +249,7 @@ describe Retriable do
       tries[3].class.must_equal EOFError
     end
 
-    it "can call #retriable in the global" do
+    it "#retriable can be called in the global scope" do
       -> do
         retriable do
           puts "should raise NoMethodError"
@@ -258,16 +258,16 @@ describe Retriable do
 
       require_relative "../lib/retriable/core_ext/kernel"
 
-      i = 0
+      attempts = 0
       retriable do
-        i += 1
-        raise EOFError.new if i < 3
+        attempts += 1
+        raise EOFError.new if attempts < 3
       end
-      i.must_equal 3
+      attempts.must_equal 3
     end
   end
 
-  it "retry runs for a max elapsed time of 2 seconds" do
+  it "#retriable runs for a max elapsed time of 2 seconds" do
     subject.configure do |c|
       c.sleep_disabled = false
     end
@@ -282,7 +282,7 @@ describe Retriable do
     end
 
     -> do
-      subject.retry(
+      subject.retriable(
         base_interval: 1.0,
         multiplier: 1.0,
         rand_factor: 0.0,

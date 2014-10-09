@@ -1,3 +1,6 @@
+## 2.0.0.beta4
+* Change #retry back to #retriable. Didn't like the idea of defining a method that is also a reserved word.
+
 ## 2.0.0.beta3
 * Accept `intervals` array argument to provide your own custom intervals.
 * Refactor the exponential backoff code into it's own class.

@@ -16,7 +16,7 @@ module Retriable
     @config ||= Config.new
   end
 
-  def retry(
+  def retriable(
     max_tries:         config.max_tries,
     base_interval:     config.base_interval,
     max_interval:      config.max_interval,
