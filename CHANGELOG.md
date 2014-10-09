@@ -1,5 +1,6 @@
 ## 2.0.0.beta4
 * Change #retry back to #retriable. Didn't like the idea of defining a method that is also a reserved word.
+* Add ability for `:on` argument to accept a `Hash` where the keys are exception types and the values are a single or list of `Regexp` pattern(s) to match against exception messages for retrial.
 
 ## 2.0.0.beta3
 * Accept `intervals` array argument to provide your own custom intervals.
