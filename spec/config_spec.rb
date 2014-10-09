@@ -9,8 +9,8 @@ describe Retriable::Config do
     subject.new.sleep_disabled.must_equal false
   end
 
-  it "max tries defaults to 3" do
-    subject.new.max_tries.must_equal 3
+  it "tries defaults to 3" do
+    subject.new.tries.must_equal 3
   end
 
   it "max interval defaults to 60" do

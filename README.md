@@ -66,7 +66,7 @@ end
 
 Here are the available options:
 
-`max_tries` (default: 3) - Number of attempts to make at running your code block.
+`tries` (default: 3) - Number of attempts to make at running your code block.
 
 `base_interval` (default: 0.5) - The initial interval in seconds between attempts.
 
@@ -82,7 +82,7 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `max_elapsed_time`  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried.
 
-`intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `max_tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
+`intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
@@ -96,7 +96,7 @@ You can change the global defaults with a `#configure` block:
 
 ```ruby
 Retriable.configure do |c|
-  c.max_tries = 5
+  c.tries = 5
   c.max_elapsed_time = 3600 # 1 hour
 end
 ```
@@ -106,7 +106,7 @@ end
 `Retriable.retriable` accepts custom arguments. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each attempt.
 
 ```ruby
-Retriable.retriable on: Timeout::Error, max_tries: 3, base_interval: 1 do
+Retriable.retriable on: Timeout::Error, tries: 3, base_interval: 1 do
   # code here...
 end
 ```
@@ -149,7 +149,7 @@ end
 
 ### Custom Interval Array
 
-You can also bypass the built-in interval generation and provide your own array of intervals. Supplying your own intervals overrides the `max_tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` parameters.
+You can also bypass the built-in interval generation and provide your own array of intervals. Supplying your own intervals overrides the `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` parameters.
 
 ```ruby
 Retriable.retriable intervals: [0.5, 1.0, 2.0, 2.5] do

@@ -56,11 +56,11 @@ describe Retriable do
       end.must_raise TestError
     end
 
-    it "#retriable with 10 max tries" do
+    it "#retriable tries 10 times" do
       attempts = 0
 
       subject.retriable(
-        max_tries: 10
+        tries: 10
       ) do
           attempts += 1
           raise EOFError.new if attempts < 10
@@ -91,7 +91,7 @@ describe Retriable do
           on: [EOFError, ArgumentError],
           on_retry: handler,
           rand_factor: 0.0,
-          max_tries: 9
+          tries: 9
         ) do
           @attempts += 1
           raise ArgumentError.new
@@ -111,7 +111,7 @@ describe Retriable do
 
     describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
       before do
-        max_tries = 6
+        tries = 6
         @attempts = 0
         @time_table = {}
 
@@ -124,10 +124,10 @@ describe Retriable do
           on: [EOFError, ArgumentError],
           on_retry: handler,
           rand_factor: 0.0,
-          max_tries: max_tries
+          tries: tries
         ) do
           @attempts += 1
-          raise ArgumentError.new if @attempts < max_tries
+          raise ArgumentError.new if @attempts < tries
         end
       end
 
@@ -147,7 +147,7 @@ describe Retriable do
     end
 
     it "#retriable has a max interval of 1.5 seconds" do
-      max_tries = 6
+      tries = 6
       attempts = 0
       time_table = {}
 
@@ -159,11 +159,11 @@ describe Retriable do
         on: EOFError,
         on_retry: handler,
         rand_factor: 0.0,
-        max_tries: max_tries,
+        tries: tries,
         max_interval: 1.5
       ) do
         attempts += 1
-        raise EOFError.new if attempts < max_tries
+        raise EOFError.new if attempts < tries
       end
 
       time_table.must_equal({
@@ -226,7 +226,7 @@ describe Retriable do
       end
 
       e = -> do
-        subject.retriable max_tries: 4, on: { EOFError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
+        subject.retriable tries: 4, on: { EOFError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
           attempts += 1
           case attempts
           when 1

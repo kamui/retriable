@@ -17,7 +17,7 @@ module Retriable
   end
 
   def retriable(
-    max_tries:         config.max_tries,
+    tries:             config.tries,
     base_interval:     config.base_interval,
     max_interval:      config.max_interval,
     rand_factor:       config.rand_factor,
@@ -33,14 +33,14 @@ module Retriable
     elapsed_time = -> { Time.now - start_time }
 
     if intervals
-      max_tries = intervals.size
+      tries = intervals.size
     else
       intervals = ExponentialBackoff.new(
-        max_tries: max_tries,
-        base_interval: base_interval,
-        multiplier: multiplier,
-        max_interval: max_interval,
-        rand_factor: rand_factor
+        tries:          tries,
+        base_interval:  base_interval,
+        multiplier:     multiplier,
+        max_interval:   max_interval,
+        rand_factor:    rand_factor
       ).intervals
     end
 
@@ -67,7 +67,7 @@ module Retriable
         end
 
         on_retry.call(exception, attempt, elapsed_time.call, interval) if on_retry
-        raise if attempt >= max_tries || (elapsed_time.call + interval) > max_elapsed_time
+        raise if attempt >= tries || (elapsed_time.call + interval) > max_elapsed_time
         sleep interval if config.sleep_disabled != true
       end
     end

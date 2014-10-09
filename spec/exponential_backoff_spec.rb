@@ -5,8 +5,8 @@ describe Retriable::ExponentialBackoff do
     Retriable::ExponentialBackoff
   end
 
-  it "max tries defaults to 3" do
-    subject.new.max_tries.must_equal 3
+  it "tries defaults to 3" do
+    subject.new.tries.must_equal 3
   end
 
   it "max interval defaults to 60" do
@@ -22,7 +22,7 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates randomized intervals" do
-    i = subject.new(max_tries: 9).intervals
+    i = subject.new(tries: 9).intervals
     i[0].between?(0.25, 0.75).must_equal true
     i[1].between?(0.375, 1.125).must_equal true
     i[2].between?(0.562, 1.687).must_equal true
@@ -36,7 +36,7 @@ describe Retriable::ExponentialBackoff do
 
   it "generates 5 non-randomized intervals" do
     subject.new(
-      max_tries: 5,
+      tries: 5,
       rand_factor: 0.0
     ).intervals.must_equal([
       0.5,
