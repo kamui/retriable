@@ -36,18 +36,18 @@ gem 'retriable'
 
 Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 retry attempts before raising the last exception, and also use randomized exponential backoff to calculate each succeeding attempt interval. The default interval table with 10 attempts looks like this (in seconds):
 
-| request# | retry interval | randomized interval |
-| -------- | -------------- | ------------------- |
-| 1        |    0.5         |   [0.25,   0.75]    |
-| 2        |    0.75        |   [0.375,  1.125]   |
-| 3        |    1.125       |   [0.562,  1.687]   |
-| 4        |    1.687       |   [0.8435, 2.53]    |
-| 5        |    2.53        |   [1.265,  3.795]   |
-| 6        |    3.795       |   [1.897,  5.692]   |
-| 7        |    5.692       |   [2.846,  8.538]   |
-| 8        |    8.538       |   [4.269, 12.807]   |
-| 9        |   12.807       |   [6.403, 19.210]   |
-| 10       |   19.210       |   stop              |
+| request# | retry interval | randomized interval             |
+| -------- | -------------- | ------------------------------- |
+| 1        |    0.5         |  [0.25,   0.75]                 |
+| 2        |    0.75        |  [0.375,  1.125]                |
+| 3        |    1.125       |  [0.5625,  1.6875]              |
+| 4        |    1.6875      |  [0.84375, 2.53125]             |
+| 5        |    2.53125     |  [1.265625, 3.796875]           |
+| 6        |    3.796875    |  [1.8984375,  5.6953125]        |
+| 7        |    5.6953125   |  [2.84765625,  8.54296875]      |
+| 8        |   8.54296875   |  [4.271484375, 12.814453125]    |
+| 9        |  12.814453125  |  [6.4072265625, 19.2216796875]  |
+| 10       | 19.2216796875  |  stop                           |
 
 ```ruby
 require 'retriable'

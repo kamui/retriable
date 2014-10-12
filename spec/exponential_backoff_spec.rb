@@ -22,28 +22,36 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates randomized intervals" do
-    i = subject.new(tries: 9).intervals
-    i[0].between?(0.25, 0.75).must_equal true
-    i[1].between?(0.375, 1.125).must_equal true
-    i[2].between?(0.562, 1.687).must_equal true
-    i[3].between?(0.8435, 2.53).must_equal true
-    i[4].between?(1.265, 3.795).must_equal true
-    i[5].between?(1.897, 5.692).must_equal true
-    i[6].between?(2.846, 8.538).must_equal true
-    i[7].between?(4.269, 12.807).must_equal true
-    i[8].between?(6.403, 19.210).must_equal true
+    10000.times do |iteration|
+      i = subject.new(tries: 9).intervals
+      i[0].between?(0.25, 0.75).must_equal true
+      i[1].between?(0.375, 1.125).must_equal true
+      i[2].between?(0.5625, 1.6875).must_equal true
+      i[3].between?(0.84375, 2.53125).must_equal true
+      i[4].between?(1.265625, 3.796875).must_equal true
+      i[5].between?(1.8984375, 5.6953125).must_equal true
+      i[6].between?(2.84765625, 8.54296875).must_equal true
+      i[7].between?(4.271484375, 12.814453125).must_equal true
+      i[8].between?(6.4072265625, 19.2216796875).must_equal true
+      i.size.must_equal 9
+    end
   end
 
-  it "generates 5 non-randomized intervals" do
+  it "generates 10 non-randomized intervals" do
     subject.new(
-      tries: 5,
+      tries: 10,
       rand_factor: 0.0
     ).intervals.must_equal([
       0.5,
       0.75,
       1.125,
       1.6875,
-      2.53125
+      2.53125,
+      3.796875,
+      5.6953125,
+      8.54296875,
+      12.814453125,
+      19.2216796875
     ])
   end
 end

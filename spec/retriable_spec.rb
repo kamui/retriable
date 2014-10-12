@@ -98,15 +98,18 @@ describe Retriable do
         end
       end.must_raise ArgumentError
 
-      @time_table[1].between?(0.25, 0.75).must_equal true
-      @time_table[2].between?(0.375, 1.125).must_equal true
-      @time_table[3].between?(0.562, 1.687).must_equal true
-      @time_table[4].between?(0.8435, 2.53).must_equal true
-      @time_table[5].between?(1.265, 3.795).must_equal true
-      @time_table[6].between?(1.897, 5.692).must_equal true
-      @time_table[7].between?(2.846, 8.538).must_equal true
-      @time_table[8].between?(4.269, 12.807).must_equal true
-      @time_table[9].between?(6.403, 19.210).must_equal true
+      10000.times do |iteration|
+        @time_table[1].between?(0.25, 0.75).must_equal true
+        @time_table[2].between?(0.375, 1.125).must_equal true
+        @time_table[3].between?(0.5625, 1.6875).must_equal true
+        @time_table[4].between?(0.84375, 2.53125).must_equal true
+        @time_table[5].between?(1.265625, 3.796875).must_equal true
+        @time_table[6].between?(1.8984375, 5.6953125).must_equal true
+        @time_table[7].between?(2.84765625, 8.54296875).must_equal true
+        @time_table[8].between?(4.271484375, 12.814453125).must_equal true
+        @time_table[9].between?(6.4072265625, 19.2216796875).must_equal true
+        @time_table.size.must_equal 9
+      end
     end
 
     describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
