@@ -35,9 +35,9 @@ module Retriable
     def randomize(interval)
       return interval if rand_factor == 0
       delta = rand_factor * interval * 1.0
-      min_interval = interval - delta
-      max_interval = interval + delta
-      rand(min_interval..max_interval)
+      min = interval - delta
+      max = interval + delta
+      rand(min..max)
     end
   end
 end

@@ -51,6 +51,30 @@ describe Retriable::ExponentialBackoff do
     ])
   end
 
+  it "generates intervals with a defined multiplier" do
+    subject.new(multiplier: 1).intervals.must_equal([
+      0.5244067512211441,
+      0.607594682584082,
+      0.5513816852888495
+    ])
+  end
+
+  it "generates intervals with a defined max interval" do
+    subject.new(max_interval: 1.0, rand_factor: 0.0).intervals.must_equal([
+      0.5,
+      0.75,
+      1.0
+    ])
+  end
+
+  it "generates intervals with a defined rand_factor" do
+    subject.new(rand_factor: 0.2).intervals.must_equal([
+      0.5097627004884576,
+      0.8145568095504492,
+      1.1712435167599646
+    ])
+  end
+
   it "generates 10 non-randomized intervals" do
     subject.new(
       tries: 10,
