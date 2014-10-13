@@ -14,76 +14,93 @@ describe Retriable do
       end
     end
 
-    it "stops at first attempt if the block does not raise an exception" do
-      attempts = 0
+    it "stops at first try if the block does not raise an exception" do
+      tries = 0
       subject.retriable do
-        attempts += 1
+        tries += 1
       end
 
-      attempts.must_equal 1
+      tries.must_equal 1
     end
 
     it "raises a LocalJumpError if #retriable is not given a block" do
       -> do
-        subject.retriable on: EOFError
+        subject.retriable on: StandardError
       end.must_raise LocalJumpError
 
       -> do
-        subject.retriable on: EOFError, timeout: 2
+        subject.retriable on: StandardError, timeout: 2
       end.must_raise LocalJumpError
     end
 
-    describe "#retriable block of code raising EOFError with no arguments" do
-      before do
-        @attempts = 0
+    it "makes 3 tries when retrying block of code raising StandardError with no arguments" do
+      tries = 0
 
+      -> do
         subject.retriable do
-          @attempts += 1
-          raise EOFError.new if @attempts < 3
+          tries += 1
+          raise StandardError.new
         end
-      end
+      end.must_raise StandardError
 
-      it "uses exponential backoff" do
-        @attempts.must_equal 3
-      end
+      tries.must_equal 3
     end
 
-    it "#retriable on custom exception and re-raises the exception" do
+    it "makes only 1 try when exception raised is not ancestor of StandardError" do
+      tries = 0
+
       -> do
-        subject.retriable on: TestError do
+        subject.retriable do
+          tries += 1
           raise TestError.new
         end
       end.must_raise TestError
+
+      tries.must_equal 1
+    end
+
+    it "#retriable with custom exception tries 3  times and re-raises the exception" do
+      tries = 0
+      -> do
+        subject.retriable on: TestError do
+          tries += 1
+          raise TestError.new
+        end
+      end.must_raise TestError
+
+      tries.must_equal 3
     end
 
     it "#retriable tries 10 times" do
-      attempts = 0
+      tries = 0
 
-      subject.retriable(
-        tries: 10
-      ) do
-          attempts += 1
-          raise EOFError.new if attempts < 10
-      end
+      -> do
+        subject.retriable(
+          tries: 10
+        ) do
+            tries += 1
+            raise StandardError.new
+        end
+      end.must_raise StandardError
 
-      attempts.must_equal 10
+      tries.must_equal 10
     end
 
     it "#retriable will timeout after 1 second" do
       -> do
         subject.retriable timeout: 1 do
-          sleep 2
+          sleep 1.1
         end
       end.must_raise Timeout::Error
     end
 
-    it "applies a randomized exponential backoff to each attempt" do
-      @attempts = 0
+    it "applies a randomized exponential backoff to each try" do
+      @tries = 0
       @time_table = {}
 
-      handler = ->(exception, attempt, elapsed_time, next_interval) do
+      handler = ->(exception, try, elapsed_time, next_interval) do
         exception.class.must_equal ArgumentError
-        @time_table[attempt] = next_interval
+        @time_table[try] = next_interval
       end
 
       -> do
@@ -93,7 +110,7 @@ describe Retriable do
           rand_factor: 0.0,
           tries: 9
         ) do
-          @attempts += 1
+          @tries += 1
           raise ArgumentError.new
         end
       end.must_raise ArgumentError
@@ -115,12 +132,12 @@ describe Retriable do
     describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
       before do
         tries = 6
-        @attempts = 0
+        @tries = 0
         @time_table = {}
 
-        handler = ->(exception, attempt, elapsed_time, next_interval) do
+        handler = ->(exception, try, elapsed_time, next_interval) do
           exception.class.must_equal ArgumentError
-          @time_table[attempt] = next_interval
+          @time_table[try] = next_interval
         end
 
         Retriable.retriable(
@@ -129,16 +146,16 @@ describe Retriable do
           rand_factor: 0.0,
           tries: tries
         ) do
-          @attempts += 1
-          raise ArgumentError.new if @attempts < tries
+          @tries += 1
+          raise ArgumentError.new if @tries < tries
         end
       end
 
-      it "makes 6 attempts" do
-        @attempts.must_equal 6
+      it "makes 6 tries" do
+        @tries.must_equal 6
       end
 
-      it "applies a non-randomized exponential backoff to each attempt" do
+      it "applies a non-randomized exponential backoff to each try" do
         @time_table.must_equal({
           1 => 0.5,
           2 => 0.75,
@@ -150,24 +167,25 @@ describe Retriable do
     end
 
     it "#retriable has a max interval of 1.5 seconds" do
-      tries = 6
-      attempts = 0
+      tries = 0
       time_table = {}
 
-      handler = ->(exception, attempt, elapsed_time, next_interval) do
-        time_table[attempt] = next_interval
+      handler = ->(exception, try, elapsed_time, next_interval) do
+        time_table[try] = next_interval
       end
 
-      subject.retriable(
-        on: EOFError,
-        on_retry: handler,
-        rand_factor: 0.0,
-        tries: tries,
-        max_interval: 1.5
-      ) do
-        attempts += 1
-        raise EOFError.new if attempts < tries
-      end
+      -> do
+        subject.retriable(
+          on: StandardError,
+          on_retry: handler,
+          rand_factor: 0.0,
+          tries: 5,
+          max_interval: 1.5
+        ) do
+          tries += 1
+          raise StandardError.new
+        end
+      end.must_raise StandardError
 
       time_table.must_equal({
         1 => 0.5,
@@ -178,7 +196,7 @@ describe Retriable do
       })
     end
 
-    it "#retriable with defined intervals" do
+    it "#retriable with custom defined intervals" do
       intervals = [
         0.5,
         0.75,
@@ -188,19 +206,18 @@ describe Retriable do
       ]
       time_table = {}
 
-      handler = ->(exception, attempt, elapsed_time, next_interval) do
-        time_table[attempt] = next_interval
+      handler = ->(exception, try, elapsed_time, next_interval) do
+        time_table[try] = next_interval
       end
 
       -> do
         subject.retriable(
-          on: EOFError,
           on_retry: handler,
           intervals: intervals
         ) do
-          raise EOFError.new
+          raise StandardError.new
         end
-      end.must_raise EOFError
+      end.must_raise StandardError
 
       time_table.must_equal({
         1 => 0.5,
@@ -222,22 +239,22 @@ describe Retriable do
     end
 
     it "#retriable with a hash exception list where the values are exception message patterns" do
-      attempts = 0
-      tries = []
-      handler = ->(exception, attempt, elapsed_time, next_interval) do
-        tries[attempt] = exception
+      tries = 0
+      exceptions = []
+      handler = ->(exception, try, elapsed_time, next_interval) do
+        exceptions[try] = exception
       end
 
       e = -> do
-        subject.retriable tries: 4, on: { EOFError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
-          attempts += 1
-          case attempts
+        subject.retriable tries: 4, on: { StandardError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
+          tries += 1
+          case tries
           when 1
             raise TestError.new('foo')
           when 2
             raise TestError.new('bar')
           when 3
-            raise EOFError.new
+            raise StandardError.new
           else
             raise TestError.new('crash')
           end
@@ -245,11 +262,11 @@ describe Retriable do
       end.must_raise TestError
 
       e.message.must_equal "crash"
-      tries[1].class.must_equal TestError
-      tries[1].message.must_equal "foo"
-      tries[2].class.must_equal TestError
-      tries[2].message.must_equal "bar"
-      tries[3].class.must_equal EOFError
+      exceptions[1].class.must_equal TestError
+      exceptions[1].message.must_equal "foo"
+      exceptions[2].class.must_equal TestError
+      exceptions[2].message.must_equal "bar"
+      exceptions[3].class.must_equal StandardError
     end
 
     it "#retriable can be called in the global scope" do
@@ -261,12 +278,16 @@ describe Retriable do
 
       require_relative "../lib/retriable/core_ext/kernel"
 
-      attempts = 0
-      retriable do
-        attempts += 1
-        raise EOFError.new if attempts < 3
-      end
-      attempts.must_equal 3
+      tries = 0
+
+      -> do
+        retriable do
+          tries += 1
+          raise StandardError.new
+        end
+      end.must_raise StandardError
+
+      tries.must_equal 3
     end
   end
 
@@ -277,11 +298,11 @@ describe Retriable do
 
     subject.config.sleep_disabled.must_equal false
 
-    attempts = 0
+    tries = 0
     time_table = {}
 
-    handler = ->(exception, attempt, elapsed_time, next_interval) do
-      time_table[attempt] = elapsed_time
+    handler = ->(exception, try, elapsed_time, next_interval) do
+      time_table[try] = elapsed_time
     end
 
     -> do
@@ -292,11 +313,11 @@ describe Retriable do
         max_elapsed_time: 2.0,
         on_retry: handler
       ) do
-        attempts += 1
+        tries += 1
         raise EOFError.new
       end
     end.must_raise EOFError
 
-    attempts.must_equal 2
+    tries.must_equal 2
   end
 end

@@ -46,12 +46,12 @@ module Retriable
 
     exception_list = on.kind_of?(Hash) ? on.keys : on
 
-    intervals.each.with_index(1) do |interval, attempt|
+    intervals.each.with_index(1) do |interval, try|
       begin
         if timeout
-          Timeout::timeout(timeout) { return yield(attempt) }
+          Timeout::timeout(timeout) { return yield(try) }
         else
-          return yield(attempt)
+          return yield(try)
         end
       rescue *[*exception_list] => exception
         if on.kind_of?(Hash)
@@ -66,8 +66,8 @@ module Retriable
           raise unless message_match
         end
 
-        on_retry.call(exception, attempt, elapsed_time.call, interval) if on_retry
-        raise if attempt >= tries || (elapsed_time.call + interval) > max_elapsed_time
+        on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
+        raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
         sleep interval if config.sleep_disabled != true
       end
     end

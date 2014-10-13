@@ -34,7 +34,7 @@ gem 'retriable'
 
 ## Usage
 
-Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 retry attempts before raising the last exception, and also use randomized exponential backoff to calculate each succeeding attempt interval. The default interval table with 10 attempts looks like this (in seconds):
+Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 retry tries before raising the last exception, and also use randomized exponential backoff to calculate each succeeding try interval. The default interval table with 10 tries looks like this (in seconds):
 
 | request# | retry interval | randomized interval             |
 | -------- | -------------- | ------------------------------- |
@@ -66,11 +66,11 @@ end
 
 Here are the available options:
 
-`tries` (default: 3) - Number of attempts to make at running your code block.
+`tries` (default: 3) - Number of tries to make at running your code block.
 
-`base_interval` (default: 0.5) - The initial interval in seconds between attempts.
+`base_interval` (default: 0.5) - The initial interval in seconds between tries.
 
-`max_interval` (default: 60) - The maximum interval in seconds that any attempt can climb to.
+`max_interval` (default: 60) - The maximum interval in seconds that any try can reach.
 
 `rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this:
 
@@ -86,9 +86,9 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
 
-`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each attempt, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type.
+`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type.
 
-`on_retry` - (default: nil) - Proc to call after each attempt is rescued.
+`on_retry` - (default: nil) - Proc to call after each try is rescued.
 
 ### Config
 
@@ -103,7 +103,7 @@ end
 
 ### Examples
 
-`Retriable.retriable` accepts custom arguments. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each attempt.
+`Retriable.retriable` accepts custom arguments. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
 
 ```ruby
 Retriable.retriable on: Timeout::Error, tries: 3, base_interval: 1 do
@@ -131,7 +131,7 @@ Retriable.retriable on: {
 end
 ```
 
-You can also specify a timeout if you want the code block to only make an attempt for X amount of seconds. This timeout is per attempt.
+You can also specify a timeout if you want the code block to only make an try for X amount of seconds. This timeout is per try.
 
 ```ruby
 Retriable.retriable timeout: 60 do
@@ -177,11 +177,11 @@ end
 
 ### Callbacks
 
-`#retriable` also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the `exception` that was raised in the current attempt, the `try_number`, the `elapsed_time` for all attempts so far, and the time in seconds of the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
+`#retriable` also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the `exception` that was raised in the current try, the `try_number`, the `elapsed_time` for all tries so far, and the time in seconds of the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
 ```ruby
-do_this_on_each_retry = Proc.new do |exception, try_number, elapsed_time, next_interval|
-  log "#{exception.class}: '#{exception.message}' - #{try_number} attempts in #{elapsed_time} seconds and #{next_interval} seconds until the next attempt."}
+do_this_on_each_retry = Proc.new do |exception, try, elapsed_time, next_interval|
+  log "#{exception.class}: '#{exception.message}' - #{try} tries in #{elapsed_time} seconds and #{next_interval} seconds until the next try."}
 end
 
 Retriable.retriable on_retry: do_this_on_each_retry do
