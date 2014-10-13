@@ -5,6 +5,10 @@ describe Retriable::ExponentialBackoff do
     Retriable::ExponentialBackoff
   end
 
+  before do
+    srand 0
+  end
+
   it "tries defaults to 3" do
     subject.new.tries.must_equal 3
   end
@@ -21,20 +25,30 @@ describe Retriable::ExponentialBackoff do
     subject.new.multiplier.must_equal 1.5
   end
 
-  it "generates randomized intervals" do
-    10000.times do |iteration|
-      i = subject.new(tries: 9).intervals
-      i[0].between?(0.25, 0.75).must_equal true
-      i[1].between?(0.375, 1.125).must_equal true
-      i[2].between?(0.5625, 1.6875).must_equal true
-      i[3].between?(0.84375, 2.53125).must_equal true
-      i[4].between?(1.265625, 3.796875).must_equal true
-      i[5].between?(1.8984375, 5.6953125).must_equal true
-      i[6].between?(2.84765625, 8.54296875).must_equal true
-      i[7].between?(4.271484375, 12.814453125).must_equal true
-      i[8].between?(6.4072265625, 19.2216796875).must_equal true
-      i.size.must_equal 9
-    end
+  it "generates 10 randomized intervals" do
+    subject.new(tries: 9).intervals.must_equal([
+      0.5244067512211441,
+      0.9113920238761231,
+      1.2406087918999114,
+      1.7632403621664823,
+      2.338001204738311,
+      4.350816718580626,
+      5.339852157217869,
+      11.889873261212443,
+      18.756037881636484
+    ])
+  end
+
+  it "generates defined number of intervals" do
+    subject.new(tries: 5).intervals.size.must_equal 5
+  end
+
+  it "generates intervals with a defined base interval" do
+    subject.new(base_interval: 1).intervals.must_equal([
+      1.0488135024422882,
+      1.8227840477522461,
+      2.4812175837998227
+    ])
   end
 
   it "generates 10 non-randomized intervals" do

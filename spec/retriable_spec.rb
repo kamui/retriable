@@ -7,6 +7,10 @@ describe Retriable do
     Retriable
   end
 
+  before do
+    srand 0
+  end
+
   describe "with sleep disabled" do
     before do
       Retriable.configure do |c|
@@ -59,7 +63,7 @@ describe Retriable do
       tries.must_equal 1
     end
 
-    it "#retriable with custom exception tries 3  times and re-raises the exception" do
+    it "#retriable with custom exception tries 3 times and re-raises the exception" do
       tries = 0
       -> do
         subject.retriable on: TestError do
@@ -96,18 +100,17 @@ describe Retriable do
 
     it "applies a randomized exponential backoff to each try" do
       @tries = 0
-      @time_table = {}
+      @time_table = []
 
       handler = ->(exception, try, elapsed_time, next_interval) do
         exception.class.must_equal ArgumentError
-        @time_table[try] = next_interval
+        @time_table << next_interval
       end
 
       -> do
         Retriable.retriable(
           on: [EOFError, ArgumentError],
           on_retry: handler,
-          rand_factor: 0.0,
           tries: 9
         ) do
           @tries += 1
@@ -115,18 +118,17 @@ describe Retriable do
         end
       end.must_raise ArgumentError
 
-      10000.times do |iteration|
-        @time_table[1].between?(0.25, 0.75).must_equal true
-        @time_table[2].between?(0.375, 1.125).must_equal true
-        @time_table[3].between?(0.5625, 1.6875).must_equal true
-        @time_table[4].between?(0.84375, 2.53125).must_equal true
-        @time_table[5].between?(1.265625, 3.796875).must_equal true
-        @time_table[6].between?(1.8984375, 5.6953125).must_equal true
-        @time_table[7].between?(2.84765625, 8.54296875).must_equal true
-        @time_table[8].between?(4.271484375, 12.814453125).must_equal true
-        @time_table[9].between?(6.4072265625, 19.2216796875).must_equal true
-        @time_table.size.must_equal 9
-      end
+      @time_table.must_equal([
+        0.5244067512211441,
+        0.9113920238761231,
+        1.2406087918999114,
+        1.7632403621664823,
+        2.338001204738311,
+        4.350816718580626,
+        5.339852157217869,
+        11.889873261212443,
+        18.756037881636484
+      ])
     end
 
     describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
