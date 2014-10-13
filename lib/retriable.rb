@@ -17,16 +17,16 @@ module Retriable
   end
 
   def retriable(
-    tries:             config.tries,
-    base_interval:     config.base_interval,
-    max_interval:      config.max_interval,
-    rand_factor:       config.rand_factor,
-    multiplier:        config.multiplier,
-    max_elapsed_time:  config.max_elapsed_time,
-    intervals:         config.intervals,
-    timeout:           config.timeout,
-    on:                config.on,
-    on_retry:          config.on_retry
+      tries:             config.tries,
+      base_interval:     config.base_interval,
+      max_interval:      config.max_interval,
+      rand_factor:       config.rand_factor,
+      multiplier:        config.multiplier,
+      max_elapsed_time:  config.max_elapsed_time,
+      intervals:         config.intervals,
+      timeout:           config.timeout,
+      on:                config.on,
+      on_retry:          config.on_retry
     )
 
     start_time = Time.now

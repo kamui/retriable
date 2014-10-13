@@ -7,11 +7,11 @@ module Retriable
     attr_accessor :rand_factor
 
     def initialize(
-      tries:            Retriable.config.tries,
-      base_interval:    Retriable.config.base_interval,
-      multiplier:       Retriable.config.multiplier,
-      max_interval:     Retriable.config.max_interval,
-      rand_factor:      Retriable.config.rand_factor
+        tries:            Retriable.config.tries,
+        base_interval:    Retriable.config.base_interval,
+        multiplier:       Retriable.config.multiplier,
+        max_interval:     Retriable.config.max_interval,
+        rand_factor:      Retriable.config.rand_factor
       )
 
       @tries          = tries
