@@ -23,13 +23,13 @@ gem install retriable
 In your ruby script:
 
 ```ruby
-require 'retriable', '~> 2.0'
+require 'retriable'
 ```
 
 In your Gemfile:
 
 ```ruby
-gem 'retriable'
+gem 'retriable', '~> 2.0'
 ```
 
 ## Usage
