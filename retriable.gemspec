@@ -29,4 +29,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency "guard"
   s.add_development_dependency "guard-minitest"
   s.add_development_dependency "ruby_gntp"
+  s.add_development_dependency "simplecov"
+  s.add_development_dependency "codeclimate-test-reporter"
 end
