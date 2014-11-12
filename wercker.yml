@@ -6,8 +6,8 @@ build:
     # http://devcenter.wercker.com/articles/languages/ruby.html
     steps:
         # Uncomment this to force RVM to use a specific Ruby version
-        # - rvm-use:
-            # version: 2.1.0
+        - rvm-use:
+            version: 2.1.4
 
         # A step that executes `bundle install` command
         - bundle-install
