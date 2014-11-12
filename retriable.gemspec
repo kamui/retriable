@@ -1,34 +1,28 @@
 # coding: utf-8
-lib = File.expand_path("../lib", __FILE__)
+lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "retriable/version"
 
-Gem::Specification.new do |s|
-  s.name        = "retriable"
-  s.version     = Retriable::VERSION
-  s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Jack Chu"]
-  s.email       = ["jack@jackchu.com"]
-  s.homepage    = %q{http://github.com/kamui/retriable}
-  s.summary     = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff}
-  s.description = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff. This is especially useful when interacting external api/services or file system calls.
+Gem::Specification.new do |spec|
+  spec.name          = "retriable"
+  spec.version       = Retriable::VERSION
+  spec.authors       = ["Jack Chu"]
+  spec.email         = ["jack@jackchu.com"]
+  spec.summary       = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff}
+  spec.description   = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff. This is especially useful when interacting external api/services or file system calls.
 }
-  s.license       = "MIT"
+  spec.homepage      = %q{http://github.com/kamui/retriable}
+  spec.license       = "MIT"
 
-  s.rubyforge_project = "retriable"
+  spec.files         = `git ls-files -z`.split("\x0")
+  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
+  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.require_paths = ["lib"]
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-  s.require_paths = ["lib"]
+  spec.add_development_dependency "bundler", "~> 1.7"
+  spec.add_development_dependency "rake", "~> 10.0"
 
-  s.add_development_dependency "rake"
-  s.add_development_dependency "minitest", ">= 5.0"
-  s.add_development_dependency "minitest-focus"
-  s.add_development_dependency "pry"
-  s.add_development_dependency "guard"
-  s.add_development_dependency "guard-minitest"
-  s.add_development_dependency "ruby_gntp"
-  s.add_development_dependency "simplecov"
-  s.add_development_dependency "codeclimate-test-reporter"
+  spec.add_development_dependency "minitest", "~> 5.4"
+  spec.add_development_dependency "guard"
+  spec.add_development_dependency "guard-minitest"
 end
