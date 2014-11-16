@@ -1,3 +1,7 @@
+## HEAD
+
+  * Require ruby 2.0.0 minimum in gemspec.
+
 ## 2.0.0.beta5
 * Change `:max_tries` back to `:tries`.
 
