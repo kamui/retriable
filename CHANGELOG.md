@@ -1,13 +1,24 @@
 ## HEAD
 
-  * Require ruby 2.0.0 minimum in gemspec.
+## 2.0.0
+
+* Require ruby 2.0+.
+* Time intervals default to randomized exponential backoff instead of fixed time intervals. The delay between retries grows with every attempt and there's a randomization factor added to each attempt.
+* `base_interval`, `max_interval`, `rand_factor`, and `multiplier` are new arguments that are used to generate randomized exponential back off time intervals.
+* `interval` argument removed.
+* Accept `intervals` array argument to provide your own custom intervals.
+* Allow configurable defaults via `Retriable#configure` block.
+* Add ability for `:on` argument to accept a `Hash` where the keys are exception types and the values are a single or array of `Regexp` pattern(s) to match against exception messages for retrial.
+* Raise, not return, on max elapsed time.
+* Check for elapsed time after next interval is calculated and it goes over the max elapsed time.
+* Support early termination via `max_elapsed_time` argument.
 
 ## 2.0.0.beta5
 * Change `:max_tries` back to `:tries`.
 
 ## 2.0.0.beta4
 * Change #retry back to #retriable. Didn't like the idea of defining a method that is also a reserved word.
-* Add ability for `:on` argument to accept a `Hash` where the keys are exception types and the values are a single or list of `Regexp` pattern(s) to match against exception messages for retrial.
+* Add ability for `:on` argument to accept a `Hash` where the keys are exception types and the values are a single or array of `Regexp` pattern(s) to match against exception messages for retrial.
 
 ## 2.0.0.beta3
 * Accept `intervals` array argument to provide your own custom intervals.
@@ -15,15 +26,16 @@
 * Add specs for exponential backoff, randomization, and config.
 
 ## 2.0.0.beta2
-* Raise not return on max elapsed time, also check for elapsed time after next interval is calculated and it goes over the max elapsed time.
+* Raise, not return, on max elapsed time.
+* Check for elapsed time after next interval is calculated and it goes over the max elapsed time.
 * Add specs for `max_elapsed_time` and `max_interval`.
 
 ## 2.0.0.beta1
 * Require ruby 2.0+.
 * Default to random exponential backoff, removes the `interval` option. Exponential backoff is configurable via arguments.
-* Allow configurable defaults via `#configure`.
+* Allow configurable defaults via `Retriable#configure` block.
 * Change `Retriable.retriable` to `Retriable.retry`.
-* Support `max_elapsed_time` termination.
+* Support early termination via `max_elapsed_time` argument.
 
 ## 1.4.1
 * Fixes non kernel mode bug. Remove DSL class, move `#retriable` into Retriable module. Thanks @mkrogemann.
