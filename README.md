@@ -12,7 +12,7 @@ Ruby 2.0+
 
 If you need 1.9.x support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x).
 
-There's a (1.x to 2.x migration wiki entry](https://github.com/kamui/retriable/wiki/Migrating-to-2.x) available.
+There's a [1.x to 2.x migration wiki entry](https://github.com/kamui/retriable/wiki/Migrating-to-2.x) available.
 
 WARNING: 2.x isn't API compatible with 1.x.
 
