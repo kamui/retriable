@@ -93,7 +93,7 @@ If you'd like exponential backoff, interval can take a Proc
 
 ```ruby
 # with exponential back-off - sleep 4, 16, 64, 256, give up
-Retriable.retryable :times => 4, :interval => lambda {|attempts| 4 ** attempts} do
+Retriable.retriable :tries => 4, :interval => lambda {|attempts| 4 ** attempts} do
   # code here...
 end
 ```
