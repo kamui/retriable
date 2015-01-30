@@ -236,4 +236,4 @@ end
 
 ## Credits
 
-Retriable was originally forked from the retryable-rb gem by [Robert Sosinski](https://github.com/robertsosinski), which in turn originally inspired by code written by [Michael Celona](http://github.com/mcelona) and later assisted by [David Malin](http://github.com/dmalin). The [attempt](https://rubygems.org/gems/attempt) gem by Daniel J. Berger was also an inspiration.
+The randomized exponetial backoff implementation was inspired by the one used in Google's [google-http-java-client](https://code.google.com/p/google-http-java-client/wiki/ExponentialBackoff) project.
