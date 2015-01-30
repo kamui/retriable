@@ -161,10 +161,22 @@ end
 
 ### Turn off Exponential Backoff
 
-Exponential backoff is enabled by default, if you want to simply execute code every second, you can do this:
+Exponential backoff is enabled by default, if you want to simply retry code every second, 5 times maximum, you can do this:
 
 ```ruby
-Retriable.retriable base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0 do
+Retriable.retriable tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0 do
+  # code here...
+end
+```
+
+This works by starting at a 1 second interval (`base_interval`), setting the `multipler` to 1.0 means each subsequent try will increase 1x, which is still `1.0` seconds, and then a `rand_factor` of 0.0 means that there's no randomization of that interval. By default, it would randomize 0.25 seconds, which would mean normally the intervals would randomize between 0.75 and 1.25 seconds, but in this case `rand_factor` is basically being disabled.
+
+Another way to accomplish this would be to create an array with a fixed interval. In this example, `Array.new(5, 1)` creates an array with 5 elements, all with the value 1. The code block will retry up to 5 times, and wait 1 second between each attempt.
+
+```ruby
+# Array.new(5, 1) # => [1, 1, 1, 1, 1]
+
+Retriable.retriable intervals: Array.new(5, 1) do
   # code here...
 end
 ```
