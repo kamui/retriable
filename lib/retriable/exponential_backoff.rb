@@ -31,7 +31,7 @@ module Retriable
       intervals.map { |i| randomize(i) }
     end
 
-    protected
+    private
     def randomize(interval)
       return interval if rand_factor == 0
       delta = rand_factor * interval * 1.0
