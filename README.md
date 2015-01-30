@@ -9,7 +9,7 @@ Retriable is an simple DSL to retry a code block if an exception should be raise
 via command line:
 
 ```ruby
-gem install retriable
+gem install retriable -v 1.4.1
 ```
 
 In your ruby script:
@@ -21,7 +21,7 @@ require 'retriable'
 In your Gemfile:
 
 ```ruby
-gem 'retriable'
+gem 'retriable', '~> 1.4'
 ```
 
 ##Usage
