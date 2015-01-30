@@ -19,7 +19,7 @@ module Retriable
       @max_interval      = 60
       @rand_factor       = 0.5
       @multiplier        = 1.5
-      @max_elapsed_time  = 900 # 15 minn
+      @max_elapsed_time  = 900 # 15 min
       @intervals         = nil
       @timeout           = nil
       @on                = [StandardError]
