@@ -8,9 +8,9 @@ Retriable is an simple DSL to retry failed code blocks with randomized [exponent
 
 ## Requirements
 
-Ruby 2.0+
+Ruby 1.9.3+
 
-If you need 1.9.x support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x).
+If you need ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x).
 
 There's a [1.x to 2.x migration wiki entry](https://github.com/kamui/retriable/wiki/Migrating-to-2.x) available.
 

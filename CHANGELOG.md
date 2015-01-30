@@ -1,5 +1,9 @@
 ## HEAD
 
+## 2.0.1
+
+* Add support for ruby 1.9.3.
+
 ## 2.0.0
 
 * Require ruby 2.0+.
