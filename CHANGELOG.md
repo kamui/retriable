@@ -1,5 +1,9 @@
 ## HEAD
 
+## 2.0.2
+
+* Change required_ruby_version in gemspec to >= 1.9.3.
+
 ## 2.0.1
 
 * Add support for ruby 1.9.3.
