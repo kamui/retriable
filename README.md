@@ -88,7 +88,7 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
 
-`timeout` (default: 0) - Number of seconds to allow the code block to run before raising a Timeout::Error
+`timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
 
 `on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type.
 
