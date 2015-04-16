@@ -1,5 +1,7 @@
 ## HEAD
 
+* Switch to `Minitest` 5.6 expect syntax.
+
 ## 2.0.2
 
 * Change required_ruby_version in gemspec to >= 1.9.3.
