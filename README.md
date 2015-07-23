@@ -151,6 +151,23 @@ Retriable.retriable base_interval: (200/1000.0), timeout: (500/1000.0) do
 end
 ```
 
+### Using an object wrapper
+
+Instead of using a block, you can also wrap an arbitrary object with retries. Any method call on that
+object is going to be wrapped with `Retriable.retriable` if you use this functionality.
+
+```ruby
+network_interface = API.new(unreliable_server: 'https://api-server.com')
+stubborn_interface = Retriable.with_retries(network_interface, on: Net::TimeoutError)
+stubborn_interface.create(id: 123, name: 'Some object that gets created')
+```
+
+`Retriable.with_retries` accepts the same options as `Retriable.retriable`.
+
+The wrapped object can then be used just like the object it wraps (all the call return results will
+be maintained and returned as-is). If the object returns other objects of the same type, they are _not_
+going to be wrapped with a `Retriable::Wrapper` anymore.
+
 ### Custom Interval Array
 
 You can also bypass the built-in interval generation and provide your own array of intervals. Supplying your own intervals overrides the `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` parameters.

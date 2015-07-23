@@ -10,7 +10,25 @@ describe Retriable do
   before do
     srand 0
   end
+  
+  describe '.with_retries' do
+    it 'wraps an object with a Wrapper that forwards method calls with arguments and blocks' do
+      str = 'This is a string'
+      retriable_string = subject.with_retries(str)
 
+      retriable_string.must_be_kind_of(Retriable::Wrapper)
+      retriable_string.must_respond_to(:gsub)
+      retriable_string.must_respond_to(:length)
+      
+      retriable_string.length.must_equal 16
+      gsubbed = retriable_string.gsub(/s/) do | matched |
+        matched.must_equal "s"
+        't'
+      end
+      gsubbed.must_equal "Thit it a ttring"
+    end
+  end
+  
   describe "with sleep disabled" do
     before do
       Retriable.configure do |c|

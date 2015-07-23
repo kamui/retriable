@@ -1,7 +1,8 @@
 require "timeout"
-require "retriable/config"
-require "retriable/exponential_backoff"
-require "retriable/version"
+require_relative "retriable/config"
+require_relative "retriable/exponential_backoff"
+require_relative "retriable/version"
+require_relative "retriable/wrapper"
 
 module Retriable
   extend self
@@ -15,7 +16,11 @@ module Retriable
   def config
     @config ||= Config.new
   end
-
+  
+  def with_retries(object, retriable_options = {})
+    Wrapper.new(object, retriable_options)
+  end
+  
   def retriable(opts = {})
     tries             = opts[:tries]            || config.tries
     base_interval     = opts[:base_interval]    || config.base_interval
