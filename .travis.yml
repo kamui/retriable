@@ -8,6 +8,7 @@ rvm:
   - 2.1
   - 2.2
   - rbx
+  - jruby-9.0.0.0
   - ruby-head
   - jruby-head
 
@@ -16,6 +17,7 @@ matrix:
     - rvm: 1.9.3
     - rvm: ruby-head
     - rvm: jruby-head
+    - jruby-9.0.0.0
 
 addons:
   code_climate:
