@@ -17,7 +17,7 @@ matrix:
     - rvm: 1.9.3
     - rvm: ruby-head
     - rvm: jruby-head
-    - jruby-9.0.0.0
+    - rvm: jruby-9.0.0.0
 
 addons:
   code_climate:
