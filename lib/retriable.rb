@@ -1,7 +1,7 @@
 require "timeout"
-require "retriable/config"
-require "retriable/exponential_backoff"
-require "retriable/version"
+require_relative "retriable/config"
+require_relative "retriable/exponential_backoff"
+require_relative "retriable/version"
 
 module Retriable
   extend self
