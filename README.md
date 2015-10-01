@@ -38,9 +38,9 @@ gem 'retriable', '~> 2.0'
 
 ## Usage
 
-Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 retry tries before raising the last exception, and also use randomized exponential backoff to calculate each succeeding try interval. The default interval table with 10 tries looks like this (in seconds):
+Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 tries (including the initial attempt) before raising the last exception, and also use randomized exponential backoff to calculate each succeeding try interval. The default interval table with 10 tries looks like this (in seconds):
 
-| request# | retry interval | randomized interval             |
+| retry#   | retry interval | randomized interval             |
 | -------- | -------------- | ------------------------------- |
 | 1        |    0.5         |  [0.25,   0.75]                 |
 | 2        |    0.75        |  [0.375,  1.125]                |
@@ -70,7 +70,7 @@ end
 
 Here are the available options:
 
-`tries` (default: 3) - Number of tries to make at running your code block.
+`tries` (default: 3) - Number of attempts to make at running your code block (includes intial attempt).
 
 `base_interval` (default: 0.5) - The initial interval in seconds between tries.
 
@@ -160,6 +160,8 @@ Retriable.retriable intervals: [0.5, 1.0, 2.0, 2.5] do
   # code here...
 end
 ```
+
+This example makes 5 total attempts, if the first attempt fails, the 2nd attempt occurs 0.5 seconds later.
 
 ### Turn off Exponential Backoff
 

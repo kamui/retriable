@@ -1,5 +1,6 @@
 ## HEAD
 
+* Fix bug #17 due to confusing the initial try as a retry.
 * Switch to `Minitest` 5.6 expect syntax.
 
 ## 2.0.2

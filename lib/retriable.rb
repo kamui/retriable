@@ -32,10 +32,10 @@ module Retriable
     elapsed_time = -> { Time.now - start_time }
 
     if intervals
-      tries = intervals.size
+      tries = intervals.size + 1
     else
       intervals = ExponentialBackoff.new(
-        tries:          tries,
+        tries:          tries - 1,
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
@@ -45,7 +45,8 @@ module Retriable
 
     exception_list = on.kind_of?(Hash) ? on.keys : on
 
-    intervals.each.with_index(1) do |interval, try|
+    tries.times do |index|
+      try = index + 1
       begin
         if timeout
           Timeout::timeout(timeout) { return yield(try) }
@@ -65,6 +66,7 @@ module Retriable
           raise unless message_match
         end
 
+        interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
         raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
         sleep interval if config.sleep_disabled != true

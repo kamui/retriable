@@ -65,6 +65,7 @@ describe Retriable do
 
     it "#retriable with custom exception tries 3 times and re-raises the exception" do
       tries = 0
+
       expect do
         subject.retriable on: TestError do
           tries += 1
@@ -80,10 +81,10 @@ describe Retriable do
 
       expect do
         subject.retriable(
-          tries: 10
+          tries: 10,
         ) do
-            tries += 1
-            raise StandardError.new
+          tries += 1
+          raise StandardError.new
         end
       end.must_raise StandardError
 
@@ -99,26 +100,26 @@ describe Retriable do
     end
 
     it "applies a randomized exponential backoff to each try" do
-      @tries = 0
-      @time_table = []
+      tries = 0
+      time_table = []
 
       handler = ->(exception, try, elapsed_time, next_interval) do
         expect(exception.class).must_equal ArgumentError
-        @time_table << next_interval
+        time_table << next_interval
       end
 
       expect do
         Retriable.retriable(
           on: [EOFError, ArgumentError],
           on_retry: handler,
-          tries: 9
+          tries: 10,
         ) do
-          @tries += 1
+          tries += 1
           raise ArgumentError.new
         end
       end.must_raise ArgumentError
 
-      expect(@time_table).must_equal([
+      expect(time_table).must_equal([
         0.5244067512211441,
         0.9113920238761231,
         1.2406087918999114,
@@ -127,14 +128,17 @@ describe Retriable do
         4.350816718580626,
         5.339852157217869,
         11.889873261212443,
-        18.756037881636484
+        18.756037881636484,
+        nil,
       ])
+
+      expect(tries).must_equal(10)
     end
 
     describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
       before do
         tries = 6
-        @tries = 0
+        @try_count = 0
         @time_table = {}
 
         handler = ->(exception, try, elapsed_time, next_interval) do
@@ -146,15 +150,15 @@ describe Retriable do
           on: [EOFError, ArgumentError],
           on_retry: handler,
           rand_factor: 0.0,
-          tries: tries
+          tries: tries,
         ) do
-          @tries += 1
-          raise ArgumentError.new if @tries < tries
+          @try_count += 1
+          raise ArgumentError.new if @try_count < tries
         end
       end
 
       it "makes 6 tries" do
-        expect(@tries).must_equal 6
+        expect(@try_count).must_equal 6
       end
 
       it "applies a non-randomized exponential backoff to each try" do
@@ -163,7 +167,7 @@ describe Retriable do
           2 => 0.75,
           3 => 1.125,
           4 => 1.6875,
-          5 => 2.53125
+          5 => 2.53125,
         })
       end
     end
@@ -182,7 +186,7 @@ describe Retriable do
           on_retry: handler,
           rand_factor: 0.0,
           tries: 5,
-          max_interval: 1.5
+          max_interval: 1.5,
         ) do
           tries += 1
           raise StandardError.new
@@ -194,7 +198,7 @@ describe Retriable do
         2 => 0.75,
         3 => 1.125,
         4 => 1.5,
-        5 => 1.5
+        5 => nil,
       })
     end
 
@@ -204,7 +208,7 @@ describe Retriable do
         0.75,
         1.125,
         1.5,
-        1.5
+        1.5,
       ]
       time_table = {}
 
@@ -212,11 +216,14 @@ describe Retriable do
         time_table[try] = next_interval
       end
 
+      try_count = 0
+
       expect do
         subject.retriable(
           on_retry: handler,
-          intervals: intervals
+          intervals: intervals,
         ) do
+          try_count += 1
           raise StandardError.new
         end
       end.must_raise StandardError
@@ -226,8 +233,11 @@ describe Retriable do
         2 => 0.75,
         3 => 1.125,
         4 => 1.5,
-        5 => 1.5
+        5 => 1.5,
+        6 => nil,
       })
+
+      expect(try_count).must_equal(6)
     end
 
     it "#retriable with a hash exception where the value is an exception message pattern" do
@@ -313,7 +323,7 @@ describe Retriable do
         multiplier: 1.0,
         rand_factor: 0.0,
         max_elapsed_time: 2.0,
-        on_retry: handler
+        on_retry: handler,
       ) do
         tries += 1
         raise EOFError.new
