@@ -4,7 +4,7 @@
 [![Code Climate](https://codeclimate.com/github/kamui/retriable/badges/gpa.svg)](https://codeclimate.com/github/kamui/retriable)
 [![Test Coverage](https://codeclimate.com/github/kamui/retriable/badges/coverage.svg)](https://codeclimate.com/github/kamui/retriable)
 
-Retriable is an simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff) time intervals. This is especially useful when interacting external api/services or file system calls.
+Retriable is a simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff) time intervals. This is especially useful when interacting external api/services or file system calls.
 
 ## Requirements
 
@@ -135,7 +135,7 @@ Retriable.retriable on: {
 end
 ```
 
-You can also specify a timeout if you want the code block to only make an try for X amount of seconds. This timeout is per try.
+You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try.
 
 ```ruby
 Retriable.retriable timeout: 60 do
