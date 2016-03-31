@@ -91,6 +91,19 @@ describe Retriable do
       expect(tries).must_equal 10
     end
 
+    it "#retriable tries infinitely" do
+      tries = 0
+
+      subject.retriable(
+        tries: 0,
+      ) do
+        next if 10000 < tries += 1
+        raise StandardError.new
+      end
+
+      expect(tries).must_equal 10001
+    end
+
     it "#retriable will timeout after 1 second" do
       expect do
         subject.retriable timeout: 1 do
