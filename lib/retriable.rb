@@ -58,7 +58,7 @@ module Retriable
           patterns = [*on[exception.class]]
           message_match = patterns.empty? ? true : false
           patterns.each do |pattern|
-            if !!(exception.message =~ pattern)
+            if exception.message =~ pattern
               message_match = true
               break
             end
