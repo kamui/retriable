@@ -22,9 +22,10 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = '>= 1.9.3'
 
   spec.add_development_dependency "bundler", "~> 1.7"
-  spec.add_development_dependency "rake", "~> 10.4"
+  spec.add_development_dependency "rake", "~> 11.2"
 
   spec.add_development_dependency "minitest", "~> 5.6"
   spec.add_development_dependency "guard"
   spec.add_development_dependency "guard-minitest"
+  spec.add_development_dependency "listen", "~> 3.0.8"
 end
