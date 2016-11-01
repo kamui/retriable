@@ -257,7 +257,7 @@ describe Retriable do
         subject.retriable on: { TestError => /something went wrong/ } do
           raise SecondTestError.new('something went wrong')
         end
-      end.must_raise TestError
+      end.must_raise SecondTestError
 
       expect(e.message).must_equal "something went wrong"
     end
