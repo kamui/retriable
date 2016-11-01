@@ -55,13 +55,8 @@ module Retriable
         end
       rescue *[*exception_list] => exception
         if on.kind_of?(Hash)
-          message_match = false
-
-          exception_list.each do |e|
-            next unless exception.is_a?(e)
-
-            patterns = [*on[e]]
-            message_match = patterns.empty? || patterns.any? { |p| exception.message =~ p }
+          message_match = exception_list.select { |e| exception.is_a?(e) }.inject(false) do |match, e|
+            match || [*on[e]].empty? || [*on[e]].any? { |p| exception.message =~ p }
           end
 
           raise unless message_match
