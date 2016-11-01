@@ -90,7 +90,7 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
 
-`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type. Subclasses of the listed exceptions will also be caught.
+`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type. Subclasses of the listed exceptions will be retried and have their messages matched in the same way.
 
 `on_retry` - (default: nil) - Proc to call after each try is rescued.
 
