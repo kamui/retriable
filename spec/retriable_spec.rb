@@ -250,6 +250,18 @@ describe Retriable do
       expect(e.message).must_equal "something went wrong"
     end
 
+    it "retries on matching exception subclass" do
+      class SecondTestError < TestError; end
+
+      e = expect do
+        subject.retriable on: { TestError => /something went wrong/ } do
+          raise SecondTestError.new('something went wrong')
+        end
+      end.must_raise TestError
+
+      expect(e.message).must_equal "something went wrong"
+    end
+
     it "#retriable with a hash exception list where the values are exception message patterns" do
       tries = 0
       exceptions = []
