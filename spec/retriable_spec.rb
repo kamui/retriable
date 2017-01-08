@@ -243,7 +243,7 @@ describe Retriable do
     it "#retriable with a hash exception where the value is an exception message pattern" do
       e = expect do
         subject.retriable on: { TestError => /something went wrong/ } do
-          raise TestError.new('something went wrong')
+          raise TestError.new("something went wrong")
         end
       end.must_raise TestError
 
@@ -252,12 +252,17 @@ describe Retriable do
 
     it "#retriable with a hash exception list matches exception subclasses" do
       class SecondTestError < TestError; end
+      class DifferentTestError < Exception; end
 
       tries = 0
       e = expect do
-        subject.retriable on: { TestError => /something went wrong/ }, tries: 4 do
+        subject.retriable on: {
+            DifferentTestError => /should never happen/,
+            TestError => /something went wrong/,
+            DifferentTestError => /also should never happen/,
+          }, tries: 4 do
           tries += 1
-          raise SecondTestError.new('something went wrong')
+          raise SecondTestError.new("something went wrong")
         end
       end.must_raise SecondTestError
 
@@ -269,10 +274,10 @@ describe Retriable do
       class SecondTestError < TestError; end
 
       tries = 0
-      e = expect do
+      expect do
         subject.retriable on: { TestError => /something went wrong/ }, tries: 4 do
           tries += 1
-          raise SecondTestError.new('not a match')
+          raise SecondTestError.new("not a match")
         end
       end.must_raise SecondTestError
 
@@ -291,13 +296,13 @@ describe Retriable do
           tries += 1
           case tries
           when 1
-            raise TestError.new('foo')
+            raise TestError.new("foo")
           when 2
-            raise TestError.new('bar')
+            raise TestError.new("bar")
           when 3
             raise StandardError.new
           else
-            raise TestError.new('crash')
+            raise TestError.new("crash")
           end
         end
       end.must_raise TestError
