@@ -28,4 +28,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "guard"
   spec.add_development_dependency "guard-minitest"
   spec.add_development_dependency "listen", "~> 3.1"
+
+  if RUBY_VERSION < "2.3"
+    spec.add_development_dependency "ruby_dep", "~> 1.3.1"
+  end
 end
