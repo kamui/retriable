@@ -8,13 +8,11 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
 
 ## Requirements
 
-Ruby 1.9.3+
+Ruby 2.0.0+
 
-If you need ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x).
+If you need ruby 1.9.3 support, use the [2.x branch](https://github.com/kamui/retriable/tree/2.x) by specifying `~2.1` in your Gemfile.
 
-There's a [1.x to 2.x migration wiki entry](https://github.com/kamui/retriable/wiki/Migrating-to-2.x) available.
-
-WARNING: 2.x isn't API compatible with 1.x.
+If you need ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x) by specifying `~1.4` in your Gemfile.
 
 ## Installation
 
@@ -33,7 +31,7 @@ require 'retriable'
 In your Gemfile:
 
 ```ruby
-gem 'retriable', '~> 2.1'
+gem 'retriable', '~> 3.0'
 ```
 
 ## Usage
@@ -90,7 +88,7 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
 
-`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type.
+`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type. Subclasses of the listed exceptions will be retried and have their messages matched in the same way.
 
 `on_retry` - (default: nil) - Proc to call after each try is rescued.
 

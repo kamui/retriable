@@ -1,5 +1,10 @@
 ## HEAD
 
+## 3.0.0
+* Require ruby 2.0+.
+* Breaking Change: `on` with a `Hash` value now matches subclassed exceptions. Thanks @apurvis!
+* Remove `awesome_print` from development environment.
+
 ## 2.1.0
 
 * Fix bug #17 due to confusing the initial try as a retry.
