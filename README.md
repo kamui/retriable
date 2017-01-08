@@ -227,7 +227,6 @@ end
 Retriable.mysql.retriable do
   some_other_call
 end
-
 ```
 
 ### Ensure/Else
