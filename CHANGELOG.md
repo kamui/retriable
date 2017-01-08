@@ -1,5 +1,8 @@
 ## HEAD
 
+## 3.1.0
+* Added environments feature
+
 ## 3.0.0
 * Require ruby 2.0+.
 * Breaking Change: `on` with a `Hash` value now matches subclassed exceptions. Thanks @apurvis!
