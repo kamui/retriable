@@ -5,6 +5,14 @@ describe Retriable::Config do
     Retriable::Config
   end
 
+  before do
+    Retriable.reset!
+  end
+
+  after do
+    Retriable.reset!
+  end
+
   it "sleep defaults to enabled" do
     expect(subject.new.sleep_disabled).must_equal false
   end
@@ -43,5 +51,25 @@ describe Retriable::Config do
 
   it "on retry handler defaults to nil" do
     expect(subject.new.on_retry).must_be_nil
+  end
+
+  it "raises errors on invalid configuration" do
+    assert_raises ArgumentError do
+      Retriable.configure do |config|
+        config.environments = { aws: { yo: 'mtv raps' } }
+      end
+    end
+
+    assert_raises ArgumentError do
+      Retriable.configure do |config|
+        config.environments = { aws: 'yo' }
+      end
+    end
+
+    assert_raises ArgumentError do
+      Retriable.configure do |config|
+        config.environments = 'yo'
+      end
+    end
   end
 end
