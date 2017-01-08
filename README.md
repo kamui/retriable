@@ -211,12 +211,12 @@ The easiest way to coordinate sets of Retriable options across an app is via env
 
 ```ruby
 Retriable.configure do |c|
-  c.environments[:aws]      = { max_attempts: 3, delay_interval: 5 }
-  c.environments[:internal] = { max_attempts: 2, delay_interval: 0 }
+  c.environments[:aws]    = { max_attempts: 3, delay_interval: 5 }
+  c.environments[:mysql]  = { max_attempts: 2, delay_interval: 0 }
 end
 ```
 
-This will create two environments, `aws` and `internal`, which allow you to employ different backoff strategies without continually passing those strategy options to the `retriable` method.
+This will create two environments, `aws` and `mysql`, which allow you to employ different backoff strategies without continually passing those strategy options to the `retriable` method.
 These are employed simply by calling `Retriable.environment_name.retriable`:
 
 ```ruby
@@ -224,7 +224,7 @@ Retriable.aws.retriable do
   aws_call
 end
 
-Retriable.internal.retriable do
+Retriable.mysql.retriable do
   some_other_call
 end
 
