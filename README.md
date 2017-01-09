@@ -89,6 +89,7 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 `timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
 
 `on` (default: [StandardError]) - An `Array` of exceptions to retry or a `Hash` where the keys are `Exception` classes.  When using a hash, the values can be:
+
 1. `nil` - catch all of the exceptions of class `key` (and their subclasses)
 1. A single `Regexp` patterns - catch all of the exceptions of class `key` (and their subclasses) with a message matching `value`
 1. A list of `Regexp` patterns - catch all of the exceptions of class `key` (and their subclasses) with a message matching a `Regexp` in the list
