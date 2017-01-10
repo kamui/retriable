@@ -40,8 +40,7 @@ module Retriable
       elsif @on.is_a?(Hash)
         @on.each do |k, v|
           next if v.nil? || v.is_a?(Regexp)
-          raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array)
-          raise ArgumentError, invalid_config_message(:on) unless v.all? { |regex| regex.is_a?(Regexp) }
+          raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
         end
       else
         raise ArgumentError, invalid_config_message(:on)
