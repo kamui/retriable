@@ -37,6 +37,12 @@ describe Retriable do
         config.environments = 'yo'
       end
     end
+
+    assert_raises ArgumentError do
+      Retriable.configure do |config|
+        config.environments = { retriable: { max_elapsed_time: 500 } }
+      end
+    end
   end
 
   it "additional_environments can be added" do

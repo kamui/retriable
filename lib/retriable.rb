@@ -9,7 +9,7 @@ module Retriable
 
   def configure
     yield(config)
-    config.validate_environments
+    config.validate!
   end
 
   def config

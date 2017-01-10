@@ -91,8 +91,8 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 `on` (default: [StandardError]) - An `Array` of exceptions to retry or a `Hash` where the keys are `Exception` classes.  When using a hash, the values can be:
 
 1. `nil` - catch all of the exceptions of class `key` (and their subclasses)
-1. A single `Regexp` patterns - catch all of the exceptions of class `key` (and their subclasses) with a message matching `value`
-1. A list of `Regexp` patterns - catch all of the exceptions of class `key` (and their subclasses) with a message matching a `Regexp` in the list
+1. A single `Regexp` pattern - catch all of the exceptions of class `key` (and their subclasses) with an exception message matching the `Regexp`
+1. An array of `Regexp` patterns - catch all of the exceptions of class `key` (and their subclasses) if the exception message matches a `Regexp` in the array
 
 `on_retry` - (default: nil) - Proc to call after each try is rescued.
 
