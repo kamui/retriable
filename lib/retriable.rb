@@ -6,8 +6,6 @@ require_relative "retriable/version"
 module Retriable
   extend self
 
-  attr_reader :config
-
   def self.configure
     yield(config)
   end
