@@ -33,8 +33,6 @@ module Retriable
     end
 
     def validate!
-      validate_environments!
-
       if @on.is_a?(Array)
         raise ArgumentError, invalid_config_message(:on) unless @on.all? { |e| e.is_a?(Class) }
       elsif @on.is_a?(Hash)
@@ -48,20 +46,6 @@ module Retriable
     end
 
     private
-
-    def validate_environments!
-      raise ArgumentError, ":environments must be a hash (#{@environments})" unless @environments.is_a?(Hash)
-
-      @environments = Hash[
-        @environments.map do |k, e|
-          [k.to_sym, e.is_a?(Environment) ? e : Environment.new(e)]
-        end
-      ]
-
-      unless (overloaded_methods = (@environments.keys & Retriable.methods)).empty?
-        raise ArgumentError, "Can't use method names #{overloaded_methods.join(',')} as environment keys"
-      end
-    end
 
     def invalid_config_message(param)
       "Invalid configuration of #{param}: #{public_send(param)}"

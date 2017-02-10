@@ -1,6 +1,5 @@
 require "timeout"
 require_relative "retriable/config"
-require_relative "retriable/environment"
 require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
 
@@ -9,7 +8,6 @@ module Retriable
 
   def configure
     yield(config)
-    config.validate!
   end
 
   def config
@@ -72,18 +70,6 @@ module Retriable
         raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
         sleep interval if config.sleep_disabled != true
       end
-    end
-  end
-
-  def respond_to?(method_sym, options = {}, &block)
-    super || config.environments.key?(method_sym)
-  end
-
-  def method_missing(method_sym, options = {}, &block)
-    if config.environments.key?(method_sym)
-      config.environments[method_sym]
-    else
-      super
     end
   end
 end
