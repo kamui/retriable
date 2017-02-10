@@ -7,11 +7,11 @@ module Retriable
       :max_interval,
       :multiplier,
       :on,
-      :on_retry
+      :on_retry,
       :rand_factor,
       :sleep_disabled,
       :timeout,
-      :tries,
+      :tries
     ]
 
     PROPERTIES.each { |p| attr_accessor p }

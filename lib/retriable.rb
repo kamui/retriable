@@ -8,6 +8,7 @@ module Retriable
 
   def configure
     yield(config)
+    config.validate!
   end
 
   def config
