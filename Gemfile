@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gemspec name: 'retriable'
+gemspec
 
 group :test do
   # gem "ruby_gntp"

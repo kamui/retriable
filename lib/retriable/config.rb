@@ -1,20 +1,19 @@
 module Retriable
   class Config
     PROPERTIES = [
-      :sleep_disabled,
-      :tries,
       :base_interval,
-      :max_interval,
-      :rand_factor,
-      :multiplier,
-      :max_elapsed_time,
       :intervals,
-      :timeout,
+      :max_elapsed_time,
+      :max_interval,
+      :multiplier,
       :on,
       :on_retry
+      :rand_factor,
+      :sleep_disabled,
+      :timeout,
+      :tries,
     ]
 
-    attr_accessor :environments
     PROPERTIES.each { |p| attr_accessor p }
 
     def initialize
@@ -29,7 +28,6 @@ module Retriable
       @timeout           = nil
       @on                = [StandardError]
       @on_retry          = nil
-      @environments      = {}
     end
 
     def validate!
