@@ -1,7 +1,7 @@
 ## HEAD
 
 ## 3.1.0
-* Added environments feature
+* Added contexts feature
 * Add validation of :on parameter in main config
 
 ## 3.0.0

@@ -1,15 +1,15 @@
 require 'retriable'
-require 'retriable_environments/config.rb'
-require 'retriable_environments/environment'
+require 'retriable_contexts/config.rb'
+require 'retriable_contexts/context'
 
 module Retriable
   def respond_to_missing?(method_sym, options = {}, &block)
-    config.environments.key?(method_sym) || super
+    config.contexts.key?(method_sym) || super
   end
 
   def method_missing(method_sym, options = {}, &block)
-    if config.environments.key?(method_sym)
-      Environment.new(config.environments[method_sym].merge(options)).retriable(&block) if block
+    if config.contexts.key?(method_sym)
+      Context.new(config.contexts[method_sym].merge(options)).retriable(&block) if block
     else
       super
     end
