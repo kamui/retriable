@@ -209,14 +209,20 @@ Retriable.retriable on_retry: do_this_on_each_retry do
 end
 ```
 
-### Environments
+### RetriableEnvironments
 
-The easiest way to coordinate sets of Retriable options across an app is via environments--these are basically option hashes configured in Retriable by name:
+There is a separate plugin to enable the environments feature.  It's not included by default; to use it do:
+
+```ruby
+require 'retriable_environments'
+```
+
+Environments allow you to coordinate sets of Retriable options across an application.  Each environment is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
 
 ```ruby
 Retriable.configure do |c|
-  c.environments[:aws]    = { max_attempts: 3, delay_interval: 5 }
-  c.environments[:mysql]  = { max_attempts: 2, delay_interval: 0 }
+  c.environments[:aws]    = { max_attempts: 3, delay_interval: 5, on_retry: Proc.new { puts 'Curse you, AWS!' } }
+  c.environments[:mysql]  = { max_attempts: 10, delay_interval: 0, on: ActiveRecord::QueryException }
 end
 ```
 

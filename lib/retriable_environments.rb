@@ -1,3 +1,4 @@
+require 'retriable'
 require 'retriable_environments/config.rb'
 require 'retriable_environments/environment'
 
