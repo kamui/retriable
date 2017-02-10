@@ -4,20 +4,9 @@ module Retriable
       @environments ||= {}
     end
 
-    private
-
-    def validate_environments!
-      raise ArgumentError, ":environments must be a hash (#{@environments})" unless @environments.is_a?(Hash)
-
-      @environments = Hash[
-        @environments.map do |k, e|
-          [k.to_sym, e.is_a?(Environment) ? e : Environment.new(e)]
-        end
-      ]
-
-      unless (overloaded_methods = (@environments.keys & Retriable.methods)).empty?
-        raise ArgumentError, "Can't use method names #{overloaded_methods.join(',')} as environment keys"
-      end
+    def environments=(environments_hash)
+      raise ArgumentError, 'environments must be a hash' unless environments_hash.is_a?(Hash)
+      @environments = environments_hash
     end
   end
 end

@@ -1,4 +1,4 @@
-require_relative 'spec_helper'
+  require_relative 'spec_helper'
 
 describe Retriable do
   subject do
@@ -24,23 +24,19 @@ describe Retriable do
       Retriable.configure do |config|
         config.environments = { aws: { yo: 'mtv raps' } }
       end
+      Retriable.aws
     end
 
     assert_raises ArgumentError do
       Retriable.configure do |config|
         config.environments = { aws: 'yo' }
       end
+      Retriable.aws
     end
 
     assert_raises ArgumentError do
       Retriable.configure do |config|
         config.environments = 'yo'
-      end
-    end
-
-    assert_raises ArgumentError do
-      Retriable.configure do |config|
-        config.environments = { retriable: { max_elapsed_time: 500 } }
       end
     end
   end
