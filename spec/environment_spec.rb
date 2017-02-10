@@ -13,48 +13,48 @@ describe Retriable do
     Retriable.reset!
   end
 
-  it "accepts environment configurations" do
+  it "accepts context configurations" do
     Retriable.configure do |config|
-      config.environments = { ecs: { max_elapsed_time: 500 } }
+      config.contexts = { ecs: { max_elapsed_time: 500 } }
     end
   end
 
   it "raises errors on invalid configuration" do
     assert_raises ArgumentError do
       Retriable.configure do |config|
-        config.environments = { aws: { yo: 'mtv raps' } }
+        config.contexts = { aws: { yo: 'mtv raps' } }
       end
       Retriable.aws { 1 + 1 }
     end
 
     assert_raises ArgumentError do
       Retriable.configure do |config|
-        config.environments = { aws: 'yo' }
+        config.contexts = { aws: 'yo' }
       end
       Retriable.aws { 1 + 1 }
     end
 
     assert_raises ArgumentError do
       Retriable.configure do |config|
-        config.environments = 'yo'
+        config.contexts = 'yo'
       end
     end
   end
 
-  it "additional_environments can be added" do
+  it "additional_contexts can be added" do
     Retriable.configure do |config|
-      config.environments = { aws: { max_elapsed_time: 500 } }
+      config.contexts = { aws: { max_elapsed_time: 500 } }
     end
 
     Retriable.configure do |config|
-      config.environments[:s3] = { max_elapsed_time: 1500 }
+      config.contexts[:s3] = { max_elapsed_time: 1500 }
     end
 
     Retriable.aws
     Retriable.s3
   end
 
-  it 'will not use a nonexistent environment' do
+  it 'will not use a nonexistent context' do
     expect do
       Retriable.heroku do
         tries += 1
@@ -63,11 +63,11 @@ describe Retriable do
     end.must_raise NoMethodError
   end
 
-  it 'uses a configured environment' do
+  it 'uses a configured context' do
     tries = 0
 
     subject.configure do |c|
-      c.environments[:aws] = {
+      c.contexts[:aws] = {
         base_interval: 0.1,
         multiplier: 0.1,
         tries: 5
@@ -84,11 +84,11 @@ describe Retriable do
     expect(tries).must_equal(5)
   end
 
-  it 'overloads part of a configured environment' do
+  it 'overloads part of a configured context' do
     tries = 0
 
     subject.configure do |c|
-      c.environments[:aws] = {
+      c.contexts[:aws] = {
         base_interval: 0.1,
         multiplier: 0.1,
         tries: 5

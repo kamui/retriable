@@ -11,4 +11,4 @@ require "minitest/autorun"
 require "minitest/focus"
 require "pry"
 
-require_relative "../lib/retriable_environments"
+require_relative "../lib/retriable_contexts"

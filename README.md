@@ -209,24 +209,24 @@ Retriable.retriable on_retry: do_this_on_each_retry do
 end
 ```
 
-### RetriableEnvironments
+### RetriableContexts
 
-There is a separate plugin to enable the environments feature.  It's not included by default; to use it do:
+There is a separate plugin to enable the contexts feature.  It's not included by default; to use it do:
 
 ```ruby
-require 'retriable_environments'
+require 'retriable_contexts'
 ```
 
-Environments allow you to coordinate sets of Retriable options across an application.  Each environment is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
+Contextss allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
 
 ```ruby
 Retriable.configure do |c|
-  c.environments[:aws] = {
+  c.contexts[:aws] = {
     tries: 3,
     base_interval: 5,
     on_retry: Proc.new { puts 'Curse you, AWS!' }
   }
-  c.environments[:mysql] = {
+  c.contexts[:mysql] = {
     tries: 10,
     multiplier: 2.5,
     on: Mysql::DeadlockException
@@ -234,8 +234,9 @@ Retriable.configure do |c|
 end
 ```
 
-This will create two environments, `aws` and `mysql`, which allow you to employ different backoff strategies without continually passing those strategy options to the `retriable` method.
-These are employed simply by calling `Retriable.environment_name.retriable`:
+This will create two context, `aws` and `mysql`, which allow you to employ different backoff strategies without continually passing those strategy options to the `retriable` method.
+
+These are employed simply by calling `Retriable.name_of_context`:
 
 ```ruby
 Retriable.aws do
@@ -247,7 +248,7 @@ Retriable.mysql do
 end
 ```
 
-You can even temporarily override a configured environment:
+You can even temporarily override a configured context:
 
 ```ruby
 Retriable.aws do
