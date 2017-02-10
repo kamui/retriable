@@ -24,14 +24,14 @@ describe Retriable do
       Retriable.configure do |config|
         config.environments = { aws: { yo: 'mtv raps' } }
       end
-      Retriable.aws
+      Retriable.aws { 1 + 1 }
     end
 
     assert_raises ArgumentError do
       Retriable.configure do |config|
         config.environments = { aws: 'yo' }
       end
-      Retriable.aws
+      Retriable.aws { 1 + 1 }
     end
 
     assert_raises ArgumentError do
@@ -56,7 +56,7 @@ describe Retriable do
 
   it 'will not use a nonexistent environment' do
     expect do
-      Retriable.heroku.retriable do
+      Retriable.heroku do
         tries += 1
         raise EOFError.new
       end
@@ -75,12 +75,33 @@ describe Retriable do
     end
 
     expect do
-      Retriable.aws.retriable do
+      Retriable.aws do
         tries += 1
-        raise EOFError.new
+        raise EOFError
       end
     end.must_raise EOFError
 
     expect(tries).must_equal(5)
+  end
+
+  it 'overloads part of a configured environment' do
+    tries = 0
+
+    subject.configure do |c|
+      c.environments[:aws] = {
+        base_interval: 0.1,
+        multiplier: 0.1,
+        tries: 5
+      }
+    end
+
+    expect do
+      Retriable.aws(tries: 10) do
+        tries += 1
+        raise EOFError
+      end
+    end.must_raise EOFError
+
+    expect(tries).must_equal(10)
   end
 end

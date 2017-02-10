@@ -4,9 +4,12 @@ module Retriable
       @environments ||= {}
     end
 
-    def environments=(environments_hash)
-      raise ArgumentError, 'environments must be a hash' unless environments_hash.is_a?(Hash)
-      @environments = environments_hash
+    def environments=(envs)
+      if envs.is_a?(Hash) && envs.values.all? { |e| e.is_a? Hash }
+        @environments = envs
+      else
+        raise ArgumentError, 'environments must be a hash of hashes'
+      end
     end
   end
 end

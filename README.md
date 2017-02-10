@@ -229,7 +229,7 @@ Retriable.configure do |c|
   c.environments[:mysql] = {
     tries: 10,
     multiplier: 2.5,
-    on: ActiveRecord::QueryException
+    on: Mysql::DeadlockException
   }
 end
 ```
@@ -238,12 +238,24 @@ This will create two environments, `aws` and `mysql`, which allow you to employ 
 These are employed simply by calling `Retriable.environment_name.retriable`:
 
 ```ruby
-Retriable.aws.retriable do
+Retriable.aws do
   aws_call
 end
 
-Retriable.mysql.retriable do
-  some_other_call
+Retriable.mysql do
+  write_to_table
+end
+```
+
+You can even temporarily override a configured environment:
+
+```ruby
+Retriable.aws do
+  aws_call
+end
+
+Retriable.mysql(tries: 30) do
+  write_to_table
 end
 ```
 
