@@ -9,7 +9,7 @@ module Retriable
 
   def method_missing(method_sym, options = {}, &block)
     if config.environments.key?(method_sym)
-      config.environments[method_sym]
+      Environment.new(config.environments[method_sym])
     else
       super
     end

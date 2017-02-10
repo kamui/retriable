@@ -221,8 +221,16 @@ Environments allow you to coordinate sets of Retriable options across an applica
 
 ```ruby
 Retriable.configure do |c|
-  c.environments[:aws]    = { max_attempts: 3, delay_interval: 5, on_retry: Proc.new { puts 'Curse you, AWS!' } }
-  c.environments[:mysql]  = { max_attempts: 10, delay_interval: 0, on: ActiveRecord::QueryException }
+  c.environments[:aws] = {
+    tries: 3,
+    base_interval: 5,
+    on_retry: Proc.new { puts 'Curse you, AWS!' }
+  }
+  c.environments[:mysql] = {
+    tries: 10,
+    multiplier: 2.5,
+    on: ActiveRecord::QueryException
+  }
 end
 ```
 
