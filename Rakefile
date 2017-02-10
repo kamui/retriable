@@ -9,7 +9,6 @@ task default: :test
 desc "Run tests"
 task :test do
   Rake::TestTask.new do |t|
-    t.libs << "lib" << "spec"
     t.pattern = "spec/**/*_spec.rb"
     t.verbose = true
   end
