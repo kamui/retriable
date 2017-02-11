@@ -5,7 +5,7 @@ module Retriable
     end
 
     def contexts=(envs)
-      if envs.is_a?(Hash) && envs.values.all? { |e| e.is_a?(Hash) && Context.new(e) }
+      if envs.is_a?(Hash) && envs.values.all? { |e| e.is_a?(Hash) && Context.validate(e) }
         @contexts = envs
       else
         raise ArgumentError, 'contexts must be a hash of hashes'
