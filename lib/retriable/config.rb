@@ -32,9 +32,10 @@ module Retriable
 
     def validate!
       if @on.is_a?(Array)
-        raise ArgumentError, invalid_config_message(:on) unless @on.all? { |e| e.is_a?(Class) }
+        raise ArgumentError, invalid_config_message(:on) unless @on.all? { |e| e < Exception }
       elsif @on.is_a?(Hash)
         @on.each do |k, v|
+          raise ArgumentError, "'#{k}' is not an Exception" unless k < Exception
           next if v.nil? || v.is_a?(Regexp)
           raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
         end
