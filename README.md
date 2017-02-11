@@ -217,7 +217,7 @@ There is a separate plugin to enable the contexts feature.  It's not included by
 require 'retriable_contexts'
 ```
 
-Contextss allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
+Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
 
 ```ruby
 Retriable.configure do |c|
@@ -234,9 +234,9 @@ Retriable.configure do |c|
 end
 ```
 
-This will create two context, `aws` and `mysql`, which allow you to employ different backoff strategies without continually passing those strategy options to the `retriable` method.
+This will create two contexts, `aws` and `mysql`, which allow you to reuse different backoff strategies across your application without continually passing those strategy options to the `retriable` method.
 
-These are employed simply by calling `Retriable.name_of_context`:
+These are used simply by calling `Retriable.name_of_context`:
 
 ```ruby
 # Will retry all exceptions
