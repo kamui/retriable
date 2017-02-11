@@ -53,8 +53,8 @@ module Retriable
         end
       rescue *[*exception_list] => exception
         if on.kind_of?(Hash)
-          raise unless exception_list.select { |e| exception.is_a?(e) }.any? do |e|
-            [*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern }
+          raise unless exception_list.any? do |e|
+            exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
           end
         end
 
