@@ -7,9 +7,9 @@ module Retriable
   end
 
   def method_missing(method_sym, options = {}, &block)
-    if config.contexts.key?(method_sym)
-      Config.validate_options(config.contexts[method_sym])
-      retriable(config.contexts[method_sym].merge(options), &block) if block
+    if (context = config.contexts[method_sym])
+      Config.validate_options(context)
+      retriable(context.merge(options), &block) if block
     else
       super
     end
