@@ -239,10 +239,12 @@ This will create two context, `aws` and `mysql`, which allow you to employ diffe
 These are employed simply by calling `Retriable.name_of_context`:
 
 ```ruby
+# Will retry all exceptions
 Retriable.aws do
   aws_call
 end
 
+# Will retry Mysql::DeadlockException
 Retriable.mysql do
   write_to_table
 end
@@ -251,10 +253,6 @@ end
 You can even temporarily override a configured context:
 
 ```ruby
-Retriable.aws do
-  aws_call
-end
-
 Retriable.mysql(tries: 30) do
   write_to_table
 end
