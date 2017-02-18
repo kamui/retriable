@@ -6,12 +6,17 @@ require_relative "retriable/version"
 module Retriable
   extend self
 
-  def self.configure
+  def configure
     yield(config)
+    config.validate!
   end
 
   def config
     @config ||= Config.new
+  end
+
+  def reset!
+    @config = Config.new
   end
 
   def retriable(opts = {})

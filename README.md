@@ -1,4 +1,4 @@
-#Retriable
+# Retriable
 
 [![Build Status](https://secure.travis-ci.org/kamui/retriable.svg)](http://travis-ci.org/kamui/retriable)
 [![Code Climate](https://codeclimate.com/github/kamui/retriable/badges/gpa.svg)](https://codeclimate.com/github/kamui/retriable)
@@ -88,7 +88,11 @@ randomized_interval = retry_interval * (random value in range [1 - randomization
 
 `timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
 
-`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type. Subclasses of the listed exceptions will be retried and have their messages matched in the same way.
+`on` (default: [StandardError]) - An `Array` of exceptions to retry or a `Hash` where the keys are `Exception` classes.  When using a hash, the values can be:
+
+1. `nil` - catch all of the exceptions of class `key` (and their subclasses)
+1. A single `Regexp` pattern - catch all of the exceptions of class `key` (and their subclasses) with an exception message matching the `Regexp`
+1. An array of `Regexp` patterns - catch all of the exceptions of class `key` (and their subclasses) if the exception message matches a `Regexp` in the array
 
 `on_retry` - (default: nil) - Proc to call after each try is rescued.
 
@@ -202,6 +206,55 @@ end
 
 Retriable.retriable on_retry: do_this_on_each_retry do
   # code here...
+end
+```
+
+### RetriableContexts
+
+There is a separate plugin to enable the contexts feature.  It's not included by default; to use it do:
+
+```ruby
+require 'retriable_contexts'
+```
+
+Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
+
+```ruby
+Retriable.configure do |c|
+  c.contexts[:aws] = {
+    tries: 3,
+    base_interval: 5,
+    on_retry: Proc.new { puts 'Curse you, AWS!' }
+  }
+  c.contexts[:mysql] = {
+    tries: 10,
+    multiplier: 2.5,
+    on: Mysql::DeadlockException
+  }
+end
+```
+
+This will create two contexts, `aws` and `mysql`, which allow you to reuse different backoff strategies across your application without continually passing those strategy options to the `retriable` method.
+
+These are used simply by calling `Retriable.name_of_context`:
+
+```ruby
+# Will retry all exceptions
+Retriable.aws do
+  aws_call
+end
+
+# Will retry Mysql::DeadlockException
+Retriable.mysql do
+  write_to_table
+end
+```
+
+You can even temporarily override a configured context:
+
+```ruby
+Retriable.mysql(tries: 30) do
+  write_to_table
 end
 ```
 

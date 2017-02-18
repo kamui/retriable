@@ -1,16 +1,20 @@
 module Retriable
   class Config
-    attr_accessor :sleep_disabled
-    attr_accessor :tries
-    attr_accessor :base_interval
-    attr_accessor :max_interval
-    attr_accessor :rand_factor
-    attr_accessor :multiplier
-    attr_accessor :max_elapsed_time
-    attr_accessor :intervals
-    attr_accessor :timeout
-    attr_accessor :on
-    attr_accessor :on_retry
+    PROPERTIES = [
+      :base_interval,
+      :intervals,
+      :max_elapsed_time,
+      :max_interval,
+      :multiplier,
+      :on,
+      :on_retry,
+      :rand_factor,
+      :sleep_disabled,
+      :timeout,
+      :tries
+    ]
+
+    PROPERTIES.each { |p| attr_accessor p }
 
     def initialize
       @sleep_disabled    = false
@@ -24,6 +28,26 @@ module Retriable
       @timeout           = nil
       @on                = [StandardError]
       @on_retry          = nil
+    end
+
+    def validate!
+      if @on.is_a?(Array)
+        raise ArgumentError, invalid_config_message(:on) unless @on.all? { |e| e < Exception }
+      elsif @on.is_a?(Hash)
+        @on.each do |k, v|
+          raise ArgumentError, "'#{k}' is not an Exception" unless k < Exception
+          next if v.nil? || v.is_a?(Regexp)
+          raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
+        end
+      else
+        raise ArgumentError, invalid_config_message(:on)
+      end
+    end
+
+    private
+
+    def invalid_config_message(param)
+      "Invalid configuration of #{param}: #{public_send(param)}"
     end
   end
 end
