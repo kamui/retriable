@@ -1,18 +1,21 @@
 module Retriable
   class Config
-    PROPERTIES = [
+    NUMERIC_PROPERTIES = [
       :base_interval,
-      :intervals,
       :max_elapsed_time,
       :max_interval,
       :multiplier,
+      :rand_factor,
+      :tries
+    ].freeze
+
+    PROPERTIES = NUMERIC_PROPERTIES + [
+      :intervals,
       :on,
       :on_retry,
-      :rand_factor,
       :sleep_disabled,
-      :timeout,
-      :tries
-    ]
+      :timeout
+    ].freeze
 
     PROPERTIES.each { |p| attr_accessor p }
 
@@ -91,7 +94,7 @@ module Retriable
         raise_invalid_config_message(:intervals)
       end
 
-      [:tries, :base_interval, :max_interval, :rand_factor, :multiplier, :max_elapsed_time].each do |option|
+      NUMERIC_PROPERTIES.each do |option|
         raise_invalid_config_message(option) if public_send(option) && !public_send(option).is_a?(Numeric)
       end
     end
