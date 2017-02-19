@@ -69,5 +69,9 @@ describe Retriable::Config do
     assert_raises ArgumentError do
       Retriable.configure { |c| c.on = { StandardError => [1, 2] } }
     end
+
+    assert_raises ArgumentError do
+      Retriable.configure { |c| c.on_retry = '1234' }
+    end
   end
 end

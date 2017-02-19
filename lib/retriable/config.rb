@@ -97,6 +97,8 @@ module Retriable
       NUMERIC_PROPERTIES.each do |option|
         raise_invalid_config_message(option) if public_send(option) && !public_send(option).is_a?(Numeric)
       end
+
+      raise_invalid_config_message(:on_retry) if on_retry && !on_retry.is_a?(Proc)
     end
 
     private
