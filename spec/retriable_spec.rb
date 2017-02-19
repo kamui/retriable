@@ -56,7 +56,7 @@ describe Retriable do
       expect do
         subject.retriable do
           tries += 1
-          raise TestError.new, "TestError occurred"
+          raise TestError, "TestError occurred"
         end
       end.must_raise TestError
 
@@ -69,7 +69,7 @@ describe Retriable do
       expect do
         subject.retriable on: TestError do
           tries += 1
-          raise TestError.new, "TestError occurred"
+          raise TestError, "TestError occurred"
         end
       end.must_raise TestError
 
@@ -239,12 +239,15 @@ describe Retriable do
     end
 
     it "#retriable with a hash exception where the value is an exception message pattern" do
+      tries = 0
       e = expect do
         subject.retriable on: { TestError => /something went wrong/ } do
+          tries += 1
           raise TestError, "something went wrong"
         end
       end.must_raise TestError
 
+      expect(tries).must_equal(10)
       expect(e.message).must_equal "something went wrong"
     end
 
