@@ -1,5 +1,11 @@
 ## HEAD
 
+## 3.0.1
+* Add `rubocop` linter to enforce coding styles for this library. Also, fix rule violations.
+* Removed `attr_reader :config` that caused a warning. @bruno-
+* Clean up Rakefile testing cruft. @bruno-
+* Use `.any?` in the `:on` hash processing. @apurvis
+
 ## 3.0.0
 * Require ruby 2.0+.
 * Breaking Change: `on` with a `Hash` value now matches subclassed exceptions. Thanks @apurvis!
