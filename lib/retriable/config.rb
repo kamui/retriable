@@ -6,6 +6,7 @@ module Retriable
       :max_interval,
       :multiplier,
       :rand_factor,
+      :timeout,      
       :tries
     ].freeze
 
@@ -13,8 +14,7 @@ module Retriable
       :intervals,
       :on,
       :on_retry,
-      :sleep_disabled,
-      :timeout
+      :sleep_disabled
     ].freeze
 
     PROPERTIES.each { |p| attr_accessor p }
