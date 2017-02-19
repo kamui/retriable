@@ -16,10 +16,8 @@ module Retriable
 
     def intervals
       intervals = Array.new(tries) do |iteration|
-        [base_interval * multiplier**iteration, max_interval].min
+        [base_interval * multiplier ** iteration, max_interval].min
       end
-
-      return intervals if rand_factor.zero?
 
       intervals.map { |i| randomize(i) }
     end
@@ -27,8 +25,7 @@ module Retriable
     private
 
     def randomize(interval)
-      return interval if rand_factor.zero?
-      delta = rand_factor * interval * 1.0
+      delta = rand_factor * interval
       min = interval - delta
       max = interval + delta
       rand(min..max)
