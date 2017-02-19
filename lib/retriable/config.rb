@@ -33,10 +33,7 @@ module Retriable
     def retriable(opts = {})
       opts.each do |k, v|
         raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
-      end
-
-      PROPERTIES.each do |property|
-        public_send("#{property}=", opts[property] || public_send(property))
+        public_send("#{k}=", v) if v
       end
 
       validate!
