@@ -68,38 +68,30 @@ end
 
 Here are the available options:
 
-`tries` (default: 3) - Number of attempts to make at running your code block (includes intial attempt).
+| Option | Default | Definition |
+| ------ | ------- | ---------- |
+| **`tries`** | `3` | Number of attempts to make at running your code block (includes intial attempt). |
+| **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
+| **`max_interval`** | `60` | The maximum interval in seconds that any try can reach. |
+| **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
+| **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
+| **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time that code is allowed to keep being retried. |
+| **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. *Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.* |
+| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
+| **`on`** | `[StandardError]` | See below. |
+| **`on_retry`** | `nil` | Proc to call after each try is rescued. |
 
-`base_interval` (default: 0.5) - The initial interval in seconds between tries.
+#### Configuring Which Options to Retry With :on
+**`:on`** Can take the form:
 
-`max_interval` (default: 60) - The maximum interval in seconds that any try can reach.
-
-`rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this:
-
-```
-randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])
-```
-
-`multiplier` (default: 1.5) - Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.
-
-`max_elapsed_time`  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried.
-
-`intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
-
-`timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
-
-`on` (default: [StandardError]) - One of:
-
-1. An `Exception` class
-1. An `Array` of `Exception` classes to rescue for each try
+1. An `Exception` class (retry every exception of this type, including subclasses)
+1. An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
 1. A `Hash` where the keys are `Exception` classes and the values are one of:
-  1. `nil` (retries everything that is a subclass of the key)
-  1. A single `Regexp` pattern (retries exceptions that are subclasses of the key ONLY if they match the pattern)
-  1. An array of patterns (retries exceptions that are subclasses of the key ONLY if they match the pattern)
+  1. `nil`(retry every exception of the key's type, including subclasses)
+  1. A single `Regexp` pattern (retries exceptions ONLY if they match the pattern)
+  1. An array of patterns (retries exceptions ONLY if they match at least one of the patterns)
 
-`on_retry` - (default: nil) - Proc to call after each try is rescued.
-
-### Config
+### Configuring Defaults
 
 You can change the global defaults with a `#configure` block:
 
@@ -108,6 +100,8 @@ Retriable.configure do |c|
   c.tries = 5
   c.max_elapsed_time = 3600 # 1 hour
 end
+
+(The configurable defaults are exactly the same as the options)
 ```
 
 ### Examples
