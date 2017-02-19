@@ -10,10 +10,6 @@ describe Retriable do
     Retriable.reset!
   end
 
-  after do
-    Retriable.reset!
-  end
-
   it "accepts context configurations" do
     Retriable.configure do |config|
       config.contexts = { ecs: { max_elapsed_time: 500 } }
