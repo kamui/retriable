@@ -222,7 +222,7 @@ describe Retriable do
           intervals: intervals,
         ) do
           try_count += 1
-          raise StandardError.new, "StandardError occurred"
+          raise StandardError, "StandardError occurred"
         end
       end.must_raise StandardError
 
