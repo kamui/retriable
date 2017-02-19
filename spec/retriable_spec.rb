@@ -247,7 +247,7 @@ describe Retriable do
         end
       end.must_raise TestError
 
-      expect(tries).must_equal(10)
+      expect(tries).must_equal(3)
       expect(e.message).must_equal "something went wrong"
     end
 

@@ -86,7 +86,7 @@ module Retriable
           next if v.nil? || v.is_a?(Regexp)
           raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
         end
-      elsif !on.is_a?(Exception)
+      elsif !(on < Exception)
         raise ArgumentError, invalid_config_message(:on)
       end
 
