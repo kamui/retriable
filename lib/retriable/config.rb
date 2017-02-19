@@ -39,6 +39,7 @@ module Retriable
       validate!
       start_time = Time.now
       elapsed_time = -> { Time.now - start_time }
+      exception_list = on.is_a?(Hash) ? on.keys : on
 
       if intervals
         @tries = intervals.size + 1
@@ -51,8 +52,6 @@ module Retriable
           rand_factor:    rand_factor,
         ).intervals
       end
-
-      exception_list = on.is_a?(Hash) ? on.keys : on
 
       tries.times do |index|
         try = index + 1
