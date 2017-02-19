@@ -40,7 +40,6 @@ module Retriable
       end
 
       validate!
-
       start_time = Time.now
       elapsed_time = -> { Time.now - start_time }
 
@@ -80,14 +79,14 @@ module Retriable
 
     def validate!
       if on.is_a?(Array)
-        raise ArgumentError, invalid_config_message(:on) unless on.all? { |e| e < Exception }
+        raise ArgumentError, invalid_config_message(:on) unless on.all? { |e| valid_exception?(e) }
       elsif on.is_a?(Hash)
         on.each do |k, v|
-          raise ArgumentError, "'#{k}' is not an Exception" unless k < Exception
+          raise ArgumentError, "'#{k}' is not an Exception" unless valid_exception?(k)
           next if v.nil? || v.is_a?(Regexp)
           raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
         end
-      elsif !(on < Exception)
+      elsif !valid_exception?(on)
         raise ArgumentError, invalid_config_message(:on)
       end
 
@@ -100,6 +99,10 @@ module Retriable
 
     def invalid_config_message(param)
       "Invalid configuration of #{param}: #{public_send(param)}"
+    end
+
+    def valid_exception?(e)
+      e.is_a?(Class) && e < Exception
     end
   end
 end

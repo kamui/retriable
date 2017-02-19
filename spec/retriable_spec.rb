@@ -11,6 +11,10 @@ describe Retriable do
     srand 0
   end
 
+  after do
+    Retriable.reset!
+  end
+
   describe "with sleep disabled" do
     before do
       Retriable.configure do |c|

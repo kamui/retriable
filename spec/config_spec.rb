@@ -5,6 +5,10 @@ describe Retriable::Config do
     Retriable::Config
   end
 
+  after do
+    Retriable.reset!
+  end
+
   it "sleep defaults to enabled" do
     expect(subject.new.sleep_disabled).must_equal false
   end
@@ -43,5 +47,19 @@ describe Retriable::Config do
 
   it "on retry handler defaults to nil" do
     expect(subject.new.on_retry).must_be_nil
+  end
+
+  it "raises errors on invalid configuration" do
+    assert_raises ArgumentError do
+      Retriable.configure { |c| c.on = 1234 }
+    end
+
+    assert_raises ArgumentError do
+      Retriable.configure { |c| c.on = { StandardError => StandardError } }
+    end
+
+    assert_raises ArgumentError do
+      Retriable.configure { |c| c.on = { StandardError => [1, 2] } }
+    end
   end
 end
