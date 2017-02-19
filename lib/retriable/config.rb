@@ -6,7 +6,7 @@ module Retriable
       :max_interval,
       :multiplier,
       :rand_factor,
-      :timeout,      
+      :timeout,
       :tries
     ].freeze
 
@@ -47,13 +47,7 @@ module Retriable
       if intervals
         @tries = intervals.size + 1
       else
-        @intervals = ExponentialBackoff.new(
-          tries:          tries - 1,
-          base_interval:  base_interval,
-          multiplier:     multiplier,
-          max_interval:   max_interval,
-          rand_factor:    rand_factor,
-        ).intervals
+        @intervals = ExponentialBackoff.new(to_h).intervals
       end
 
       tries.times do |index|
@@ -109,6 +103,12 @@ module Retriable
 
     def valid_exception?(e)
       e.is_a?(Class) && e < Exception
+    end
+
+    def to_h
+      hash = PROPERTIES.inject({}) { |hsh, prop| hsh.merge(prop => public_send(prop)) }
+      hash[:tries] -= 1 if hash[:tries]
+      hash
     end
   end
 end
