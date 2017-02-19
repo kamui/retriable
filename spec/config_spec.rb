@@ -51,6 +51,14 @@ describe Retriable::Config do
 
   it "raises errors on invalid configuration" do
     assert_raises ArgumentError do
+      Retriable.configure { |c| c.max_interval = '123' }
+    end
+
+    assert_raises ArgumentError do
+      Retriable.configure { |c| c.tries = '123' }
+    end
+
+    assert_raises ArgumentError do
       Retriable.configure { |c| c.on = 1234 }
     end
 

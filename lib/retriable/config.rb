@@ -32,7 +32,7 @@ module Retriable
 
     def retriable(opts = {})
       opts.each do |k, v|
-        raise ArgumentError, "#{k} => #{v} is not a valid configuration" unless PROPERTIES.include?(k)
+        raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
       end
 
       PROPERTIES.each do |property|
@@ -79,26 +79,30 @@ module Retriable
 
     def validate!
       if on.is_a?(Array)
-        raise ArgumentError, invalid_config_message(:on) unless on.all? { |e| valid_exception?(e) }
+        raise_invalid_config_message(:on) unless on.all? { |e| valid_exception?(e) }
       elsif on.is_a?(Hash)
         on.each do |k, v|
           raise ArgumentError, "'#{k}' is not an Exception" unless valid_exception?(k)
           next if v.nil? || v.is_a?(Regexp)
-          raise ArgumentError, invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
+          raise_invalid_config_message(:on) unless v.is_a?(Array) && v.all? { |rgx| rgx.is_a?(Regexp) }
         end
       elsif !valid_exception?(on)
-        raise ArgumentError, invalid_config_message(:on)
+        raise_invalid_config_message(:on)
       end
 
       if intervals && !intervals.is_a?(Array)
-        raise ArgumentError, invalid_config_message(:intervals)
+        raise_invalid_config_message(:intervals)
+      end
+
+      [:tries, :base_interval, :max_interval, :rand_factor, :multiplier, :max_elapsed_time].each do |option|
+        raise_invalid_config_message(option) if public_send(option) && !public_send(option).is_a?(Numeric)
       end
     end
 
     private
 
-    def invalid_config_message(param)
-      "Invalid configuration of #{param}: #{public_send(param)}"
+    def raise_invalid_config_message(param)
+      raise ArgumentError, "Invalid configuration of #{param}: #{public_send(param)}"
     end
 
     def valid_exception?(e)
