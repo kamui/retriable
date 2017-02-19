@@ -1,11 +1,7 @@
 module Retriable
   class Config
-    NUMERIC_PROPERTIES = [
-      :base_interval,
+    NUMERIC_PROPERTIES = ExponentialBackoff::PROPERTIES + [
       :max_elapsed_time,
-      :max_interval,
-      :multiplier,
-      :rand_factor,
       :timeout,
       :tries
     ].freeze
@@ -47,13 +43,7 @@ module Retriable
       if intervals
         @tries = intervals.size + 1
       else
-        @intervals = ExponentialBackoff.new(
-          tries:          tries - 1,
-          base_interval:  base_interval,
-          multiplier:     multiplier,
-          max_interval:   max_interval,
-          rand_factor:    rand_factor,
-        ).intervals
+        @intervals = ExponentialBackoff.new(backoff_options).intervals
       end
 
       tries.times do |index|
@@ -115,6 +105,12 @@ module Retriable
       options.each do |k, v|
         raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
       end
+    end
+
+    def backoff_options
+      hash = ExponentialBackoff::PROPERTIES.inject({}) { |hsh, prop| hsh.merge(prop => public_send(prop)) }
+      hash[:tries] -= 1 if hash[:tries]
+      hash
     end
   end
 end
