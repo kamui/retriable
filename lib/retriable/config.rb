@@ -101,6 +101,7 @@ module Retriable
     end
 
     def validate_options!(options)
+      raise ArgumentError, 'Configuration options must be a hash' unless options.is_a?(Hash)
       options.each do |k, v|
         raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
       end

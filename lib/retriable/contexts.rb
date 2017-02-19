@@ -1,6 +1,4 @@
-# JRuby is complaining; try using plain require and not require_relative
-#require_relative File.join('..', 'retriable')
-require 'retriable'
+require_relative File.join('..', 'retriable')
 require_relative File.join('contexts', 'config')
 
 module Retriable

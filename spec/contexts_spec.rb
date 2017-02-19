@@ -18,6 +18,10 @@ describe Retriable do
     Retriable.configure do |config|
       config.contexts = { ecs: { max_elapsed_time: 500 } }
     end
+
+    Retriable.configure do |config|
+      config.contexts[:ecs] = { max_elapsed_time: 500 }
+    end
   end
 
   it "raises errors on invalid configuration" do
@@ -25,14 +29,18 @@ describe Retriable do
       Retriable.configure do |config|
         config.contexts = { aws: { yo: 'mtv raps' } }
       end
-      Retriable.aws { 1 + 1 }
     end
 
     assert_raises ArgumentError do
       Retriable.configure do |config|
         config.contexts = { aws: 'yo' }
       end
-      Retriable.aws { 1 + 1 }
+    end
+
+    assert_raises ArgumentError do
+      Retriable.configure do |config|
+        config.contexts[:aws] = 'yo'
+      end
     end
 
     assert_raises ArgumentError do
