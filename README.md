@@ -253,7 +253,7 @@ Retriable.mysql do
 end
 ```
 
-You can even temporarily override a configured context:
+You can even temporarily override individual options for a configured context:
 
 ```ruby
 Retriable.mysql(tries: 30) do

@@ -20,9 +20,7 @@ module Retriable
     PROPERTIES.each { |p| attr_accessor p }
 
     def initialize(opts = {})
-      opts.each do |k, v|
-        raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
-      end
+      validate_options!(opts)
 
       @sleep_disabled    = opts[:sleep_disabled]   || false
       @tries             = opts[:tries]            || 3
@@ -38,10 +36,8 @@ module Retriable
     end
 
     def retriable(opts = {})
-      opts.each do |k, v|
-        raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
-        public_send("#{k}=", v) if v
-      end
+      validate_options!(opts)
+      opts.each { |k, v| public_send("#{k}=", v) if v }
 
       validate!
       start_time = Time.now
@@ -113,6 +109,12 @@ module Retriable
 
     def valid_exception?(e)
       e.is_a?(Class) && e < Exception
+    end
+
+    def validate_options!(options)
+      options.each do |k, v|
+        raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
+      end
     end
   end
 end
