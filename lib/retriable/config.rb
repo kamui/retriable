@@ -1,14 +1,6 @@
 module Retriable
   class Config
-    EXPONENTIAL_BACKOFF_PROPERTIES = [
-      :base_interval,
-      :max_interval,
-      :multiplier,
-      :rand_factor,
-      :tries
-    ].freeze
-
-    NUMERIC_PROPERTIES = EXPONENTIAL_BACKOFF_PROPERTIES + [
+    NUMERIC_PROPERTIES = ExponentialBackoff::PROPERTIES + [
       :max_elapsed_time,
       :timeout,
       :tries
@@ -110,7 +102,7 @@ module Retriable
     end
 
     def backoff_options
-      hash = EXPONENTIAL_BACKOFF_PROPERTIES.inject({}) { |hsh, prop| hsh.merge(prop => public_send(prop)) }
+      hash = ExponentialBackoff::PROPERTIES.inject({}) { |hsh, prop| hsh.merge(prop => public_send(prop)) }
       hash[:tries] -= 1 if hash[:tries]
       hash
     end
