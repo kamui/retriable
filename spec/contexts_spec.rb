@@ -1,5 +1,5 @@
 require_relative 'spec_helper'
-require_relative "../lib/retriable/contexts"
+require_relative File.join('..', 'lib', 'retriable', 'contexts')
 
 describe Retriable do
   subject do
