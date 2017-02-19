@@ -1,5 +1,5 @@
 # coding: utf-8
-lib = File.expand_path('../lib', __FILE__)
+lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "retriable/version"
 
@@ -8,10 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = Retriable::VERSION
   spec.authors       = ["Jack Chu"]
   spec.email         = ["jack@jackchu.com"]
-  spec.summary       = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff}
-  spec.description   = %q{Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff. This is especially useful when interacting external api/services or file system calls.
-}
-  spec.homepage      = %q{http://github.com/kamui/retriable}
+  spec.summary       = "Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff"
+  spec.description   = "Retriable is an simple DSL to retry failed code blocks with randomized exponential backoff. This is especially useful when interacting external api/services or file system calls."
+  spec.homepage      = "http://github.com/kamui/retriable"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
@@ -19,7 +18,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = '>= 2.0.0'
+  spec.required_ruby_version = ">= 2.0.0"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake", "~> 12.0"

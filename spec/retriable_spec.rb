@@ -43,7 +43,7 @@ describe Retriable do
       expect do
         subject.retriable do
           tries += 1
-          raise StandardError.new
+          raise StandardError.new, "StandardError occurred"
         end
       end.must_raise StandardError
 
@@ -56,7 +56,7 @@ describe Retriable do
       expect do
         subject.retriable do
           tries += 1
-          raise TestError.new
+          raise TestError.new, "TestError occurred"
         end
       end.must_raise TestError
 
@@ -69,7 +69,7 @@ describe Retriable do
       expect do
         subject.retriable on: TestError do
           tries += 1
-          raise TestError.new
+          raise TestError.new, "TestError occurred"
         end
       end.must_raise TestError
 
@@ -80,11 +80,9 @@ describe Retriable do
       tries = 0
 
       expect do
-        subject.retriable(
-          tries: 10,
-        ) do
+        subject.retriable(tries: 10) do
           tries += 1
-          raise StandardError.new
+          raise StandardError.new, "StandardError occurred"
         end
       end.must_raise StandardError
 
@@ -103,7 +101,7 @@ describe Retriable do
       tries = 0
       time_table = []
 
-      handler = ->(exception, try, elapsed_time, next_interval) do
+      handler = lambda do |exception, _try, _elapsed_time, next_interval|
         expect(exception.class).must_equal ArgumentError
         time_table << next_interval
       end
@@ -115,7 +113,7 @@ describe Retriable do
           tries: 10,
         ) do
           tries += 1
-          raise ArgumentError.new
+          raise ArgumentError.new, "ArgumentError occurred"
         end
       end.must_raise ArgumentError
 
@@ -141,7 +139,7 @@ describe Retriable do
         @try_count = 0
         @time_table = {}
 
-        handler = ->(exception, try, elapsed_time, next_interval) do
+        handler = lambda do |exception, try, _elapsed_time, next_interval|
           expect(exception.class).must_equal ArgumentError
           @time_table[try] = next_interval
         end
@@ -153,7 +151,7 @@ describe Retriable do
           tries: tries,
         ) do
           @try_count += 1
-          raise ArgumentError.new if @try_count < tries
+          raise ArgumentError.new, "ArgumentError occurred" if @try_count < tries
         end
       end
 
@@ -162,13 +160,13 @@ describe Retriable do
       end
 
       it "applies a non-randomized exponential backoff to each try" do
-        expect(@time_table).must_equal({
+        expect(@time_table).must_equal(
           1 => 0.5,
           2 => 0.75,
           3 => 1.125,
           4 => 1.6875,
           5 => 2.53125,
-        })
+        )
       end
     end
 
@@ -176,7 +174,7 @@ describe Retriable do
       tries = 0
       time_table = {}
 
-      handler = ->(exception, try, elapsed_time, next_interval) do
+      handler = lambda do |_exception, try, _elapsed_time, next_interval|
         time_table[try] = next_interval
       end
 
@@ -189,17 +187,17 @@ describe Retriable do
           max_interval: 1.5,
         ) do
           tries += 1
-          raise StandardError.new
+          raise StandardError.new, "StandardError occurred"
         end
       end.must_raise StandardError
 
-      expect(time_table).must_equal({
+      expect(time_table).must_equal(
         1 => 0.5,
         2 => 0.75,
         3 => 1.125,
         4 => 1.5,
         5 => nil,
-      })
+      )
     end
 
     it "#retriable with custom defined intervals" do
@@ -212,7 +210,7 @@ describe Retriable do
       ]
       time_table = {}
 
-      handler = ->(exception, try, elapsed_time, next_interval) do
+      handler = lambda do |_exception, try, _elapsed_time, next_interval|
         time_table[try] = next_interval
       end
 
@@ -224,18 +222,18 @@ describe Retriable do
           intervals: intervals,
         ) do
           try_count += 1
-          raise StandardError.new
+          raise StandardError.new, "StandardError occurred"
         end
       end.must_raise StandardError
 
-      expect(time_table).must_equal({
+      expect(time_table).must_equal(
         1 => 0.5,
         2 => 0.75,
         3 => 1.125,
         4 => 1.5,
         5 => 1.5,
         6 => nil,
-      })
+      )
 
       expect(try_count).must_equal(6)
     end
@@ -243,7 +241,7 @@ describe Retriable do
     it "#retriable with a hash exception where the value is an exception message pattern" do
       e = expect do
         subject.retriable on: { TestError => /something went wrong/ } do
-          raise TestError.new("something went wrong")
+          raise TestError, "something went wrong"
         end
       end.must_raise TestError
 
@@ -262,7 +260,7 @@ describe Retriable do
             DifferentTestError => /also should never happen/,
           }, tries: 4 do
           tries += 1
-          raise SecondTestError.new("something went wrong")
+          raise SecondTestError, "something went wrong"
         end
       end.must_raise SecondTestError
 
@@ -277,7 +275,7 @@ describe Retriable do
       expect do
         subject.retriable on: { TestError => /something went wrong/ }, tries: 4 do
           tries += 1
-          raise SecondTestError.new("not a match")
+          raise SecondTestError, "not a match"
         end
       end.must_raise SecondTestError
 
@@ -287,7 +285,7 @@ describe Retriable do
     it "#retriable with a hash exception list where the values are exception message patterns" do
       tries = 0
       exceptions = []
-      handler = ->(exception, try, elapsed_time, next_interval) do
+      handler = lambda do |exception, try, _elapsed_time, _next_interval|
         exceptions[try] = exception
       end
 
@@ -296,13 +294,13 @@ describe Retriable do
           tries += 1
           case tries
           when 1
-            raise TestError.new("foo")
+            raise TestError, "foo"
           when 2
-            raise TestError.new("bar")
+            raise TestError, "bar"
           when 3
-            raise StandardError.new
+            raise StandardError
           else
-            raise TestError.new("crash")
+            raise TestError, "crash"
           end
         end
       end.must_raise TestError
@@ -329,7 +327,7 @@ describe Retriable do
       expect do
         retriable do
           tries += 1
-          raise StandardError.new
+          raise StandardError
         end
       end.must_raise StandardError
 
@@ -347,7 +345,7 @@ describe Retriable do
     tries = 0
     time_table = {}
 
-    handler = ->(exception, try, elapsed_time, next_interval) do
+    handler = lambda do |_exception, try, elapsed_time, _next_interval|
       time_table[try] = elapsed_time
     end
 
@@ -360,7 +358,7 @@ describe Retriable do
         on_retry: handler,
       ) do
         tries += 1
-        raise EOFError.new
+        raise EOFError
       end
     end.must_raise EOFError
 

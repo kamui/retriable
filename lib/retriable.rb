@@ -4,7 +4,7 @@ require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
 
 module Retriable
-  extend self
+  module_function
 
   def self.configure
     yield(config)
@@ -37,22 +37,19 @@ module Retriable
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
-        rand_factor:    rand_factor
+        rand_factor:    rand_factor,
       ).intervals
     end
 
-    exception_list = on.kind_of?(Hash) ? on.keys : on
+    exception_list = on.is_a?(Hash) ? on.keys : on
 
     tries.times do |index|
       try = index + 1
       begin
-        if timeout
-          Timeout::timeout(timeout) { return yield(try) }
-        else
-          return yield(try)
-        end
+        return Timeout.timeout(timeout) { return yield(try) } if timeout
+        return yield(try)
       rescue *[*exception_list] => exception
-        if on.kind_of?(Hash)
+        if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
           end
