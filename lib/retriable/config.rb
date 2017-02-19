@@ -59,6 +59,7 @@ module Retriable
 
       tries.times do |index|
         try = index + 1
+
         begin
           return Timeout.timeout(timeout) { return yield(try) } if timeout
           return yield(try)
