@@ -2,8 +2,7 @@ module Retriable
   class Config
     NUMERIC_PROPERTIES = ExponentialBackoff::PROPERTIES + [
       :max_elapsed_time,
-      :timeout,
-      :tries
+      :timeout
     ].freeze
 
     PROPERTIES = NUMERIC_PROPERTIES + [
