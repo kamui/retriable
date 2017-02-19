@@ -6,7 +6,7 @@ module Retriable
       :max_interval,
       :multiplier,
       :rand_factor,
-      :timeout,      
+      :timeout,
       :tries
     ].freeze
 
@@ -19,18 +19,22 @@ module Retriable
 
     PROPERTIES.each { |p| attr_accessor p }
 
-    def initialize
-      @sleep_disabled    = false
-      @tries             = 3
-      @base_interval     = 0.5
-      @max_interval      = 60
-      @rand_factor       = 0.5
-      @multiplier        = 1.5
-      @max_elapsed_time  = 900 # 15 min
-      @intervals         = nil
-      @timeout           = nil
-      @on                = [StandardError]
-      @on_retry          = nil
+    def initialize(opts = {})
+      opts.each do |k, v|
+        raise ArgumentError, "#{k} => #{v} is not a valid option" unless PROPERTIES.include?(k)
+      end
+
+      @sleep_disabled    = opts[:sleep_disabled]   || false
+      @tries             = opts[:tries]            || 3
+      @base_interval     = opts[:base_interval]    || 0.5
+      @max_interval      = opts[:max_interval]     || 60
+      @rand_factor       = opts[:rand_factor]      || 0.5
+      @multiplier        = opts[:multiplier]       || 1.5
+      @max_elapsed_time  = opts[:max_elapsed_time] || 900 # 15 min
+      @intervals         = opts[:interval]         || nil
+      @timeout           = opts[:timeout]          || nil
+      @on                = opts[:on]               || [StandardError]
+      @on_retry          = opts[:on_retry]         || nil
     end
 
     def retriable(opts = {})

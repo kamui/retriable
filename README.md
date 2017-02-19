@@ -212,6 +212,55 @@ Retriable.retriable on_retry: do_this_on_each_retry do
 end
 ```
 
+### RetriableContexts
+
+There is a separate plugin to enable the contexts feature.  It's not included by default; to use it do:
+
+```ruby
+require 'retriable/contexts'
+```
+
+Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
+
+```ruby
+Retriable.configure do |c|
+  c.contexts[:aws] = {
+    tries: 3,
+    base_interval: 5,
+    on_retry: Proc.new { puts 'Curse you, AWS!' }
+  }
+  c.contexts[:mysql] = {
+    tries: 10,
+    multiplier: 2.5,
+    on: Mysql::DeadlockException
+  }
+end
+```
+
+This will create two contexts, `aws` and `mysql`, which allow you to reuse different backoff strategies across your application without continually passing those strategy options to the `retriable` method.
+
+These are used simply by calling `Retriable.name_of_context`:
+
+```ruby
+# Will retry all exceptions
+Retriable.aws do
+  aws_call
+end
+
+# Will retry Mysql::DeadlockException
+Retriable.mysql do
+  write_to_table
+end
+```
+
+You can even temporarily override a configured context:
+
+```ruby
+Retriable.mysql(tries: 30) do
+  write_to_table
+end
+```
+
 ### Ensure/Else
 
 What if I want to execute a code block at the end, whether or not an exception was rescued ([ensure](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure))? Or, what if I want to execute a code block if no exception is raised ([else](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else))? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:

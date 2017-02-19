@@ -1,6 +1,7 @@
 ## HEAD
 
 ## 3.1.0-prerelease
+* Added contexts feature
 * Allow value of `:on` to be a single exception class (instead of either an array or hash)
 * Add strict validation
 
