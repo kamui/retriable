@@ -49,8 +49,11 @@ module Retriable
         try = index + 1
 
         begin
-          return Timeout.timeout(timeout) { return yield(try) } if timeout
-          return yield(try)
+          if timeout
+            return Timeout.timeout(timeout) { yield(try) }
+          else
+            return yield(try)
+          end
         rescue *[*exception_list] => exception
           if on.is_a?(Hash)
             raise unless exception_list.any? do |e|
