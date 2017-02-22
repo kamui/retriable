@@ -1,7 +1,7 @@
 require 'timeout'
-require_relative File.join('retriable', 'exponential_backoff')
-require_relative File.join('retriable', 'config')
-require_relative File.join('retriable', 'version')
+require 'retriable/exponential_backoff'
+require 'retriable/config'
+require 'retriable/version'
 
 module Retriable
   module_function

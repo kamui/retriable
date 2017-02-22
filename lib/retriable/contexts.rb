@@ -1,5 +1,5 @@
-require_relative File.join('..', 'retriable')
-require_relative File.join('contexts', 'config')
+require 'retriable'
+require 'retriable/contexts/config'
 
 module Retriable
   module_function
