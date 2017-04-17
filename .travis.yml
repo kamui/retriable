@@ -5,9 +5,9 @@ language: ruby
 rvm:
   - 2.0.0
   - 2.1.10
-  - 2.2.6
-  - 2.3.3
-  - 2.4.0
+  - 2.2.7
+  - 2.3.4
+  - 2.4.1
   - rbx
   - jruby-9.0.5.0
   - jruby-9.1.8.0
@@ -23,7 +23,7 @@ matrix:
 before_install:
   - gem update --system
   - gem install bundler
-  
+
 addons:
   code_climate:
     repo_token: 20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
