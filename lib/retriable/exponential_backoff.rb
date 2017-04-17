@@ -1,17 +1,17 @@
 module Retriable
   class ExponentialBackoff
-    attr_accessor :tries
-    attr_accessor :base_interval
-    attr_accessor :multiplier
-    attr_accessor :max_interval
-    attr_accessor :rand_factor
+    PROPERTIES = [
+      :base_interval,
+      :max_interval,
+      :multiplier,
+      :rand_factor,
+      :tries
+    ].freeze
+
+    PROPERTIES.each { |p| attr_accessor p }
 
     def initialize(opts = {})
-      @tries         = opts[:tries]         || Retriable.config.tries
-      @base_interval = opts[:base_interval] || Retriable.config.base_interval
-      @max_interval  = opts[:max_interval]  || Retriable.config.max_interval
-      @rand_factor   = opts[:rand_factor]   || Retriable.config.rand_factor
-      @multiplier    = opts[:multiplier]    || Retriable.config.multiplier
+      PROPERTIES.each { |p| public_send("#{p}=", opts[p] || Retriable.config.public_send(p)) }
     end
 
     def intervals
