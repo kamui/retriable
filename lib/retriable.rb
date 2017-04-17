@@ -15,16 +15,19 @@ module Retriable
   end
 
   def retriable(opts = {})
-    tries             = opts[:tries]            || config.tries
-    base_interval     = opts[:base_interval]    || config.base_interval
-    max_interval      = opts[:max_interval]     || config.max_interval
-    rand_factor       = opts[:rand_factor]      || config.rand_factor
-    multiplier        = opts[:multiplier]       || config.multiplier
-    max_elapsed_time  = opts[:max_elapsed_time] || config.max_elapsed_time
-    intervals         = opts[:intervals]        || config.intervals
-    timeout           = opts[:timeout]          || config.timeout
-    on                = opts[:on]               || config.on
-    on_retry          = opts[:on_retry]         || config.on_retry
+    local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
+
+    tries             = local_config.tries
+    base_interval     = local_config.base_interval
+    max_interval      = local_config.max_interval
+    rand_factor       = local_config.rand_factor
+    multiplier        = local_config.multiplier
+    max_elapsed_time  = local_config.max_elapsed_time
+    intervals         = local_config.intervals
+    timeout           = local_config.timeout
+    on                = local_config.on
+    on_retry          = local_config.on_retry
+    sleep_disabled    = local_config.sleep_disabled
 
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
@@ -58,7 +61,7 @@ module Retriable
         interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
         raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
-        sleep interval if config.sleep_disabled != true
+        sleep interval if sleep_disabled != true
       end
     end
   end
