@@ -20,7 +20,7 @@ module Retriable
   end
 
   def retriable(opts = {})
-    raise ArgumentError, 'retriable options must be a hash' unless opts && opts.is_a?(Hash)
+    raise ArgumentError, 'retriable options must be a hash' unless opts.is_a?(Hash)
     local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
 
     tries             = local_config.tries
