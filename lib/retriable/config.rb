@@ -2,12 +2,7 @@ require_relative "exponential_backoff"
 
 module Retriable
   class Config
-    ATTRIBUTES = [
-      :tries,
-      :base_interval,
-      :max_interval,
-      :rand_factor,
-      :multiplier,
+    ATTRIBUTES = ExponentialBackoff::ATTRIBUTES + [
       :sleep_disabled,
       :max_elapsed_time,
       :intervals,
