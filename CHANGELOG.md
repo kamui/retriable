@@ -1,5 +1,9 @@
 ## HEAD
 
+## 3.0.2
+
+* Add configuration and options validation.
+
 ## 3.0.1
 * Add `rubocop` linter to enforce coding styles for this library. Also, fix rule violations.
 * Removed `attr_reader :config` that caused a warning. @bruno-
