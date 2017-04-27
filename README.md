@@ -84,12 +84,12 @@ Here are the available options:
 #### Configuring Which Options to Retry With :on
 **`:on`** Can take the form:
 
-1. An `Exception` class (retry every exception of this type, including subclasses)
-1. An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
-1. A `Hash` where the keys are `Exception` classes and the values are one of:
-  1. `nil`(retry every exception of the key's type, including subclasses)
-  1. A single `Regexp` pattern (retries exceptions ONLY if they match the pattern)
-  1. An array of patterns (retries exceptions ONLY if they match at least one of the patterns)
+- An `Exception` class (retry every exception of this type, including subclasses)
+- An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
+- A `Hash` where the keys are `Exception` classes and the values are one of:
+  - `nil`(retry every exception of the key's type, including subclasses)
+  - A single `Regexp` pattern (retries exceptions ONLY if they match the pattern)
+  - An array of patterns (retries exceptions ONLY if they match at least one of the patterns)
 
 ### Configuring Defaults
 
