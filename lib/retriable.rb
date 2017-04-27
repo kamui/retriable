@@ -46,7 +46,7 @@ module Retriable
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
-        rand_factor:    rand_factor,
+        rand_factor:    rand_factor
       ).intervals
     end
 
