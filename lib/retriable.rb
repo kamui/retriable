@@ -1,6 +1,6 @@
 require "timeout"
 require_relative "retriable/config"
-require_relative "retriable/environment"
+require_relative "retriable/contexts"
 require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
 

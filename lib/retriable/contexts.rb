@@ -1,4 +1,3 @@
-require 'retriable'
 require 'retriable/contexts/config'
 
 module Retriable
