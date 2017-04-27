@@ -1,17 +1,26 @@
 module Retriable
   class ExponentialBackoff
-    attr_accessor :tries
-    attr_accessor :base_interval
-    attr_accessor :multiplier
-    attr_accessor :max_interval
-    attr_accessor :rand_factor
+    ATTRIBUTES = [
+      :tries,
+      :base_interval,
+      :multiplier,
+      :max_interval,
+      :rand_factor,
+    ].freeze
+
+    attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
-      @tries         = opts[:tries]         || Retriable.config.tries
-      @base_interval = opts[:base_interval] || Retriable.config.base_interval
-      @max_interval  = opts[:max_interval]  || Retriable.config.max_interval
-      @rand_factor   = opts[:rand_factor]   || Retriable.config.rand_factor
-      @multiplier    = opts[:multiplier]    || Retriable.config.multiplier
+      @tries         = 3
+      @base_interval = 0.5
+      @max_interval  = 60
+      @rand_factor   = 0.5
+      @multiplier    = 1.5
+
+      opts.each do |k, v|
+        raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
+        instance_variable_set(:"@#{k}", v)
+      end
     end
 
     def intervals

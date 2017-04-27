@@ -364,4 +364,16 @@ describe Retriable do
 
     expect(tries).must_equal 2
   end
+
+  it "raises NoMethodError on invalid configuration" do
+    assert_raises NoMethodError do
+      Retriable.configure { |c| c.does_not_exist = 123 }
+    end
+  end
+
+  it "raises ArgumentError on invalid option on #retriable" do
+    assert_raises ArgumentError do
+      Retriable.retriable(does_not_exist: 123)
+    end
+  end
 end
