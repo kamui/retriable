@@ -1,5 +1,5 @@
 ## 3.1.0
-* Added environments feature
+* Added contexts feature
 
 ## 3.0.2
 * Add configuration and options validation.
