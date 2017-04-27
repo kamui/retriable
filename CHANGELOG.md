@@ -1,8 +1,15 @@
-## HEAD
-
 ## 3.1.0
 * Added environments feature
 * Add validation of :on parameter in main config
+
+## 3.0.2
+* Add configuration and options validation.
+
+## 3.0.1
+* Add `rubocop` linter to enforce coding styles for this library. Also, fix rule violations.
+* Removed `attr_reader :config` that caused a warning. @bruno-
+* Clean up Rakefile testing cruft. @bruno-
+* Use `.any?` in the `:on` hash processing. @apurvis
 
 ## 3.0.0
 * Require ruby 2.0+.

@@ -35,7 +35,7 @@ describe Retriable::ExponentialBackoff do
       4.350816718580626,
       5.339852157217869,
       11.889873261212443,
-      18.756037881636484
+      18.756037881636484,
     ])
   end
 
@@ -47,7 +47,7 @@ describe Retriable::ExponentialBackoff do
     expect(subject.new(base_interval: 1).intervals).must_equal([
       1.0488135024422882,
       1.8227840477522461,
-      2.4812175837998227
+      2.4812175837998227,
     ])
   end
 
@@ -55,7 +55,7 @@ describe Retriable::ExponentialBackoff do
     expect(subject.new(multiplier: 1).intervals).must_equal([
       0.5244067512211441,
       0.607594682584082,
-      0.5513816852888495
+      0.5513816852888495,
     ])
   end
 
@@ -63,7 +63,7 @@ describe Retriable::ExponentialBackoff do
     expect(subject.new(max_interval: 1.0, rand_factor: 0.0).intervals).must_equal([
       0.5,
       0.75,
-      1.0
+      1.0,
     ])
   end
 
@@ -71,14 +71,14 @@ describe Retriable::ExponentialBackoff do
     expect(subject.new(rand_factor: 0.2).intervals).must_equal([
       0.5097627004884576,
       0.8145568095504492,
-      1.1712435167599646
+      1.1712435167599646,
     ])
   end
 
   it "generates 10 non-randomized intervals" do
     expect(subject.new(
       tries: 10,
-      rand_factor: 0.0
+      rand_factor: 0.0,
     ).intervals).must_equal([
       0.5,
       0.75,
@@ -89,7 +89,7 @@ describe Retriable::ExponentialBackoff do
       5.6953125,
       8.54296875,
       12.814453125,
-      19.2216796875
+      19.2216796875,
     ])
   end
 end

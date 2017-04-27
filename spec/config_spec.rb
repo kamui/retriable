@@ -52,4 +52,10 @@ describe Retriable::Config do
   it "on retry handler defaults to nil" do
     expect(subject.new.on_retry).must_be_nil
   end
+
+  it "raises errors on invalid configuration" do
+    assert_raises ArgumentError do
+      subject.new(does_not_exist: 123)
+    end
+  end
 end
