@@ -9,7 +9,7 @@ module Retriable
 
   def method_missing(method_sym, options = {}, &block)
     if (context = config.contexts[method_sym])
-      Config.new(context).retriable(options, &block) if block
+      retriable(context.merge(options), &block) if block
     else
       super
     end

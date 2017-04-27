@@ -14,6 +14,7 @@ module Retriable
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
+      raise ArgumentError, "#{opts} is not a hash" unless opts && opts.is_a?(Hash)
       backoff = ExponentialBackoff.new
 
       @tries            = backoff.tries

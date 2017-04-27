@@ -71,16 +71,4 @@ module Retriable
       end
     end
   end
-
-  def respond_to?(method_sym, options = {}, &block)
-    super || config.contexts.key?(method_sym)
-  end
-
-  def method_missing(method_sym, options = {}, &block)
-    if config.contexts.key?(method_sym)
-      config.contexts[method_sym]
-    else
-      super
-    end
-  end
 end

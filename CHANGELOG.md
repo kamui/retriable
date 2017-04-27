@@ -1,14 +1,8 @@
 ## 3.1.0
 * Added environments feature
-* Add validation of :on parameter in main config
 
 ## 3.0.2
 * Add configuration and options validation.
-
-## 3.1.0-prerelease
-* Added contexts feature
-* Allow value of `:on` to be a single exception class (instead of either an array or hash)
-* Add strict validation
 
 ## 3.0.1
 * Add `rubocop` linter to enforce coding styles for this library. Also, fix rule violations.
