@@ -5,6 +5,10 @@ describe Retriable::Config do
     Retriable::Config
   end
 
+  before do
+    Retriable.reset!
+  end
+
   after do
     Retriable.reset!
   end
@@ -51,27 +55,7 @@ describe Retriable::Config do
 
   it "raises errors on invalid configuration" do
     assert_raises ArgumentError do
-      Retriable.configure { |c| c.max_interval = '123' }
-    end
-
-    assert_raises ArgumentError do
-      Retriable.configure { |c| c.tries = '123' }
-    end
-
-    assert_raises ArgumentError do
-      Retriable.configure { |c| c.on = 1234 }
-    end
-
-    assert_raises ArgumentError do
-      Retriable.configure { |c| c.on = { StandardError => StandardError } }
-    end
-
-    assert_raises ArgumentError do
-      Retriable.configure { |c| c.on = { StandardError => [1, 2] } }
-    end
-
-    assert_raises ArgumentError do
-      Retriable.configure { |c| c.on_retry = '1234' }
+      subject.new(does_not_exist: 123)
     end
   end
 end

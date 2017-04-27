@@ -1,4 +1,4 @@
-#Retriable
+# Retriable
 
 [![Build Status](https://secure.travis-ci.org/kamui/retriable.svg)](http://travis-ci.org/kamui/retriable)
 [![Code Climate](https://codeclimate.com/github/kamui/retriable/badges/gpa.svg)](https://codeclimate.com/github/kamui/retriable)

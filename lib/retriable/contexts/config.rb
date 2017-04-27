@@ -14,7 +14,7 @@ module Retriable
 
     class Contexts < Hash
       def []=(key, val)
-        Retriable::Config.new(val).validate!
+        Retriable::Config.new(val)
         super(key, val)
       end
     end

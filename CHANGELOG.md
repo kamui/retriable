@@ -1,4 +1,9 @@
-## HEAD
+## 3.1.0
+* Added environments feature
+* Add validation of :on parameter in main config
+
+## 3.0.2
+* Add configuration and options validation.
 
 ## 3.1.0-prerelease
 * Added contexts feature
