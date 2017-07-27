@@ -6,7 +6,7 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
-  def self.configure
+  def configure
     yield(config)
   end
 
@@ -14,7 +14,12 @@ module Retriable
     @config ||= Config.new
   end
 
+  def reset!
+    @config = Config.new
+  end
+
   def retriable(opts = {})
+    raise ArgumentError, 'retriable options must be a hash' unless opts.is_a?(Hash)
     local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
 
     tries             = local_config.tries
@@ -40,7 +45,7 @@ module Retriable
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
-        rand_factor:    rand_factor,
+        rand_factor:    rand_factor
       ).intervals
     end
 

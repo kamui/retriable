@@ -1,7 +1,7 @@
-## HEAD
+## 3.1.0
+* Added contexts feature
 
 ## 3.0.2
-
 * Add configuration and options validation.
 
 ## 3.0.1

@@ -1,4 +1,4 @@
-require_relative "../../retriable"
+require_relative File.join('..', '..', 'retriable')
 
 module Kernel
   def retriable(opts = {}, &block)

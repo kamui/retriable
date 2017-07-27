@@ -5,6 +5,10 @@ describe Retriable::Config do
     Retriable::Config
   end
 
+  before do
+    Retriable.reset!
+  end
+
   it "sleep defaults to enabled" do
     expect(subject.new.sleep_disabled).must_equal false
   end

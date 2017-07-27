@@ -68,31 +68,30 @@ end
 
 Here are the available options:
 
-`tries` (default: 3) - Number of attempts to make at running your code block (includes intial attempt).
+| Option | Default | Definition |
+| ------ | ------- | ---------- |
+| **`tries`** | `3` | Number of attempts to make at running your code block (includes intial attempt). |
+| **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
+| **`max_interval`** | `60` | The maximum interval in seconds that any try can reach. |
+| **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
+| **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
+| **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time that code is allowed to keep being retried. |
+| **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. *Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.* |
+| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
+| **`on`** | `[StandardError]` | See below. |
+| **`on_retry`** | `nil` | Proc to call after each try is rescued. |
 
-`base_interval` (default: 0.5) - The initial interval in seconds between tries.
+#### Configuring Which Options to Retry With :on
+**`:on`** Can take the form:
 
-`max_interval` (default: 60) - The maximum interval in seconds that any try can reach.
+- An `Exception` class (retry every exception of this type, including subclasses)
+- An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
+- A `Hash` where the keys are `Exception` classes and the values are one of:
+  - `nil`(retry every exception of the key's type, including subclasses)
+  - A single `Regexp` pattern (retries exceptions ONLY if they match the pattern)
+  - An array of patterns (retries exceptions ONLY if they match at least one of the patterns)
 
-`rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this:
-
-```
-randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])
-```
-
-`multiplier` (default: 1.5) - Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.
-
-`max_elapsed_time`  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried.
-
-`intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
-
-`timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
-
-`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type. Subclasses of the listed exceptions will be retried and have their messages matched in the same way.
-
-`on_retry` - (default: nil) - Proc to call after each try is rescued.
-
-### Config
+### Configuring Defaults
 
 You can change the global defaults with a `#configure` block:
 
@@ -101,6 +100,8 @@ Retriable.configure do |c|
   c.tries = 5
   c.max_elapsed_time = 3600 # 1 hour
 end
+
+(The configurable defaults are exactly the same as the options)
 ```
 
 ### Examples
@@ -202,6 +203,55 @@ end
 
 Retriable.retriable on_retry: do_this_on_each_retry do
   # code here...
+end
+```
+
+### RetriableContexts
+
+There is a separate plugin to enable the contexts feature.  It's not included by default; to use it do:
+
+```ruby
+require 'retriable/contexts'
+```
+
+Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module and is accessible by name.  For example:
+
+```ruby
+Retriable.configure do |c|
+  c.contexts[:aws] = {
+    tries: 3,
+    base_interval: 5,
+    on_retry: Proc.new { puts 'Curse you, AWS!' }
+  }
+  c.contexts[:mysql] = {
+    tries: 10,
+    multiplier: 2.5,
+    on: Mysql::DeadlockException
+  }
+end
+```
+
+This will create two contexts, `aws` and `mysql`, which allow you to reuse different backoff strategies across your application without continually passing those strategy options to the `retriable` method.
+
+These are used simply by calling `Retriable.name_of_context`:
+
+```ruby
+# Will retry all exceptions
+Retriable.aws do
+  aws_call
+end
+
+# Will retry Mysql::DeadlockException
+Retriable.mysql do
+  write_to_table
+end
+```
+
+You can even temporarily override individual options for a configured context:
+
+```ruby
+Retriable.mysql(tries: 30) do
+  write_to_table
 end
 ```
 
