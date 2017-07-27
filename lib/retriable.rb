@@ -6,7 +6,7 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
-  def self.configure
+  def configure
     yield(config)
   end
 
