@@ -225,22 +225,16 @@ end
 
 ## Contexts
 
-There is a separate plugin to enable the context feature. It's not included by default; to use it do:
+Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable.config` as a simple `Hash` and is accessible by name. For example:
 
 ```ruby
-require 'retriable/contexts'
-```
-
-Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable` module as a simple `Hash` and is accessible by name. For example:
-
-```ruby
-Retriable.configure do |config, context|
-  context[:aws] = {
+Retriable.configure do |c|
+  c.context[:aws] = {
     tries: 3,
     base_interval: 5,
     on_retry: Proc.new { puts 'Curse you, AWS!' }
   }
-  contexts[:mysql] = {
+  c.context[:mysql] = {
     tries: 10,
     multiplier: 2.5,
     on: Mysql::DeadlockException
@@ -250,16 +244,16 @@ end
 
 This will create two contexts, `aws` and `mysql`, which allow you to reuse different backoff strategies across your application without continually passing those strategy options to the `retriable` method.
 
-These are used simply by calling `Retriable.with_context`:
+These are used simply by calling `Retriable.retriable_with_context`:
 
 ```ruby
 # Will retry all exceptions
-Retriable.with_context(:aws) do
+Retriable.retriable_with_context(:aws) do
   # aws_call
 end
 
 # Will retry Mysql::DeadlockException
-Retriable.with_context(:mysql) do
+Retriable.retriable_with_context(:mysql) do
   # write_to_table
 end
 ```
@@ -267,7 +261,7 @@ end
 You can even temporarily override individual options for a configured context:
 
 ```ruby
-Retriable.with_context(:mysql, tries: 30) do
+Retriable.retriable_with_context(:mysql, tries: 30) do
   # write_to_table
 end
 ```
@@ -293,6 +287,10 @@ and then you can call `#retriable` in any context like this:
 
 ```ruby
 retriable do
+  # code here...
+end
+
+retriable_with_context(:api) do
   # code here...
 end
 ```

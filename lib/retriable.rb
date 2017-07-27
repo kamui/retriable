@@ -14,6 +14,14 @@ module Retriable
     @config ||= Config.new
   end
 
+  def retriable_with_context(context_key, options = {}, &block)
+    if !config.context.key?(context_key)
+      raise ArgumentError, "#{context_key} not found in Retriable.config.context"
+    end
+
+    retriable(config.context[context_key].merge(options), &block) if block
+  end
+
   def retriable(opts = {})
     local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
 

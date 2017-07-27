@@ -9,6 +9,7 @@ module Retriable
       :timeout,
       :on,
       :on_retry,
+      :context,
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -27,6 +28,7 @@ module Retriable
       @timeout          = nil
       @on               = [StandardError]
       @on_retry         = nil
+      @context          = {}
 
       opts.each do |k, v|
         raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
