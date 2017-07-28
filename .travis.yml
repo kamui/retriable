@@ -17,7 +17,6 @@ rvm:
 
 matrix:
   allow_failures:
-    - rvm: rbx-3.83
     - rvm: ruby-head
     - rvm: jruby-head
 
