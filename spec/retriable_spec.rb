@@ -117,7 +117,7 @@ describe Retriable do
         end
       end.must_raise ArgumentError
 
-      expect(time_table).must_equal([
+      expect(time_table.map { |x| x ? x.round(3) : nil }).must_equal([
         0.524,
         0.911,
         1.241,
