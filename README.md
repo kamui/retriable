@@ -35,21 +35,29 @@ gem 'retriable', '~> 3.0'
 ```
 
 ## Usage
+Code in a `Retriable.retriable` block will be retried if an exception is raised.
 
-Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 tries (including the initial attempt) before raising the last exception, and also use randomized exponential backoff to calculate each succeeding try interval. The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond) - **the default is the randomized behavior**:
 
-| retry #  | retry interval | randomized interval             |
-| -------- | -------------- | ------------------------------- |
-| 1        |    0.5         |  [0.25,   0.75]                 |
-| 2        |    0.75        |  [0.375,  1.125]                |
-| 3        |    1.125       |  [0.563,  1.688]                |
-| 4        |    1.688       |  [0.844,  2.531]                |
-| 5        |    2.531       |  [1.266,  3.797]                |
-| 6        |    3.797       |  [1.898,  5.695]                |
-| 7        |    5.695       |  [2.848,  8.543]                |
-| 8        |    8.543       |  [4.271, 12.814]                |
-| 9        |   12.814       |  [6.407, 19.222]                |
-| 10       |   19.222       |  **stop**                       |
+### Defaults
+By default, `Retriable` will:
+* rescue any exception inherited from `StandardError`
+* make 3 tries (including the initial attempt) before raising the last exception
+* use randomized exponential backoff to calculate each succeeding try interval.
+
+The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond)
+
+| retry #  | randomized interval             |
+| -------- | ------------------------------- |
+| 1        |  [0.25,   0.75]                 |
+| 2        |  [0.375,  1.125]                |
+| 3        |  [0.563,  1.688]                |
+| 4        |  [0.844,  2.531]                |
+| 5        |  [1.266,  3.797]                |
+| 6        |  [1.898,  5.695]                |
+| 7        |  [2.848,  8.543]                |
+| 8        |  [4.271, 12.814]                |
+| 9        |  [6.407, 19.222]                |
+| 10       |  **stop**                       |
 
 ```ruby
 require 'retriable'
