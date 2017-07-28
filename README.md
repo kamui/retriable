@@ -66,20 +66,20 @@ end
 
 ### Options
 
-Here are the available options:
+Here are the available options, in some vague order of relevance to most common use patterns:
 
 | Option | Default | Definition |
 | ------ | ------- | ---------- |
 | **`tries`** | `3` | Number of attempts to make at running your code block (includes intial attempt). |
-| **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
-| **`max_interval`** | `60` | The maximum interval in seconds that any try can reach. |
-| **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
-| **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
-| **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time that code is allowed to keep being retried. |
-| **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. *Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.* |
-| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
 | **`on`** | `[StandardError]` | See below. |
 | **`on_retry`** | `nil` | Proc to call after each try is rescued. |
+| **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
+| **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time that code is allowed to keep being retried. |
+| **`max_interval`** | `60` | The maximum interval in seconds that any try can reach. |
+| **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
+| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
+| **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
+| **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. *Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.* |
 
 #### Configuring Which Options to Retry With :on
 **`:on`** Can take the form:
