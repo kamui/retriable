@@ -1,5 +1,6 @@
 # Send builds to container-based infrastructure
 # http://docs.travis-ci.com/user/workers/container-based-infrastructure/
+dist: trusty
 sudo: false
 language: ruby
 rvm:
@@ -12,11 +13,11 @@ rvm:
   - jruby-9.0.5.0
   - jruby-9.1.12.0
   - jruby-head
-  - rubinius-3.83
+  - rbx-3.83
 
 matrix:
   allow_failures:
-    - rvm: rubinius-3.83
+    - rvm: rbx-3.83
     - rvm: ruby-head
     - rvm: jruby-head
 
