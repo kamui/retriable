@@ -3,7 +3,11 @@
 
 ## 3.1.0
 
-* Added contexts feature. Thanks to @apurvis.
+* Fix typo in contexts exception message.
+
+## 3.1.0
+
+* Added [contexts feature](https://github.com/kamui/retriable#contexts). Thanks to @apurvis.
 
 ## 3.0.2
 
