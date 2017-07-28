@@ -1,5 +1,7 @@
 ## HEAD
 
+## 3.1.0
+
 * Added contexts feature. Thanks to @apurvis.
 
 ## 3.0.2
