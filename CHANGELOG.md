@@ -1,8 +1,4 @@
 ## HEAD
-* Fix typo in argument exception message
-
-## 3.1.0
-
 * Fix typo in contexts exception message.
 
 ## 3.1.0
