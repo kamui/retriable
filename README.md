@@ -244,16 +244,16 @@ end
 
 This will create two contexts, `aws` and `mysql`, which allow you to reuse different backoff strategies across your application without continually passing those strategy options to the `retriable` method.
 
-These are used simply by calling `Retriable.retriable_with_context`:
+These are used simply by calling `Retriable.with_context`:
 
 ```ruby
 # Will retry all exceptions
-Retriable.retriable_with_context(:aws) do
+Retriable.with_context(:aws) do
   # aws_call
 end
 
 # Will retry Mysql::DeadlockException
-Retriable.retriable_with_context(:mysql) do
+Retriable.with_context(:mysql) do
   # write_to_table
 end
 ```
@@ -261,7 +261,7 @@ end
 You can even temporarily override individual options for a configured context:
 
 ```ruby
-Retriable.retriable_with_context(:mysql, tries: 30) do
+Retriable.with_context(:mysql, tries: 30) do
   # write_to_table
 end
 ```

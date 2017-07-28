@@ -14,7 +14,7 @@ module Retriable
     @config ||= Config.new
   end
 
-  def retriable_with_context(context_key, options = {}, &block)
+  def with_context(context_key, options = {}, &block)
     if !config.contexts.key?(context_key)
       raise ArgumentError, "#{context_key} not found in Retriable.config.contexts"
     end

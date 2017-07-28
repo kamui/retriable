@@ -6,6 +6,6 @@ module Kernel
   end
 
   def retriable_with_context(context_key, opts = {}, &block)
-    Retriable.retriable_with_context(context_key, opts, &block)
+    Retriable.with_context(context_key, opts, &block)
   end
 end
