@@ -381,8 +381,8 @@ describe Retriable do
     before do
       Retriable.configure do |c|
         c.sleep_disabled = true
-        c.context[:sql] = { tries: 1 }
-        c.context[:api] = { tries: 3 }
+        c.contexts[:sql] = { tries: 1 }
+        c.contexts[:api] = { tries: 3 }
       end
     end
 

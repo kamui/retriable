@@ -15,11 +15,11 @@ module Retriable
   end
 
   def retriable_with_context(context_key, options = {}, &block)
-    if !config.context.key?(context_key)
-      raise ArgumentError, "#{context_key} not found in Retriable.config.context"
+    if !config.contexts.key?(context_key)
+      raise ArgumentError, "#{context_key} not found in Retriable.config.contexts"
     end
 
-    retriable(config.context[context_key].merge(options), &block) if block
+    retriable(config.contexts[context_key].merge(options), &block) if block
   end
 
   def retriable(opts = {})

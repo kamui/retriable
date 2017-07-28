@@ -229,12 +229,12 @@ Contexts allow you to coordinate sets of Retriable options across an application
 
 ```ruby
 Retriable.configure do |c|
-  c.context[:aws] = {
+  c.contexts[:aws] = {
     tries: 3,
     base_interval: 5,
     on_retry: Proc.new { puts 'Curse you, AWS!' }
   }
-  c.context[:mysql] = {
+  c.contexts[:mysql] = {
     tries: 10,
     multiplier: 2.5,
     on: Mysql::DeadlockException
