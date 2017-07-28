@@ -45,6 +45,10 @@ describe Retriable::Config do
     expect(subject.new.on_retry).must_be_nil
   end
 
+  it "contexts defaults to {}" do
+    expect(subject.new.contexts).must_equal Hash.new
+  end
+
   it "raises errors on invalid configuration" do
     assert_raises ArgumentError do
       subject.new(does_not_exist: 123)

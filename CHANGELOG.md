@@ -1,5 +1,7 @@
 ## HEAD
 
+* Added contexts feature. Thanks to @apurvis.
+
 ## 3.0.2
 
 * Add configuration and options validation.

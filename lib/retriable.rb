@@ -6,12 +6,20 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
-  def self.configure
+  def configure
     yield(config)
   end
 
   def config
     @config ||= Config.new
+  end
+
+  def with_context(context_key, options = {}, &block)
+    if !config.contexts.key?(context_key)
+      raise ArgumentError, "#{context_key} not found in Retriable.config.contexts. Here the available contexts: #{config.contexts.keys}"
+    end
+
+    retriable(config.contexts[context_key].merge(options), &block) if block
   end
 
   def retriable(opts = {})
@@ -40,7 +48,7 @@ module Retriable
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
-        rand_factor:    rand_factor,
+        rand_factor:    rand_factor
       ).intervals
     end
 

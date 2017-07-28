@@ -6,7 +6,7 @@ Style/Documentation:
 
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
-  
+
 Style/TrailingCommaInLiteral:
   EnforcedStyleForMultiline: comma
 
@@ -17,6 +17,9 @@ Style/IndentArray:
   Enabled: false
 
 Style/IndentHash:
+  Enabled: false
+
+Style/NegatedIf:
   Enabled: false
 
 Metrics/ClassLength:
