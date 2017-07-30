@@ -1,5 +1,11 @@
 ## HEAD
+
+* Fancier README
+
+## 3.1.1
+
 * Fix typo in contexts exception message.
+* Fix updating the version in the library.
 
 ## 3.1.0
 

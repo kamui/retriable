@@ -31,7 +31,7 @@ require 'retriable'
 In your Gemfile:
 
 ```ruby
-gem 'retriable', '~> 3.0'
+gem 'retriable', '~> 3.1'
 ```
 
 ## Usage
