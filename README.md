@@ -174,7 +174,7 @@ This example makes 5 total attempts, if the first attempt fails, the 2nd attempt
 Exponential backoff is enabled by default, if you want to simply retry code every second, 5 times maximum, you can do this:
 
 ```ruby
-Retriable.retriable tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0 do
+Retriable.retriable(tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0) do
   # code here...
 end
 ```
