@@ -16,7 +16,7 @@ If you need ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com
 
 ## Installation
 
-via command line:
+Via command line:
 
 ```ruby
 gem install retriable
@@ -35,21 +35,29 @@ gem 'retriable', '~> 3.1'
 ```
 
 ## Usage
+Code in a `Retriable.retriable` block will be retried if an exception is raised.
 
-Code in a `Retriable.retriable` block will be retried if an exception is raised. By default, Retriable will rescue any exception inherited from `StandardError`, make 3 tries (including the initial attempt) before raising the last exception, and also use randomized exponential backoff to calculate each succeeding try interval. The default interval table with 10 tries looks like this (in seconds):
 
-| retry#   | retry interval | randomized interval             |
-| -------- | -------------- | ------------------------------- |
-| 1        |    0.5         |  [0.25,   0.75]                 |
-| 2        |    0.75        |  [0.375,  1.125]                |
-| 3        |    1.125       |  [0.5625,  1.6875]              |
-| 4        |    1.6875      |  [0.84375, 2.53125]             |
-| 5        |    2.53125     |  [1.265625, 3.796875]           |
-| 6        |    3.796875    |  [1.8984375,  5.6953125]        |
-| 7        |    5.6953125   |  [2.84765625,  8.54296875]      |
-| 8        |   8.54296875   |  [4.271484375, 12.814453125]    |
-| 9        |  12.814453125  |  [6.4072265625, 19.2216796875]  |
-| 10       | 19.2216796875  |  stop                           |
+### Defaults
+By default, `Retriable` will:
+* rescue any exception inherited from `StandardError`
+* make 3 tries (including the initial attempt) before raising the last exception
+* use randomized exponential backoff to calculate each succeeding try interval.
+
+The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond)
+
+| Retry #  | Min      | Average  | Max      |
+| -------- | -------- | -------- | -------- |
+| 1        | `0.25`   | `0.5`    | `0.75`   |
+| 2        | `0.375`  | `0.75`   | `1.125`  |
+| 3        | `0.563`  | `1.125`  | `1.688`  |
+| 4        | `0.844`  | `1.688`  | `2.531`  |
+| 5        | `1.266`  | `2.531`  | `3.797`  |
+| 6        | `1.898`  | `3.797`  | `5.695`  |
+| 7        | `2.848`  | `5.695`  | `8.543`  |
+| 8        | `4.271`  | `8.543`  | `12.814` |
+| 9        | `6.407`  | `12.814` | `19.222` |
+| 10       | **stop** | **stop** | **stop** |
 
 ```ruby
 require 'retriable'
@@ -66,31 +74,31 @@ end
 
 ### Options
 
-Here are the available options:
+Here are the available options, in some vague order of relevance to most common use patterns:
 
-`tries` (default: 3) - Number of attempts to make at running your code block (includes intial attempt).
+| Option | Default | Definition |
+| ------ | ------- | ---------- |
+| **`tries`** | `3` | Number of attempts to make at running your code block (includes intial attempt). |
+| **`on`** | `[StandardError]` | See below. |
+| **`on_retry`** | `nil` | Proc to call after each try is rescued. |
+| **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
+| **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time that code is allowed to keep being retried. |
+| **`max_interval`** | `60` | The maximum interval in seconds that any try can reach. |
+| **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
+| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
+| **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
+| **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. *Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.* |
 
-`base_interval` (default: 0.5) - The initial interval in seconds between tries.
+#### Configuring Which Options to Retry With :on
+**`:on`** Can take the form:
 
-`max_interval` (default: 60) - The maximum interval in seconds that any try can reach.
+- An `Exception` class (retry every exception of this type, including subclasses)
+- An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
+- A `Hash` where the keys are `Exception` classes and the values are one of:
+  - `nil`(retry every exception of the key's type, including subclasses)
+  - A single `Regexp` pattern (retries exceptions ONLY if they match the pattern)
+  - An array of patterns (retries exceptions ONLY if they match at least one of the patterns)
 
-`rand_factor` (default: 0.25) - The percent range above and below the next interval is randomized between. The calculation is calculated like this:
-
-```
-randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])
-```
-
-`multiplier` (default: 1.5) - Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.
-
-`max_elapsed_time`  (default: 900 (15 min)) - The maximum amount of total time that code is allowed to keep being retried.
-
-`intervals`  (default: nil) - Skip generated intervals and provide your own array of intervals in seconds. Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.
-
-`timeout` (default: nil) - Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. Default is `nil` means the code block can run forever without raising error.
-
-`on` (default: [StandardError]) - An `Array` of exceptions to rescue for each try, a `Hash` where the keys are `Exception` classes and the values can be a single `Regexp` pattern or a list of patterns, or a single `Exception` type. Subclasses of the listed exceptions will be retried and have their messages matched in the same way.
-
-`on_retry` - (default: nil) - Proc to call after each try is rescued.
 
 ### Config
 
