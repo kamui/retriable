@@ -83,7 +83,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`on_retry`** | `nil` | Proc to call after each try is rescued. |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
 | **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time that code is allowed to keep being retried. |
-| **`max_interval`** | `60` | The maximum interval in seconds that any try can reach. |
+| **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
 | **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
 | **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
 | **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
@@ -96,8 +96,8 @@ Here are the available options, in some vague order of relevance to most common 
 - An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
 - A `Hash` where the keys are `Exception` classes and the values are one of:
   - `nil`(retry every exception of the key's type, including subclasses)
-  - A single `Regexp` pattern (retries exceptions ONLY if they match the pattern)
-  - An array of patterns (retries exceptions ONLY if they match at least one of the patterns)
+  - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
+  - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
 
 
 ### Config
