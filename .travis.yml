@@ -1,5 +1,6 @@
 # Send builds to container-based infrastructure
 # http://docs.travis-ci.com/user/workers/container-based-infrastructure/
+dist: trusty
 sudo: false
 language: ruby
 rvm:
