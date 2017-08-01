@@ -50,27 +50,6 @@ class Api
 end
 ```
 
-### Defaults
-By default, `Retriable` will:
-* rescue any exception inherited from `StandardError`
-* make 3 tries (including the initial attempt) before raising the last exception
-* use randomized exponential backoff to calculate each succeeding try interval.
-
-The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond)
-
-| Retry #  | Min      | Average  | Max      |
-| -------- | -------- | -------- | -------- |
-| 1        | `0.25`   | `0.5`    | `0.75`   |
-| 2        | `0.375`  | `0.75`   | `1.125`  |
-| 3        | `0.563`  | `1.125`  | `1.688`  |
-| 4        | `0.844`  | `1.688`  | `2.531`  |
-| 5        | `1.266`  | `2.531`  | `3.797`  |
-| 6        | `1.898`  | `3.797`  | `5.695`  |
-| 7        | `2.848`  | `5.695`  | `8.543`  |
-| 8        | `4.271`  | `8.543`  | `12.814` |
-| 9        | `6.407`  | `12.814` | `19.222` |
-| 10       | **stop** | **stop** | **stop** |
-
 ### Options
 
 Here are the available options, in some vague order of relevance to most common use patterns:
