@@ -37,6 +37,18 @@ gem 'retriable', '~> 3.1'
 ## Usage
 Code in a `Retriable.retriable` block will be retried if an exception is raised.
 
+```ruby
+require 'retriable'
+
+class Api
+  # Use it in methods that interact with unreliable services
+  def get
+    Retriable.retriable do
+      # code here...
+    end
+  end
+end
+```
 
 ### Defaults
 By default, `Retriable` will:
@@ -58,19 +70,6 @@ The default interval table with 10 tries looks like this (in seconds, rounded to
 | 8        | `4.271`  | `8.543`  | `12.814` |
 | 9        | `6.407`  | `12.814` | `19.222` |
 | 10       | **stop** | **stop** | **stop** |
-
-```ruby
-require 'retriable'
-
-class Api
-  # Use it in methods that interact with unreliable services
-  def get
-    Retriable.retriable do
-      # code here...
-    end
-  end
-end
-```
 
 ### Options
 
