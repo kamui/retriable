@@ -86,7 +86,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
 | **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
 | **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
-| **`rand_factor`** | 0.25 | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
+| **`rand_factor`** | `0.25` | The percent range above and below the next interval is randomized between. The calculation is calculated as `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
 | **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. *Setting this option will ignore `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` values.* |
 
 #### Configuring Which Options to Retry With :on
