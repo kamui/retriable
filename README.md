@@ -186,7 +186,7 @@ Another way to accomplish this would be to create an array with a fixed interval
 ```ruby
 # Array.new(5, 1) # => [1, 1, 1, 1, 1]
 
-Retriable.retriable intervals: Array.new(5, 1) do
+Retriable.retriable(intervals: Array.new(5, 1)) do
   # code here...
 end
 ```
@@ -194,7 +194,7 @@ end
 If you don't want exponential backoff, but you still want some randomization between intervals, this code will run every 1 seconds with a randomization factor of 0.2, which means each interval will be a random value between 0.8 and 1.2 (1 second +/- 0.2):
 
 ```ruby
-Retriable.retriable base_interval: 1.0, multiplier: 1.0, rand_factor: 0.2 do
+Retriable.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.2) do
   # code here...
 end
 ```
