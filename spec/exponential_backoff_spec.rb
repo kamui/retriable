@@ -26,9 +26,17 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates 10 randomized intervals" do
-    expect(subject.new(tries: 9).intervals.map { |x| x.round(3) }).must_equal(
-      [0.524, 0.911, 1.241, 1.763, 2.338, 4.351, 5.34, 11.89, 18.756]
-    )
+    expect(subject.new(tries: 9).intervals).must_equal([
+      0.5244067512211441,
+      0.9113920238761231,
+      1.2406087918999114,
+      1.7632403621664823,
+      2.338001204738311,
+      4.350816718580626,
+      5.339852157217869,
+      11.889873261212443,
+      18.756037881636484,
+    ])
   end
 
   it "generates defined number of intervals" do
@@ -36,19 +44,35 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates intervals with a defined base interval" do
-    expect(subject.new(base_interval: 1).intervals.map { |x| x.round(3) }).must_equal([1.049, 1.823, 2.481])
+    expect(subject.new(base_interval: 1).intervals).must_equal([
+      1.0488135024422882,
+      1.8227840477522461,
+      2.4812175837998227,
+    ])
   end
 
   it "generates intervals with a defined multiplier" do
-    expect(subject.new(multiplier: 1).intervals.map { |x| x.round(3) }).must_equal([0.524, 0.608, 0.551])
+    expect(subject.new(multiplier: 1).intervals).must_equal([
+      0.5244067512211441,
+      0.607594682584082,
+      0.5513816852888495,
+    ])
   end
 
   it "generates intervals with a defined max interval" do
-    expect(subject.new(max_interval: 1.0, rand_factor: 0.0).intervals).must_equal([0.5, 0.75, 1.0])
+    expect(subject.new(max_interval: 1.0, rand_factor: 0.0).intervals).must_equal([
+      0.5,
+      0.75,
+      1.0,
+    ])
   end
 
   it "generates intervals with a defined rand_factor" do
-    expect(subject.new(rand_factor: 0.2).intervals.map { |x| x.round(3) }).must_equal([0.51, 0.815, 1.171])
+    expect(subject.new(rand_factor: 0.2).intervals).must_equal([
+      0.5097627004884576,
+      0.8145568095504492,
+      1.1712435167599646,
+    ])
   end
 
   it "generates 10 non-randomized intervals" do
