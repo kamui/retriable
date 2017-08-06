@@ -1,5 +1,6 @@
 module Retriable
   class ExponentialBackoff
+
     ATTRIBUTES = [
       :tries,
       :base_interval,
@@ -25,18 +26,19 @@ module Retriable
 
     def intervals
       intervals = Array.new(tries) do |iteration|
-        [base_interval * multiplier**iteration, max_interval].min
+        [base_interval * (multiplier ** iteration), max_interval].min
       end
 
-      return intervals if rand_factor.zero?
-
-      intervals.map { |i| randomize(i) }
+      if rand_factor.zero?
+        intervals
+      else
+        intervals.map { |i| randomize(i) }
+      end
     end
 
     private
 
     def randomize(interval)
-      return interval if rand_factor.zero?
       delta = rand_factor * interval * 1.0
       min = interval - delta
       max = interval + delta

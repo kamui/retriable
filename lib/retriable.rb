@@ -37,6 +37,7 @@ module Retriable
     on_retry          = local_config.on_retry
     sleep_disabled    = local_config.sleep_disabled
 
+    exception_list = on.is_a?(Hash) ? on.keys : on
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
@@ -52,10 +53,9 @@ module Retriable
       ).intervals
     end
 
-    exception_list = on.is_a?(Hash) ? on.keys : on
-
     tries.times do |index|
       try = index + 1
+
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
@@ -69,7 +69,7 @@ module Retriable
         interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
         raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
-        sleep interval if sleep_disabled != true
+        sleep(interval) if sleep_disabled != true
       end
     end
   end
