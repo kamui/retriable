@@ -78,7 +78,7 @@ Here are the available options, in some vague order of relevance to most common 
 
 | Option | Default | Definition |
 | ------ | ------- | ---------- |
-| **`tries`** | `3` | Number of attempts to make at running your code block (includes intial attempt). |
+| **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
 | **`on`** | `[StandardError]` | [See below](#configuring-which-options-to-retry-with-on). |
 | **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
