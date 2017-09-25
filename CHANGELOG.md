@@ -5,6 +5,7 @@
 * Replace `minitest` gem with `rspec`
 * Fancier README
 * Remove unnecessary short circuit in `randomize` method
+* Add ability for `:on` argument to accept a `Hash` where the keys are exception types and the values are either `Proc`s or arrays of `Proc`s that will evaluate to `true` when the exception should be retried.
 
 ## 3.1.1
 

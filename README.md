@@ -97,8 +97,9 @@ Here are the available options, in some vague order of relevance to most common 
 - An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
 - A `Hash` where the keys are `Exception` classes and the values are one of:
   - `nil` (retry every exception of the key's type, including subclasses)
+  - A single `Proc` (retries exceptions ONLY if it returns truthy)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
-  - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
+  - An array of `Proc` and/or `Regexp` (retries exceptions ONLY if at least one exception matches `Regexp` or the `Proc` evaluates to `true`)
 
 
 ### Configuration
@@ -132,10 +133,16 @@ end
 
 You can also use a hash to specify that you only want to retry exceptions with certain messages (see [the documentation above](#configuring-which-options-to-retry-with-on)).  This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/Username has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
 
+A `Regexp` (or array of `Regexp`s). If any of the `Regexp`s match the exception's message, the block will be retried.
+A `Proc` (or array of `Proc`s) that evaluates the exception being handled and returns `true` if the block should be retried. If any of the procs in the list return `true`, the block will be retried.
+You can also mix and match `Proc`s and `Regexp`s in an `Array`
+>>>>>>> Accept Proc in the `:on` argument
+
 ```ruby
 Retriable.retriable(on: {
   ActiveRecord::RecordNotUnique => nil,
   ActiveRecord::RecordInvalid => [/Parent must exist/, /Username has already been taken/],
+  ActiveRecord::RecordNotFound => -> (exception, try, elapsed_time, next_interval) { exception.model == User }
   Mysql2::Error => /Duplicate entry/
 }) do
   # code here...
