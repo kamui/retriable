@@ -96,8 +96,9 @@ Here are the available options, in some vague order of relevance to most common 
 - An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
 - A `Hash` where the keys are `Exception` classes and the values are one of:
   - `nil` (retry every exception of the key's type, including subclasses)
+  - A single `Proc` (retries exceptions ONLY if it returns truthy)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
-  - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
+  - An array of `Proc` and/or `Regexp` (retries exceptions ONLY if at least one exception matches `Regexp` or the `Proc` evaluates to `true`)
 
 
 ### Configuration
@@ -129,12 +130,17 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern, or an array of `Regexp`s.
+You can also specify a `Hash` where the keys are `Exception` subclasses and the values are either:
+
+A `Regexp` (or array of `Regexp`s). If any of the `Regexp`s match the exception's message, the block will be retried.
+A `Proc` (or array of `Proc`s) that evaluates the exception being handled and returns `true` if the block should be retried. If any of the procs in the list return `true`, the block will be retried.
+You can also mix and match `Proc`s and `Regexp`s in an `Array`
 
 ```ruby
 Retriable.retriable(on: {
   ActiveRecord::RecordNotUnique => nil,
   ActiveRecord::RecordInvalid => [/Email has already been taken/, /Username has already been taken/],
+  ActiveRecord::RecordNotFound => -> (e) { e.model == User }
   Mysql2::Error => /Duplicate entry/
 }) do
   # code here...
