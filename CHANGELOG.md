@@ -1,6 +1,7 @@
 ## HEAD
 
 * Fancier README
+* Add ability for `:on` argument to accept a `Hash` where the keys are exception types and the values are a single or array of `Proc` that evaluates whether to retry exception.
 
 ## 3.1.1
 
