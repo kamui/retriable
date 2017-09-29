@@ -28,11 +28,9 @@ module Retriable
         [base_interval * multiplier**iteration, max_interval].min
       end
 
-      if rand_factor.zero?
-        intervals
-      else
-        intervals.map { |i| randomize(i) }
-      end
+      return intervals if rand_factor.zero?
+
+      intervals.map { |i| randomize(i) }
     end
 
     private
