@@ -56,7 +56,7 @@ By default, `Retriable` will:
 * make 3 tries (including the initial attempt) before raising the last exception
 * use randomized exponential backoff to calculate each succeeding try interval.
 
-The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond)
+The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond):
 
 | Retry #  | Min      | Average  | Max      |
 | -------- | -------- | -------- | -------- |
@@ -129,7 +129,7 @@ Retriable.retriable on: [Timeout::Error, Errno::ECONNRESET] do
 end
 ```
 
-You can also specify a Hash of exceptions where the values are a list or single Regexp pattern.
+You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern or an array of `Regexp`s.
 
 ```ruby
 Retriable.retriable on: {
