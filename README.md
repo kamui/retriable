@@ -129,7 +129,7 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern or an array of `Regexp`s.
+You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern, or an array of `Regexp`s.
 
 ```ruby
 Retriable.retriable(on: {
