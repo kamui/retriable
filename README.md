@@ -4,7 +4,7 @@
 [![Code Climate](https://codeclimate.com/github/kamui/retriable/badges/gpa.svg)](https://codeclimate.com/github/kamui/retriable)
 [![Test Coverage](https://codeclimate.com/github/kamui/retriable/badges/coverage.svg)](https://codeclimate.com/github/kamui/retriable)
 
-Retriable is a simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff) time intervals. This is especially useful when interacting external api/services or file system calls.
+Retriable is a simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff) time intervals. This is especially useful when interacting external APIs, remote services, or file system calls.
 
 ## Requirements
 
@@ -56,7 +56,7 @@ By default, `Retriable` will:
 * make 3 tries (including the initial attempt) before raising the last exception
 * use randomized exponential backoff to calculate each succeeding try interval.
 
-The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond)
+The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond):
 
 | Retry #  | Min      | Average  | Max      |
 | -------- | -------- | -------- | -------- |
@@ -95,7 +95,7 @@ Here are the available options, in some vague order of relevance to most common 
 - An `Exception` class (retry every exception of this type, including subclasses)
 - An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
 - A `Hash` where the keys are `Exception` classes and the values are one of:
-  - `nil`(retry every exception of the key's type, including subclasses)
+  - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
   - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
 
@@ -129,7 +129,7 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also specify a Hash of exceptions where the values are a list or single Regexp pattern.
+You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern, or an array of `Regexp`s.
 
 ```ruby
 Retriable.retriable(on: {
@@ -208,14 +208,14 @@ do_this_on_each_retry = Proc.new do |exception, try, elapsed_time, next_interval
   log "#{exception.class}: '#{exception.message}' - #{try} tries in #{elapsed_time} seconds and #{next_interval} seconds until the next try."
 end
 
-Retriable.retriable on_retry: do_this_on_each_retry do
+Retriable.retriable(on_retry: do_this_on_each_retry) do
   # code here...
 end
 ```
 
 ### Ensure/Else
 
-What if I want to execute a code block at the end, whether or not an exception was rescued ([ensure](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure))? Or, what if I want to execute a code block if no exception is raised ([else](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else))? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:
+What if I want to execute a code block at the end, whether or not an exception was rescued ([ensure](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure))? Or what if I want to execute a code block if no exception is raised ([else](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else))? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:
 
 ```ruby
 begin

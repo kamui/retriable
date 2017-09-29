@@ -36,7 +36,6 @@ module Retriable
     private
 
     def randomize(interval)
-      return interval if rand_factor.zero?
       delta = rand_factor * interval * 1.0
       min = interval - delta
       max = interval + delta
