@@ -1,6 +1,7 @@
 ## HEAD
 
 * Fancier README
+* Remove unnecessary short circuit in `randomize` method
 
 ## 3.1.1
 
