@@ -313,6 +313,32 @@ describe Retriable do
       expect(exceptions[3].class).must_equal StandardError
     end
 
+    it '#retriable retries with a hash exception where the value is a proc that returns true' do
+      matcher = ->(e) { e.message == 'something went wrong' }
+      tries = 0
+      expect do
+        subject.retriable on: { TestError => matcher }, tries: 2 do
+          tries += 1
+          raise TestError, 'something went wrong'
+        end
+      end.must_raise TestError
+
+      expect(tries).must_equal 2
+    end
+
+    it '#retriable does not retry with a hash exception where the value is a proc that returns false' do
+      matcher = ->(e) { e.message == 'something went wrong' }
+      tries = 0
+      expect do
+        subject.retriable on: { TestError => matcher }, tries: 2 do
+          tries += 1
+          raise TestError, 'not a match'
+        end
+      end.must_raise TestError
+
+      expect(tries).must_equal 1
+    end
+
     it "#retriable can be called in the global scope" do
       expect do
         retriable do

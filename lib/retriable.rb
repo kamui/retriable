@@ -60,11 +60,7 @@ module Retriable
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
       rescue *[*exception_list] => exception
-        if on.is_a?(Hash)
-          raise unless exception_list.any? do |e|
-            exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
-          end
-        end
+        raise unless matched_exception?(on, exception)
 
         interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
@@ -73,4 +69,24 @@ module Retriable
       end
     end
   end
+
+  def matched_exception?(on, exception)
+    return true unless on.is_a?(Hash)
+
+    on.any? do |expected_exception, matchers|
+      next false unless exception.is_a?(expected_exception)
+      next true if matchers.nil?
+
+      Array(matchers).any? do |matcher|
+        if matcher.is_a?(Regexp)
+          exception.message =~ matcher
+        elsif matcher.is_a?(Proc)
+          matcher.call(exception)
+        else
+          raise ArgumentError, 'Exception hash values must be Proc or Regexp'
+        end
+      end
+    end
+  end
+  private_class_method :matched_exception?
 end
