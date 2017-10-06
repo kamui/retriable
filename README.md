@@ -167,11 +167,11 @@ Retriable.retriable(intervals: [0.5, 1.0, 2.0, 2.5]) do
 end
 ```
 
-This example makes 5 total attempts, if the first attempt fails, the 2nd attempt occurs 0.5 seconds later.
+This example makes 5 total attempts. If the first attempt fails, the 2nd attempt occurs 0.5 seconds later.
 
 ### Turn off Exponential Backoff
 
-Exponential backoff is enabled by default, if you want to simply retry code every second, 5 times maximum, you can do this:
+Exponential backoff is enabled by default.  If you want to simply retry code every second, 5 times maximum, you can do this:
 
 ```ruby
 Retriable.retriable(tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0) do
@@ -179,7 +179,7 @@ Retriable.retriable(tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 
 end
 ```
 
-This works by starting at a 1 second interval (`base_interval`), setting the `multipler` to 1.0 means each subsequent try will increase 1x, which is still `1.0` seconds, and then a `rand_factor` of 0.0 means that there's no randomization of that interval. By default, it would randomize 0.25 seconds, which would mean normally the intervals would randomize between 0.75 and 1.25 seconds, but in this case `rand_factor` is basically being disabled.
+This works by starting at a 1 second `base_interval`.  Setting the `multipler` to 1.0 means each subsequent try will increase 1x, which is still `1.0` seconds, and then a `rand_factor` of 0.0 means that there's no randomization of that interval. (By default, it would randomize 0.25 seconds, which would mean normally the intervals would randomize between 0.75 and 1.25 seconds, but in this case `rand_factor` is basically being disabled.)
 
 Another way to accomplish this would be to create an array with a fixed interval. In this example, `Array.new(5, 1)` creates an array with 5 elements, all with the value 1. The code block will retry up to 5 times, and wait 1 second between each attempt.
 
@@ -191,7 +191,7 @@ Retriable.retriable(intervals: Array.new(5, 1)) do
 end
 ```
 
-If you don't want exponential backoff, but you still want some randomization between intervals, this code will run every 1 seconds with a randomization factor of 0.2, which means each interval will be a random value between 0.8 and 1.2 (1 second +/- 0.2):
+If you don't want exponential backoff but you still want some randomization between intervals, this code will run every 1 seconds with a randomization factor of 0.2, which means each interval will be a random value between 0.8 and 1.2 (1 second +/- 0.2):
 
 ```ruby
 Retriable.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.2) do
