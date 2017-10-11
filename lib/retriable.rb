@@ -2,6 +2,7 @@ require "timeout"
 require_relative "retriable/config"
 require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
+require_relative "retriable/ext"
 
 module Retriable
   module_function
