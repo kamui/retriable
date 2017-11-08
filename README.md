@@ -113,7 +113,7 @@ end
 
 ### Example Usage
 
-`Retriable.retriable` accepts custom arguments. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
+This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
 
 ```ruby
 Retriable.retriable(on: Timeout::Error, tries: 3, base_interval: 1) do
@@ -129,19 +129,19 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern, or an array of `Regexp`s.
+You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern, or an array of `Regexp`s.  This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/\w+ has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
 
 ```ruby
 Retriable.retriable(on: {
   ActiveRecord::RecordNotUnique => nil,
-  ActiveRecord::RecordInvalid => [/Email has already been taken/, /Username has already been taken/],
+  ActiveRecord::RecordInvalid => [/Parent must exist/, /\w+ has already been taken/],
   Mysql2::Error => /Duplicate entry/
 }) do
   # code here...
 end
 ```
 
-You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try.
+You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try. (You may want to read up on [the dangers of using Ruby `Timeout`](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) before using this feature.)
 
 ```ruby
 Retriable.retriable(timeout: 60) do
