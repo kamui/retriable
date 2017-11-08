@@ -129,12 +129,12 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also use a hash to specify that you only want to retry exceptions with certain messages (see [the documentation above](#configuring-which-options-to-retry-with-on)).  This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/\w+ has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
+You can also use a hash to specify that you only want to retry exceptions with certain messages (see [the documentation above](#configuring-which-options-to-retry-with-on)).  This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/Username has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
 
 ```ruby
 Retriable.retriable(on: {
   ActiveRecord::RecordNotUnique => nil,
-  ActiveRecord::RecordInvalid => [/Parent must exist/, /\w+ has already been taken/],
+  ActiveRecord::RecordInvalid => [/Parent must exist/, /Username has already been taken/],
   Mysql2::Error => /Duplicate entry/
 }) do
   # code here...
