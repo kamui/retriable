@@ -85,8 +85,11 @@ module Retriable
   # @param method_name [Symbol,String] the method to wrap in a retryable call
   # @param opts [Hash] options passed to Retriable#retriable
   def retriable(method_name, opts = {})
-    prepend(Module.new {
-      define_method(method_name) { |*a, &b| Retriable.retriable(opts) { super(*a, &b) } }
-    })
+    mod = Module.new do
+      define_method(method_name) do |*a, &b|
+        Retriable.retriable(opts) { super(*a, &b) }
+      end
+    end
+    prepend(mod)
   end
 end
