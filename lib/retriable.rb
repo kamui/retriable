@@ -2,20 +2,17 @@ require "timeout"
 require_relative "retriable/config"
 require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
-require_relative "retriable/ext"
 
 module Retriable
-  module_function
-
-  def configure
+  def self.configure
     yield(config)
   end
 
-  def config
+  def self.config
     @config ||= Config.new
   end
 
-  def with_context(context_key, options = {}, &block)
+  def self.with_context(context_key, options = {}, &block)
     if !config.contexts.key?(context_key)
       raise ArgumentError, "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
     end
@@ -23,7 +20,7 @@ module Retriable
     retriable(config.contexts[context_key].merge(options), &block) if block
   end
 
-  def retriable(opts = {})
+  def self.retriable(opts = {})
     local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
 
     tries             = local_config.tries
@@ -73,5 +70,23 @@ module Retriable
         sleep interval if sleep_disabled != true
       end
     end
+  end
+
+  # Retriable class extension
+  #
+  # @example
+  #   extend Retriable
+  #   def perform
+  #     # some work
+  #   end
+  #   retriable :perform, on: Net::OpenTimeout
+  #
+  # @note Method should be defined on the class
+  # @param method_name [Symbol,String] the method to wrap in a retryable call
+  # @param opts [Hash] options passed to Retriable#retriable
+  def retriable(method_name, opts = {})
+    prepend(Module.new {
+      define_method(method_name) { |*a, &b| Retriable.retriable(opts) { super(*a, &b) } }
+    })
   end
 end
