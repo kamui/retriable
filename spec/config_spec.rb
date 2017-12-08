@@ -1,6 +1,7 @@
 require_relative "spec_helper"
 
 describe Retriable::Config do
+  include Minitest::Spec::DSL
   subject do
     Retriable::Config
   end

@@ -3,6 +3,7 @@ require_relative "spec_helper"
 class TestError < Exception; end
 
 describe Retriable do
+  include Minitest::Spec::DSL
   subject do
     Retriable
   end
