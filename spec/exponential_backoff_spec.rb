@@ -1,6 +1,7 @@
 require_relative "spec_helper"
 
 describe Retriable::ExponentialBackoff do
+  include Minitest::Spec::DSL
   subject do
     Retriable::ExponentialBackoff
   end

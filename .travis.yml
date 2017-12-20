@@ -18,13 +18,18 @@ rvm:
 matrix:
   allow_failures:
     - rvm: rbx-3.86
-    - rvm: ruby-head
-    - rvm: jruby-head
 
 before_install:
   - gem update --system
   - gem install bundler
+script:
+  - "bin/test_all.sh"
+cache:
+  bundler: true
 
+env:
+  global:
+    - JRUBY_OPTS=--debug
 addons:
   code_climate:
     repo_token: 20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
