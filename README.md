@@ -79,14 +79,14 @@ Here are the available options, in some vague order of relevance to most common 
 | Option | Default | Definition |
 | ------ | ------- | ---------- |
 | **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
-| **`on`** | `[StandardError]` | [See below](#configuring-which-options-to-retry-with-on). |
+| **`on`** | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on). |
 | **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
 | **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time in seconds that code is allowed to keep being retried. |
 | **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
 | **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
 | **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
-| **`rand_factor`** | `0.25` | The percent range above and below the next interval is randomized between. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
+| **`rand_factor`** | `0.25` | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
 | **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array). |
 
 #### Configuring Which Options to Retry With :on
@@ -113,7 +113,7 @@ end
 
 ### Example Usage
 
-`Retriable.retriable` accepts custom arguments. This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
+This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
 
 ```ruby
 Retriable.retriable(on: Timeout::Error, tries: 3, base_interval: 1) do
@@ -129,19 +129,19 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also specify a Hash of exceptions where the values are either `nil`, a single `Regexp` pattern, or an array of `Regexp`s.
+You can also use a hash to specify that you only want to retry exceptions with certain messages (see [the documentation above](#configuring-which-options-to-retry-with-on)).  This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/Username has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
 
 ```ruby
 Retriable.retriable(on: {
   ActiveRecord::RecordNotUnique => nil,
-  ActiveRecord::RecordInvalid => [/Email has already been taken/, /Username has already been taken/],
+  ActiveRecord::RecordInvalid => [/Parent must exist/, /Username has already been taken/],
   Mysql2::Error => /Duplicate entry/
 }) do
   # code here...
 end
 ```
 
-You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try.
+You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try. (You may want to read up on [the dangers of using Ruby `Timeout`](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) before using this feature.)
 
 ```ruby
 Retriable.retriable(timeout: 60) do
