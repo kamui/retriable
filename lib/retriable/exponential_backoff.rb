@@ -1,11 +1,11 @@
 module Retriable
   class ExponentialBackoff
-    ATTRIBUTES = [
-      :tries,
-      :base_interval,
-      :multiplier,
-      :max_interval,
-      :rand_factor,
+    ATTRIBUTES = %i[
+      tries
+      base_interval
+      multiplier
+      max_interval
+      rand_factor
     ].freeze
 
     attr_accessor(*ATTRIBUTES)

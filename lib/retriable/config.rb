@@ -2,14 +2,14 @@ require_relative "exponential_backoff"
 
 module Retriable
   class Config
-    ATTRIBUTES = ExponentialBackoff::ATTRIBUTES + [
-      :sleep_disabled,
-      :max_elapsed_time,
-      :intervals,
-      :timeout,
-      :on,
-      :on_retry,
-      :contexts,
+    ATTRIBUTES = ExponentialBackoff::ATTRIBUTES + %i[
+      sleep_disabled
+      max_elapsed_time
+      intervals
+      timeout
+      on
+      on_retry
+      contexts
     ].freeze
 
     attr_accessor(*ATTRIBUTES)
@@ -28,7 +28,7 @@ module Retriable
       @timeout          = nil
       @on               = [StandardError]
       @on_retry         = nil
-      @contexts          = {}
+      @contexts         = {}
 
       opts.each do |k, v|
         raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
