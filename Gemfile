@@ -5,6 +5,7 @@ gemspec
 group :test do
   gem "codeclimate-test-reporter", require: false
   gem "minitest-focus"
+  gem "rspec"
   gem "simplecov", require: false
 end
 
