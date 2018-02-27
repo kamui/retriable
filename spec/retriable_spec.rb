@@ -253,7 +253,7 @@ describe Retriable do
         exceptions[try] = exception
       end
 
-      e = expect do
+      expect do
         described_class.retriable tries: 4, on: { StandardError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
           @tries += 1
 
