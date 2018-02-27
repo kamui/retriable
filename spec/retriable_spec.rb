@@ -18,7 +18,7 @@ describe Retriable do
 
   def increment_tries_with_exception(exception_class)
     increment_tries
-    raise exception_class, "#{exception_class.to_s} occurred"
+    raise exception_class, "#{exception_class} occurred"
   end
 
   context "with sleep disabled" do
