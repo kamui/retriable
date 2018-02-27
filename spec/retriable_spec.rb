@@ -242,6 +242,8 @@ describe Retriable do
       end
     end
 
+
+
     it "#retriable with a hash exception list where the values are exception message patterns" do
       exceptions = []
       handler = lambda do |exception, try, _elapsed_time, _next_interval|

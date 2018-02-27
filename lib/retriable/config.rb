@@ -28,7 +28,7 @@ module Retriable
       @timeout          = nil
       @on               = [StandardError]
       @on_retry         = nil
-      @contexts          = {}
+      @contexts         = {}
 
       opts.each do |k, v|
         raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
