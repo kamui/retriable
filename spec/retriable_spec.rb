@@ -1,8 +1,10 @@
 require_relative "spec_helper"
 
-class TestError < Exception; end
-
 describe Retriable do
+  before do
+    @tries = 0
+  end
+
   describe "with sleep disabled" do
     before do
       Retriable.configure do |c|
@@ -11,12 +13,8 @@ describe Retriable do
     end
 
     it "stops at first try if the block does not raise an exception" do
-      tries = 0
-      described_class.retriable do
-        tries += 1
-      end
-
-      expect(tries).to eq(1)
+      described_class.retriable { @tries += 1 }
+      expect(@tries).to eq(1)
     end
 
     it "raises a LocalJumpError if #retriable is not given a block" do
@@ -25,67 +23,58 @@ describe Retriable do
     end
 
     it "makes 3 tries when retrying block of code raising StandardError with no arguments" do
-      tries = 0
-
       expect do
         described_class.retriable do
-          tries += 1
+          @tries += 1
           raise StandardError.new, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
-      expect(tries).to eq(3)
+      expect(@tries).to eq(3)
     end
 
     it "makes only 1 try when exception raised is not ancestor of StandardError" do
-      tries = 0
-
       expect do
         described_class.retriable do
-          tries += 1
+          @tries += 1
           raise TestError.new, "TestError occurred"
         end
       end.to raise_error(TestError)
 
-      expect(tries).to eq(1)
+      expect(@tries).to eq(1)
     end
 
     it "#retriable with custom exception tries 3 times and re-raises the exception" do
-      tries = 0
-
       expect do
         described_class.retriable(on: TestError) do
-          tries += 1
+          @tries += 1
           raise TestError.new, "TestError occurred"
         end
       end.to raise_error(TestError)
 
-      expect(tries).to eq(3)
+      expect(@tries).to eq(3)
     end
 
     it "#retriable tries 10 times" do
-      tries = 0
-
       expect do
         described_class.retriable(tries: 10) do
-          tries += 1
+          @tries += 1
           raise StandardError.new, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
-      expect(tries).to eq(10)
+      expect(@tries).to eq(10)
     end
 
     it "#retriable will timeout after 1 second" do
       expect do
         described_class.retriable(timeout: 1) do
-          sleep 1.1
+          sleep(1.1)
         end
       end.to raise_error(Timeout::Error)
     end
 
     it "applies a randomized exponential backoff to each try" do
-      tries = 0
       time_table = []
 
       handler = lambda do |exception, _try, _elapsed_time, next_interval|
@@ -95,7 +84,7 @@ describe Retriable do
 
       expect do
         Retriable.retriable(on: [EOFError, ArgumentError], on_retry: handler, tries: 10) do
-          tries += 1
+          @tries += 1
           raise ArgumentError.new, "ArgumentError occurred"
         end
       end.to raise_error(ArgumentError)
@@ -113,7 +102,7 @@ describe Retriable do
         nil,
       ])
 
-      expect(tries).to eq(10)
+      expect(@tries).to eq(10)
     end
 
     describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
@@ -154,7 +143,6 @@ describe Retriable do
     end
 
     it "#retriable has a max interval of 1.5 seconds" do
-      tries = 0
       time_table = {}
 
       handler = lambda do |_exception, try, _elapsed_time, next_interval|
@@ -169,8 +157,8 @@ describe Retriable do
           tries: 5,
           max_interval: 1.5,
         ) do
-          tries += 1
-          raise StandardError.new, "StandardError occurred"
+          @tries += 1
+          raise StandardError.new
         end
       end.to raise_error(StandardError)
 
@@ -197,15 +185,13 @@ describe Retriable do
         time_table[try] = next_interval
       end
 
-      try_count = 0
-
       expect do
         described_class.retriable(
           on_retry: handler,
           intervals: intervals,
         ) do
-          try_count += 1
-          raise StandardError.new, "StandardError occurred"
+          @tries += 1
+          raise StandardError.new
         end
       end.to raise_error(StandardError)
 
@@ -218,51 +204,50 @@ describe Retriable do
         6 => nil,
       )
 
-      expect(try_count).to eq(6)
+      expect(@tries).to eq(6)
     end
 
-    it "#retriable with a hash exception where the value is an exception message pattern" do
-      e = expect do
-        described_class.retriable on: { TestError => /something went wrong/ } do
-          raise TestError, "something went wrong"
-        end
-      end.to raise_error(TestError, /something went wrong/)
+    context "hash exception list" do
+      let(:error_message) { 'something went wrong' }
+      let(:hash_argument) { { TestError => /#{error_message}/ } }
+
+      it "#retriable with a hash exception where the value is an exception message pattern" do
+        expect do
+          described_class.retriable(on: hash_argument) { raise TestError, error_message }
+        end.to raise_error(TestError, /#{error_message}/)
+      end
+
+      it "#retriable with a hash exception list matches exception subclasses" do
+        on_hash = hash_argument.merge(
+          DifferentTestError => /should never happen/,
+          DifferentTestError => /also should never happen/
+        )
+
+        expect do
+          described_class.retriable(tries: 4, on: on_hash, tries: 4) do
+            @tries += 1
+            raise SecondTestError, error_message
+          end
+        end.to raise_error(SecondTestError, /something went wrong/)
+
+        expect(@tries).to eq(4)
+      end
+
+      it "#retriable with a hash exception list does not retry matching exception subclass but not message" do
+        expect do
+          described_class.retriable(on: hash_argument, tries: 4) do
+            @tries += 1
+            raise SecondTestError, "not a match"
+          end
+        end.to raise_error(SecondTestError, /not a match/)
+
+        expect(@tries).to eq(1)
+      end
     end
 
-    it "#retriable with a hash exception list matches exception subclasses" do
-      class SecondTestError < TestError; end
-      class DifferentTestError < Exception; end
 
-      tries = 0
-      e = expect do
-        described_class.retriable on: {
-            DifferentTestError => /should never happen/,
-            TestError => /something went wrong/,
-            DifferentTestError => /also should never happen/,
-          }, tries: 4 do
-          tries += 1
-          raise SecondTestError, "something went wrong"
-        end
-      end.to raise_error(SecondTestError, /something went wrong/)
-
-      expect(tries).to eq(4)
-    end
-
-    it "#retriable with a hash exception list does not retry matching exception subclass but not message" do
-      class SecondTestError < TestError; end
-      tries = 0
-      expect do
-        described_class.retriable on: { TestError => /something went wrong/ }, tries: 4 do
-          tries += 1
-          raise SecondTestError, "not a match"
-        end
-      end.to raise_error(SecondTestError, /not a match/)
-
-      expect(tries).to eq(1)
-    end
 
     it "#retriable with a hash exception list where the values are exception message patterns" do
-      tries = 0
       exceptions = []
       handler = lambda do |exception, try, _elapsed_time, _next_interval|
         exceptions[try] = exception
@@ -270,8 +255,9 @@ describe Retriable do
 
       e = expect do
         described_class.retriable tries: 4, on: { StandardError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
-          tries += 1
-          case tries
+          @tries += 1
+
+          case @tries
           when 1
             raise TestError, "foo"
           when 2
@@ -291,7 +277,7 @@ describe Retriable do
       expect(exceptions[3].class).to eq(StandardError)
     end
 
-    it "#retriable can be called in the global scope" do
+    it "#retriable cannot be called in the global scope without requiring the core_ext/kernel" do
       expect do
         retriable do
           puts "should raise NoMethodError"
@@ -300,16 +286,14 @@ describe Retriable do
 
       require_relative "../lib/retriable/core_ext/kernel"
 
-      tries = 0
-
       expect do
         retriable do
-          tries += 1
+          @tries += 1
           raise StandardError
         end
       end.to raise_error(StandardError)
 
-      expect(tries).to eq(3)
+      expect(@tries).to eq(3)
     end
   end
 
@@ -320,7 +304,6 @@ describe Retriable do
 
     expect(described_class.config.sleep_disabled).to be_falsey
 
-    tries = 0
     time_table = {}
 
     handler = lambda do |_exception, try, elapsed_time, _next_interval|
@@ -335,12 +318,12 @@ describe Retriable do
         max_elapsed_time: 2.0,
         on_retry: handler,
       ) do
-        tries += 1
+        @tries += 1
         raise EOFError
       end
     end.to raise_error(EOFError)
 
-    expect(tries).to eq(2)
+    expect(@tries).to eq(2)
   end
 
   it "raises NoMethodError on invalid configuration" do
@@ -361,46 +344,39 @@ describe Retriable do
     end
 
     it "sql context stops at first try if the block does not raise an exception" do
-      tries = 0
       described_class.with_context(:sql) do
-        tries += 1
+        @tries += 1
       end
 
-      expect(tries).to eq(1)
+      expect(@tries).to eq(1)
     end
 
     it "with_context respects the context options" do
-      tries = 0
-
       expect do
         described_class.with_context(:api) do
-          tries += 1
+          @tries += 1
           raise StandardError.new, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
-      expect(tries).to eq(3)
+      expect(@tries).to eq(3)
     end
 
     it "with_context allows override options" do
-      tries = 0
-
       expect do
         described_class.with_context(:sql, tries: 5) do
-          tries += 1
+          @tries += 1
           raise StandardError.new, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
-      expect(tries).to eq(5)
+      expect(@tries).to eq(5)
     end
 
     it "raises an ArgumentError when the context isn't found" do
-      tries = 0
-
       expect do
         described_class.with_context(:wtf) do
-          tries += 1
+          @tries += 1
         end
       end.to raise_error(ArgumentError, /wtf not found/)
     end

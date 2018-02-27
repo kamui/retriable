@@ -43,7 +43,7 @@ describe Retriable::Config do
     end
 
     it "contexts defaults to {}" do
-      expect(described_class.new.contexts).to eq(Hash.new)
+      expect(described_class.new.contexts).to eq({})
     end
   end
 
