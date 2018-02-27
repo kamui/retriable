@@ -15,7 +15,7 @@ rvm:
   - jruby-head
   - rbx-3.86
 script:
-  - bundle exec rspec
+  - bundle exec rspec --require spec_helper
 
 matrix:
   allow_failures:
