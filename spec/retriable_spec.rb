@@ -54,7 +54,7 @@ describe Retriable do
       tries = 0
 
       expect do
-        described_class.retriable on: TestError do
+        described_class.retriable(on: TestError) do
           tries += 1
           raise TestError.new, "TestError occurred"
         end
@@ -78,7 +78,7 @@ describe Retriable do
 
     it "#retriable will timeout after 1 second" do
       expect do
-        described_class.retriable timeout: 1 do
+        described_class.retriable(timeout: 1) do
           sleep 1.1
         end
       end.to raise_error(Timeout::Error)
@@ -94,11 +94,7 @@ describe Retriable do
       end
 
       expect do
-        Retriable.retriable(
-          on: [EOFError, ArgumentError],
-          on_retry: handler,
-          tries: 10,
-        ) do
+        Retriable.retriable(on: [EOFError, ArgumentError], on_retry: handler, tries: 10) do
           tries += 1
           raise ArgumentError.new, "ArgumentError occurred"
         end
@@ -406,7 +402,7 @@ describe Retriable do
         described_class.with_context(:wtf) do
           tries += 1
         end
-      end.to raise_error(ArgumentError)
+      end.to raise_error(ArgumentError, /wtf not found/)
     end
   end
 end

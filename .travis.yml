@@ -20,8 +20,6 @@ script:
 matrix:
   allow_failures:
     - rvm: rbx-3.86
-    - rvm: ruby-head
-    - rvm: jruby-head
 
 before_install:
   - gem update --system
