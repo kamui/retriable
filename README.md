@@ -315,3 +315,9 @@ RetriableProxy.for_object(api_endpoint, on: Net::TimeoutError)
 ## Credits
 
 The randomized exponential backoff implementation was inspired by the one used in Google's [google-http-java-client](https://code.google.com/p/google-http-java-client/wiki/ExponentialBackoff) project.
+
+## Development
+### Running Specs
+```bash
+bundle exec rspec
+```
