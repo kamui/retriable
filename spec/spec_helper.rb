@@ -12,3 +12,9 @@ require "minitest/focus"
 require "pry"
 
 require_relative "../lib/retriable"
+
+RSpec.configure do |config|
+  config.before(:each) do
+    srand(0)
+  end
+end

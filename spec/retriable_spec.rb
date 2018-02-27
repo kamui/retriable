@@ -3,10 +3,6 @@ require_relative "spec_helper"
 class TestError < Exception; end
 
 describe Retriable do
-  before do
-    srand 0
-  end
-
   describe "with sleep disabled" do
     before do
       Retriable.configure do |c|

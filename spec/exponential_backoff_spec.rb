@@ -1,24 +1,22 @@
 require_relative "spec_helper"
 
 describe Retriable::ExponentialBackoff do
-  before do
-    srand 0
-  end
+  context "defaults" do
+    it "tries defaults to 3" do
+      expect(described_class.new.tries).to eq(3)
+    end
 
-  it "tries defaults to 3" do
-    expect(described_class.new.tries).to eq(3)
-  end
+    it "max interval defaults to 60" do
+      expect(described_class.new.max_interval).to eq(60)
+    end
 
-  it "max interval defaults to 60" do
-    expect(described_class.new.max_interval).to eq(60)
-  end
+    it "randomization factor defaults to 0.5" do
+      expect(described_class.new.base_interval).to eq(0.5)
+    end
 
-  it "randomization factor defaults to 0.5" do
-    expect(described_class.new.base_interval).to eq(0.5)
-  end
-
-  it "multiplier defaults to 1.5" do
-    expect(described_class.new.multiplier).to eq(1.5)
+    it "multiplier defaults to 1.5" do
+      expect(described_class.new.multiplier).to eq(1.5)
+    end
   end
 
   it "generates 10 randomized intervals" do
