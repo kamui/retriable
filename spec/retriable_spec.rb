@@ -1,5 +1,3 @@
-require_relative "spec_helper"
-
 describe Retriable do
   let(:time_table_handler) do
     lambda do |_exception, try, _elapsed_time, next_interval|
@@ -101,56 +99,51 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
-    describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
-      before do
-        tries = 6
-
-        Retriable.retriable(
-          on: [EOFError, ArgumentError],
-          on_retry: time_table_handler,
-          rand_factor: 0.0,
-          tries: tries,
-        ) do
-          @tries += 1
-          raise ArgumentError, "ArgumentError occurred" if @tries < tries
-        end
-      end
-
-      it "makes 6 tries" do
-        expect(@tries).to eq(6)
-      end
-
-      it "applies a non-randomized exponential backoff to each try" do
-        expect(@next_interval_table).to eq(
+    context "rand_factor 0.0" do
+      let(:no_rand_timetable) do
+        {
           1 => 0.5,
           2 => 0.75,
-          3 => 1.125,
-          4 => 1.6875,
-          5 => 2.53125,
-        )
+          3 => 1.125
+        }
       end
-    end
 
-    it "#retriable has a max interval of 1.5 seconds" do
-      expect do
-        described_class.retriable(
-          on: StandardError,
-          on_retry: time_table_handler,
-          rand_factor: 0.0,
-          tries: 5,
-          max_interval: 1.5,
-        ) do
-          increment_tries_with_exception(StandardError)
+      describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
+        before do
+          tries = 6
+
+          Retriable.retriable(
+            on: [EOFError, ArgumentError],
+            on_retry: time_table_handler,
+            rand_factor: 0.0,
+            tries: tries,
+          ) do
+            @tries += 1
+            raise ArgumentError, "ArgumentError occurred" if @tries < tries
+          end
         end
-      end.to raise_error(StandardError)
 
-      expect(@next_interval_table).to eq(
-        1 => 0.5,
-        2 => 0.75,
-        3 => 1.125,
-        4 => 1.5,
-        5 => nil,
-      )
+        it "applies a non-randomized exponential backoff to each try" do
+          expect(@tries).to eq(6)
+          expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.6875, 5 => 2.53125))
+        end
+      end
+
+      it "#retriable has a max interval of 1.5 seconds" do
+        expect do
+          described_class.retriable(
+            on: StandardError,
+            on_retry: time_table_handler,
+            rand_factor: 0.0,
+            tries: 5,
+            max_interval: 1.5,
+          ) do
+            increment_tries_with_exception(StandardError)
+          end
+        end.to raise_error(StandardError)
+
+        expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.5, 5 => nil))
+      end
     end
 
     it "#retriable with custom defined intervals" do
@@ -247,7 +240,7 @@ describe Retriable do
       end
     end
 
-    context 'global scope extension' do
+    context "global scope extension" do
       it "cannot be called in the global scope without requiring the core_ext/kernel" do
         expect { retriable { puts "should raise NoMethodError" } }.to raise_error(NoMethodError)
       end

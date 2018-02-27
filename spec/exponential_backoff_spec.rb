@@ -1,5 +1,3 @@
-require_relative "spec_helper"
-
 describe Retriable::ExponentialBackoff do
   context "defaults" do
     let(:backoff_config) { described_class.new }

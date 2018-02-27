@@ -1,5 +1,3 @@
-require_relative "spec_helper"
-
 describe Retriable::Config do
   let(:default_config) { described_class.new }
 
