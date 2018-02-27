@@ -26,7 +26,7 @@ describe Retriable do
       expect do
         described_class.retriable do
           @tries += 1
-          raise StandardError.new, "StandardError occurred"
+          raise StandardError, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
@@ -37,7 +37,7 @@ describe Retriable do
       expect do
         described_class.retriable do
           @tries += 1
-          raise TestError.new, "TestError occurred"
+          raise TestError, "TestError occurred"
         end
       end.to raise_error(TestError)
 
@@ -59,7 +59,7 @@ describe Retriable do
       expect do
         described_class.retriable(tries: 10) do
           @tries += 1
-          raise StandardError.new, "StandardError occurred"
+          raise StandardError, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
@@ -158,7 +158,7 @@ describe Retriable do
           max_interval: 1.5,
         ) do
           @tries += 1
-          raise StandardError.new
+          raise StandardError
         end
       end.to raise_error(StandardError)
 
@@ -191,7 +191,7 @@ describe Retriable do
           intervals: intervals,
         ) do
           @tries += 1
-          raise StandardError.new
+          raise StandardError
         end
       end.to raise_error(StandardError)
 
@@ -208,7 +208,7 @@ describe Retriable do
     end
 
     context "hash exception list" do
-      let(:error_message) { 'something went wrong' }
+      let(:error_message) { "something went wrong" }
       let(:hash_argument) { { TestError => /#{error_message}/ } }
 
       it "#retriable with a hash exception where the value is an exception message pattern" do
@@ -254,7 +254,7 @@ describe Retriable do
       end
 
       expect do
-        described_class.retriable tries: 4, on: { StandardError => nil, TestError => [/foo/, /bar/] }, on_retry: handler do
+        described_class.retriable(tries: 4, on: { StandardError => nil, TestError => [/foo/, /bar/] }, on_retry: handler) do
           @tries += 1
 
           case @tries
@@ -355,7 +355,7 @@ describe Retriable do
       expect do
         described_class.with_context(:api) do
           @tries += 1
-          raise StandardError.new, "StandardError occurred"
+          raise StandardError, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
@@ -366,7 +366,7 @@ describe Retriable do
       expect do
         described_class.with_context(:sql, tries: 5) do
           @tries += 1
-          raise StandardError.new, "StandardError occurred"
+          raise StandardError, "StandardError occurred"
         end
       end.to raise_error(StandardError)
 
