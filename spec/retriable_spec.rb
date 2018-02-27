@@ -186,10 +186,7 @@ describe Retriable do
       end
 
       expect do
-        described_class.retriable(
-          on_retry: handler,
-          intervals: intervals,
-        ) do
+        described_class.retriable(on_retry: handler, intervals: intervals) do
           @tries += 1
           raise StandardError
         end
@@ -244,8 +241,6 @@ describe Retriable do
         expect(@tries).to eq(1)
       end
     end
-
-
 
     it "#retriable with a hash exception list where the values are exception message patterns" do
       exceptions = []
