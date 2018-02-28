@@ -119,22 +119,20 @@ describe Retriable do
 
         expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.5, 5 => 1.5, 6 => nil))
       end
-    end
 
-    it "with custom defined intervals" do
-      intervals = [0.5, 0.75, 1.125, 1.5, 1.5]
+      it "obeys custom defined intervals" do
+        interval_hash = no_rand_timetable.merge(4 => 1.5, 5 => 1.5, 6 => nil)
+        intervals = interval_hash.values.compact.sort
 
-      interval_hash = intervals.each_with_index.inject({}) do |hsh, (element, i)|
-        hsh[i + 1] = element
-        hsh
-      end.merge(intervals.size + 1 => nil)
+        expect do
+          described_class.retriable(on_retry: time_table_handler, intervals: intervals) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
 
-      expect do
-        described_class.retriable(on_retry: time_table_handler, intervals: intervals) { increment_tries_with_exception }
-      end.to raise_error(StandardError)
-
-      expect(@next_interval_table).to eq(interval_hash)
-      expect(@tries).to eq(intervals.size + 1)
+        expect(@next_interval_table).to eq(interval_hash)
+        expect(@tries).to eq(intervals.size + 1)
+      end
     end
 
     context "with an array :on parameter" do
