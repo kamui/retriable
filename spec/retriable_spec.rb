@@ -146,11 +146,11 @@ describe Retriable do
     end
 
     context "with a hash :on parameter" do
-      let(:on_hash_argument) { { NonStandardError => /NonStandardError occurred/ } }
+      let(:on_hash) { { NonStandardError => /NonStandardError occurred/ } }
 
       it "where the value is an exception message pattern" do
         expect do
-          described_class.retriable(on: on_hash_argument) { increment_tries_with_exception(NonStandardError) }
+          described_class.retriable(on: on_hash) { increment_tries_with_exception(NonStandardError) }
         end.to raise_error(NonStandardError, /NonStandardError occurred/)
 
         expect(@tries).to eq(3)
@@ -158,7 +158,7 @@ describe Retriable do
 
       it "matches exception subclasses" do
         expect do
-          described_class.retriable(on: on_hash_argument.merge(DifferentError => [/shouldn't happen/, /also not/])) do
+          described_class.retriable(on: on_hash.merge(DifferentError => [/shouldn't happen/, /also not/])) do
             increment_tries_with_exception(SecondNonStandardError)
           end
         end.to raise_error(SecondNonStandardError, /SecondNonStandardError occurred/)
@@ -168,7 +168,7 @@ describe Retriable do
 
       it "does not retry matching exception subclass but not message" do
         expect do
-          described_class.retriable(on: on_hash_argument, tries: 4) do
+          described_class.retriable(on: on_hash) do
             increment_tries
             raise SecondNonStandardError, "not a match"
           end
@@ -211,15 +211,10 @@ describe Retriable do
       described_class.configure { |c| c.sleep_disabled = false }
 
       expect do
-        described_class.retriable(
-          base_interval: 1.0,
-          multiplier: 1.0,
-          rand_factor: 0.0,
-          max_elapsed_time: 2.0
-        ) do
-          increment_tries_with_exception(EOFError)
+        described_class.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0, max_elapsed_time: 2.0) do
+          increment_tries_with_exception
         end
-      end.to raise_error(EOFError)
+      end.to raise_error(StandardError)
 
       expect(@tries).to eq(2)
     end
