@@ -156,7 +156,7 @@ describe Retriable do
         expect(@tries).to eq(3)
       end
 
-      it "matches exception subclasses" do
+      it "matches exception subclasses when message matches pattern" do
         expect do
           described_class.retriable(on: on_hash.merge(DifferentError => [/shouldn't happen/, /also not/])) do
             increment_tries_with_exception(SecondNonStandardError)
