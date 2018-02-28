@@ -152,16 +152,18 @@ describe Retriable do
         expect do
           described_class.retriable(on: on_hash_argument) { increment_tries_with_exception(NonStandardError) }
         end.to raise_error(NonStandardError, /NonStandardError occurred/)
+
+        expect(@tries).to eq(3)
       end
 
       it "matches exception subclasses" do
-        on_hash = on_hash_argument.merge(DifferentError => [/shouldn't happen/, /also not happen/])
-
         expect do
-          described_class.retriable(tries: 4, on: on_hash) { increment_tries_with_exception(SecondNonStandardError) }
+          described_class.retriable(on: on_hash_argument.merge(DifferentError => [/shouldn't happen/, /also not/])) do
+            increment_tries_with_exception(SecondNonStandardError)
+          end
         end.to raise_error(SecondNonStandardError, /SecondNonStandardError occurred/)
 
-        expect(@tries).to eq(4)
+        expect(@tries).to eq(3)
       end
 
       it "does not retry matching exception subclass but not message" do
