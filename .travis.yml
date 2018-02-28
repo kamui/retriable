@@ -15,7 +15,7 @@ rvm:
   - jruby-head
   - rbx-3.99
 script:
-  - bundle exec rspec
+  - bundle exec rspec --format documentation
 
 matrix:
   allow_failures:
