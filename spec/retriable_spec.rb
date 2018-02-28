@@ -108,10 +108,10 @@ describe Retriable do
         }
       end
 
-      describe "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
-        before do
-          tries = 6
+      context "retries with an on_#retriable handler, 6 max retries, and a 0.0 rand_factor" do
+        let(:tries) { 6 }
 
+        before do
           Retriable.retriable(
             on: [EOFError, ArgumentError],
             on_retry: time_table_handler,
@@ -124,7 +124,7 @@ describe Retriable do
         end
 
         it "applies a non-randomized exponential backoff to each try" do
-          expect(@tries).to eq(6)
+          expect(@tries).to eq(tries)
           expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.6875, 5 => 2.53125))
         end
       end
@@ -190,9 +190,7 @@ describe Retriable do
         )
 
         expect do
-          described_class.retriable(tries: 4, on: on_hash, tries: 4) do
-            increment_tries_with_exception(SecondTestError)
-          end
+          described_class.retriable(tries: 4, on: on_hash) { increment_tries_with_exception(SecondTestError) }
         end.to raise_error(SecondTestError, /SecondTestError occurred/)
 
         expect(@tries).to eq(4)

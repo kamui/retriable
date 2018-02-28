@@ -54,11 +54,7 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates intervals with a defined max interval" do
-    expect(described_class.new(max_interval: 1.0, rand_factor: 0.0).intervals).to eq([
-      0.5,
-      0.75,
-      1.0,
-    ])
+    expect(described_class.new(max_interval: 1.0, rand_factor: 0.0).intervals).to eq([0.5, 0.75, 1.0])
   end
 
   it "generates intervals with a defined rand_factor" do
