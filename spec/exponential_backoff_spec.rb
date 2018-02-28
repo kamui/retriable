@@ -66,17 +66,7 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates 10 non-randomized intervals" do
-    expect(described_class.new(tries: 10, rand_factor: 0.0).intervals).to eq([
-      0.5,
-      0.75,
-      1.125,
-      1.6875,
-      2.53125,
-      3.796875,
-      5.6953125,
-      8.54296875,
-      12.814453125,
-      19.2216796875,
-    ])
+    non_random_intervals = 9.times.inject([0.5]) { |memo, i| memo + [memo.last * 1.5] }
+    expect(described_class.new(tries: 10, rand_factor: 0.0).intervals).to eq(non_random_intervals)
   end
 end

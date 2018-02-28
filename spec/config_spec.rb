@@ -38,7 +38,7 @@ describe Retriable::Config do
       expect(default_config.on).to eq([StandardError])
     end
 
-    it "on retry handler defaults to nil" do
+    it "on_retry handler defaults to nil" do
       expect(default_config.on_retry).to be_nil
     end
 
@@ -48,6 +48,6 @@ describe Retriable::Config do
   end
 
   it "raises errors on invalid configuration" do
-    expect { described_class.new(does_not_exist: 123) }.to raise_error(ArgumentError)
+    expect { described_class.new(does_not_exist: 123) }.to raise_error(ArgumentError, /not a valid option/)
   end
 end
