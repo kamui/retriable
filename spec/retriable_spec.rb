@@ -123,19 +123,18 @@ describe Retriable do
 
     it "with custom defined intervals" do
       intervals = [0.5, 0.75, 1.125, 1.5, 1.5]
+
       interval_hash = intervals.each_with_index.inject({}) do |hsh, (element, i)|
         hsh[i + 1] = element
         hsh
-      end
+      end.merge(intervals.size + 1 => nil)
 
       expect do
-        described_class.retriable(on_retry: time_table_handler, intervals: intervals) do
-          increment_tries_with_exception
-        end
+        described_class.retriable(on_retry: time_table_handler, intervals: intervals) { increment_tries_with_exception }
       end.to raise_error(StandardError)
 
-      expect(@next_interval_table).to eq(interval_hash.merge(intervals.size + 1 => nil))
-      expect(@tries).to eq(6)
+      expect(@next_interval_table).to eq(interval_hash)
+      expect(@tries).to eq(intervals.size + 1)
     end
 
     context "with an array :on parameter" do
@@ -161,7 +160,7 @@ describe Retriable do
       end
 
       it "matches exception subclasses" do
-        on_hash = on_hash_argument.merge(DifferentError => /shouldn't happen/, DifferentError => /also not happen/)
+        on_hash = on_hash_argument.merge(DifferentError => [/shouldn't happen/, /also not happen/])
 
         expect do
           described_class.retriable(tries: 4, on: on_hash) { increment_tries_with_exception(SecondNonStandardError) }
