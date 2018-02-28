@@ -98,19 +98,13 @@ describe Retriable do
     end
 
     context "with rand_factor 0.0" do
-      let(:no_rand_timetable) do
-        {
-          1 => 0.5,
-          2 => 0.75,
-          3 => 1.125
-        }
-      end
+      let(:tries) { 6 }
+      let(:no_rand_timetable) { { 1 => 0.5, 2 => 0.75, 3 => 1.125 } }
+      let(:args) { { on_retry: time_table_handler, rand_factor: 0.0, tries: tries } }
 
       context "with an on_retry handler, 6 max retries" do
-        let(:tries) { 6 }
-
         before do
-          Retriable.retriable(on_retry: time_table_handler, rand_factor: 0.0, tries: tries) do
+          Retriable.retriable(args) do
             @tries += 1
             raise StandardError if @tries < tries
           end
@@ -124,17 +118,10 @@ describe Retriable do
 
       it "obeys a max interval of 1.5 seconds" do
         expect do
-          described_class.retriable(
-            on_retry: time_table_handler,
-            rand_factor: 0.0,
-            tries: 5,
-            max_interval: 1.5,
-          ) do
-            increment_tries_with_exception
-          end
+          described_class.retriable(args.merge(max_interval: 1.5)) { increment_tries_with_exception }
         end.to raise_error(StandardError)
 
-        expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.5, 5 => nil))
+        expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.5, 5 => 1.5, 6 => nil))
       end
     end
 
