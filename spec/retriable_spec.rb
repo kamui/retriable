@@ -220,7 +220,7 @@ describe Retriable do
     end
 
     it "raises ArgumentError on invalid options" do
-      expect { described_class.retriable(does_not_exist: 123) }.to raise_error(ArgumentError)
+      expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
     end
   end
 
