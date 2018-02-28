@@ -1,8 +1,6 @@
 describe Retriable do
   let(:time_table_handler) do
-    lambda do |_exception, try, _elapsed_time, next_interval|
-      @next_interval_table[try] = next_interval
-    end
+    ->(_exception, try, _elapsed_time, next_interval) { @next_interval_table[try] = next_interval }
   end
 
   before(:each) do
@@ -180,7 +178,7 @@ describe Retriable do
 
       it "successfully retries when the values are arrays of exception message patterns" do
         exceptions = []
-        handler = lambda { |exception, try, _elapsed_time, _next_interval| exceptions[try] = exception }
+        handler = ->(exception, try, _elapsed_time, _next_interval) { exceptions[try] = exception }
         on_hash = { StandardError => nil, NonStandardError => [/foo/, /bar/] }
 
         expect do
