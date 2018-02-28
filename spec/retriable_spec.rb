@@ -5,7 +5,6 @@ describe Retriable do
 
   before(:each) do
     described_class.configure { |c| c.sleep_disabled = true }
-
     @tries = 0
     @next_interval_table = {}
   end
@@ -76,7 +75,7 @@ describe Retriable do
 
     it "applies a randomized exponential backoff to each try" do
       expect do
-        Retriable.retriable(on_retry: time_table_handler, tries: 10) { increment_tries_with_exception }
+        described_class.retriable(on_retry: time_table_handler, tries: 10) { increment_tries_with_exception }
       end.to raise_error(StandardError)
 
       expect(@next_interval_table).to eq(
@@ -101,8 +100,8 @@ describe Retriable do
       let(:args) { { on_retry: time_table_handler, rand_factor: 0.0, tries: tries } }
 
       it "applies a non-randomized exponential backoff to each try" do
-        Retriable.retriable(args) do
-          @tries += 1
+        described_class.retriable(args) do
+          increment_tries
           raise StandardError if @tries < tries
         end
 
@@ -136,7 +135,7 @@ describe Retriable do
     context "with an array :on parameter" do
       it "handles both kinds of exceptions" do
         described_class.retriable(on: [StandardError, NonStandardError]) do
-          @tries += 1
+          increment_tries
 
           raise StandardError if @tries == 1
           raise NonStandardError if @tries == 2
@@ -168,7 +167,7 @@ describe Retriable do
       it "does not retry matching exception subclass but not message" do
         expect do
           described_class.retriable(on: on_hash_argument, tries: 4) do
-            @tries += 1
+            increment_tries
             raise SecondNonStandardError, "not a match"
           end
         end.to raise_error(SecondNonStandardError, /not a match/)
@@ -183,7 +182,7 @@ describe Retriable do
 
         expect do
           described_class.retriable(tries: 4, on: on_hash, on_retry: handler) do
-            @tries += 1
+            increment_tries
 
             case @tries
             when 1
@@ -207,9 +206,7 @@ describe Retriable do
     end
 
     it "runs for a max elapsed time of 2 seconds" do
-      described_class.configure do |c|
-        c.sleep_disabled = false
-      end
+      described_class.configure { |c| c.sleep_disabled = false }
 
       expect do
         described_class.retriable(
@@ -226,7 +223,7 @@ describe Retriable do
     end
 
     it "raises ArgumentError on invalid options" do
-      expect { Retriable.retriable(does_not_exist: 123) }.to raise_error(ArgumentError)
+      expect { described_class.retriable(does_not_exist: 123) }.to raise_error(ArgumentError)
     end
   end
 
