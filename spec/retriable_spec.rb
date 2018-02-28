@@ -6,12 +6,10 @@ describe Retriable do
   end
 
   before(:each) do
+    described_class.configure { |c| c.sleep_disabled = true }
+
     @tries = 0
     @next_interval_table = {}
-  end
-
-  before(:each) do
-    described_class.configure { |c| c.sleep_disabled = true }
   end
 
   def increment_tries
@@ -19,8 +17,9 @@ describe Retriable do
   end
 
   def increment_tries_with_exception(exception_class = nil)
+    exception_class ||= StandardError
     increment_tries
-    raise exception_class || StandardError, "#{exception_class} occurred"
+    raise exception_class, "#{exception_class} occurred"
   end
 
   context "global scope extension" do
@@ -48,14 +47,11 @@ describe Retriable do
     end
 
     it "makes 3 tries when retrying block of code raising StandardError with no arguments" do
-      expect do
-        described_class.retriable { increment_tries_with_exception }
-      end.to raise_error(StandardError)
-
+      expect { described_class.retriable { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(3)
     end
 
-    it "makes only 1 try when exception raised is not ancestor of StandardError" do
+    it "makes only 1 try when exception raised is not descendent of StandardError" do
       expect do
         described_class.retriable { increment_tries_with_exception(NonStandardError) }
       end.to raise_error(NonStandardError)
@@ -71,11 +67,8 @@ describe Retriable do
       expect(@tries).to eq(3)
     end
 
-    it "tries 10 times" do
-      expect do
-        described_class.retriable(tries: 10) { increment_tries_with_exception }
-      end.to raise_error(StandardError)
-
+    it "tries 10 times when specified" do
+      expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(10)
     end
 
@@ -146,13 +139,11 @@ describe Retriable do
     end
 
     it "with custom defined intervals" do
-      intervals = [
-        0.5,
-        0.75,
-        1.125,
-        1.5,
-        1.5,
-      ]
+      intervals = [0.5, 0.75, 1.125, 1.5, 1.5]
+      interval_hash = intervals.each_with_index.inject({}) do |hsh, (element, i)|
+        hsh[i + 1] = element
+        hsh
+      end
 
       expect do
         described_class.retriable(on_retry: time_table_handler, intervals: intervals) do
@@ -160,32 +151,34 @@ describe Retriable do
         end
       end.to raise_error(StandardError)
 
-      expect(@next_interval_table).to eq(
-        1 => 0.5,
-        2 => 0.75,
-        3 => 1.125,
-        4 => 1.5,
-        5 => 1.5,
-        6 => nil,
-      )
-
+      expect(@next_interval_table).to eq(interval_hash.merge(intervals.size + 1 => nil))
       expect(@tries).to eq(6)
     end
 
-    context "with a hash exception list" do
+    context "with an array :on parameter" do
+      it "handles both kinds of exceptions" do
+        described_class.retriable(on: [StandardError, NonStandardError]) do
+          @tries += 1
+
+          raise StandardError if @tries == 1
+          raise NonStandardError if @tries == 2
+        end
+
+        expect(@tries).to eq(3)
+      end
+    end
+
+    context "with a hash :on parameter" do
       let(:on_hash_argument) { { NonStandardError => /NonStandardError occurred/ } }
 
       it "where the value is an exception message pattern" do
         expect do
-          described_class.retriable(on: on_hash_argument) { raise NonStandardError, "NonStandardError occurred" }
+          described_class.retriable(on: on_hash_argument) { increment_tries_with_exception(NonStandardError) }
         end.to raise_error(NonStandardError, /NonStandardError occurred/)
       end
 
       it "matches exception subclasses" do
-        on_hash = on_hash_argument.merge(
-          DifferentNonStandardError => /should never happen/,
-          DifferentNonStandardError => /also should never happen/
-        )
+        on_hash = on_hash_argument.merge(DifferentError => /shouldn't happen/, DifferentError => /also not happen/)
 
         expect do
           described_class.retriable(tries: 4, on: on_hash) { increment_tries_with_exception(SecondNonStandardError) }
@@ -207,12 +200,11 @@ describe Retriable do
 
       it "successfully retries when the values are arrays of exception message patterns" do
         exceptions = []
-        handler = lambda do |exception, try, _elapsed_time, _next_interval|
-          exceptions[try] = exception
-        end
+        handler = lambda { |exception, try, _elapsed_time, _next_interval| exceptions[try] = exception }
+        on_hash = { StandardError => nil, NonStandardError => [/foo/, /bar/] }
 
         expect do
-          described_class.retriable(tries: 4, on: { StandardError => nil, NonStandardError => [/foo/, /bar/] }, on_retry: handler) do
+          described_class.retriable(tries: 4, on: on_hash, on_retry: handler) do
             @tries += 1
 
             case @tries
@@ -228,11 +220,11 @@ describe Retriable do
           end
         end.to raise_error(NonStandardError, /crash/)
 
-        expect(exceptions[1].class).to eq(NonStandardError)
+        expect(exceptions[1]).to be_a(NonStandardError)
         expect(exceptions[1].message).to eq("foo")
-        expect(exceptions[2].class).to eq(NonStandardError)
+        expect(exceptions[2]).to be_a(NonStandardError)
         expect(exceptions[2].message).to eq("bar")
-        expect(exceptions[3].class).to eq(StandardError)
+        expect(exceptions[3]).to be_a(StandardError)
       end
     end
 
@@ -271,7 +263,6 @@ describe Retriable do
 
     before do
       described_class.configure do |c|
-        c.sleep_disabled = true
         c.contexts[:sql] = { tries: 1 }
         c.contexts[:api] = { tries: api_tries }
       end
