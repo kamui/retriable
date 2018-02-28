@@ -97,23 +97,19 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
-    context "with rand_factor 0.0" do
+    context "with rand_factor 0.0 and an on_retry handler" do
       let(:tries) { 6 }
       let(:no_rand_timetable) { { 1 => 0.5, 2 => 0.75, 3 => 1.125 } }
       let(:args) { { on_retry: time_table_handler, rand_factor: 0.0, tries: tries } }
 
-      context "with an on_retry handler, 6 max retries" do
-        before do
-          Retriable.retriable(args) do
-            @tries += 1
-            raise StandardError if @tries < tries
-          end
+      it "applies a non-randomized exponential backoff to each try" do
+        Retriable.retriable(args) do
+          @tries += 1
+          raise StandardError if @tries < tries
         end
 
-        it "applies a non-randomized exponential backoff to each try" do
-          expect(@tries).to eq(tries)
-          expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.6875, 5 => 2.53125))
-        end
+        expect(@tries).to eq(tries)
+        expect(@next_interval_table).to eq(no_rand_timetable.merge(4 => 1.6875, 5 => 2.53125))
       end
 
       it "obeys a max interval of 1.5 seconds" do
