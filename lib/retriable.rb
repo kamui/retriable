@@ -59,7 +59,7 @@ module Retriable
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
-      rescue *[*exception_list] => exception
+      rescue *exception_list => exception
         if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
