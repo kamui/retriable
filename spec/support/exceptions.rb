@@ -1,3 +1,3 @@
-class TestError < Exception; end
-class SecondTestError < TestError; end
-class DifferentTestError < Exception; end
+class NonStandardError < Exception; end
+class SecondNonStandardError < NonStandardError; end
+class DifferentError < Exception; end
