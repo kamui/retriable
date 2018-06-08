@@ -7,16 +7,13 @@ Style/Documentation:
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
 
-Style/TrailingCommaInLiteral:
-  EnforcedStyleForMultiline: comma
-
-Style/InheritException:
+Lint/InheritException:
   Enabled: false
 
-Style/IndentArray:
+Layout/IndentArray:
   Enabled: false
 
-Style/IndentHash:
+Layout/IndentHash:
   Enabled: false
 
 Style/NegatedIf:
