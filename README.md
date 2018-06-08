@@ -85,7 +85,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time in seconds that code is allowed to keep being retried. |
 | **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
 | **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
-| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. |
+| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. (You may want to read up on [the dangers of using Ruby `Timeout`](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) before using this feature.) |
 | **`rand_factor`** | `0.25` | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
 | **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array). |
 
