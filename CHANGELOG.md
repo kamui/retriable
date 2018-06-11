@@ -1,5 +1,7 @@
 ## HEAD
 
+## 3.1.2
+
 * Replace `minitest` gem with `rspec`
 * Fancier README
 * Remove unnecessary short circuit in `randomize` method
