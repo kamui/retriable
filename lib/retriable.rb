@@ -32,7 +32,7 @@ module Retriable
     multiplier        = local_config.multiplier
     max_elapsed_time  = local_config.max_elapsed_time
     intervals         = local_config.intervals
-    timeout           = local_config.timeout
+    timeouts          = local_config.timeouts
     on                = local_config.on
     on_retry          = local_config.on_retry
     sleep_disabled    = local_config.sleep_disabled
@@ -57,9 +57,19 @@ module Retriable
       try = index + 1
 
       begin
+
+        if !timeouts
+          timeout = nil
+        elsif  index < timeouts.size
+         timeout = timeouts[index]
+         last_timeout_value = timeout
+         else
+          timeout = last_timeout_value
+        end
+
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
-      rescue *[*exception_list] => exception
+        rescue *[*exception_list] => exception
         if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })

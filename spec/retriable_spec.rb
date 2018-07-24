@@ -1,3 +1,5 @@
+require "timeout"
+
 describe Retriable do
   let(:time_table_handler) do
     ->(_exception, try, _elapsed_time, next_interval) { @next_interval_table[try] = next_interval }
@@ -35,7 +37,7 @@ describe Retriable do
   context "#retriable" do
     it "raises a LocalJumpError if not given a block" do
       expect { described_class.retriable }.to raise_error(LocalJumpError)
-      expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
+      expect { described_class.retriable(timeouts: 2) }.to raise_error(LocalJumpError)
     end
 
     it "stops at first try if the block does not raise an exception" do
@@ -70,7 +72,7 @@ describe Retriable do
     end
 
     it "will timeout after 1 second" do
-      expect { described_class.retriable(timeout: 1) { sleep(1.1) } }.to raise_error(Timeout::Error)
+      expect { described_class.retriable(tries: 1, timeouts: 1 ) { sleep(1.1) } }.to raise_error(Timeout::Error)
     end
 
     it "applies a randomized exponential backoff to each try" do

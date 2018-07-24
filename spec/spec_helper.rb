@@ -1,3 +1,4 @@
+
 require "codeclimate-test-reporter"
 require "simplecov"
 

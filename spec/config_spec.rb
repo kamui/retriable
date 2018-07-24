@@ -31,7 +31,7 @@ describe Retriable::Config do
     end
 
     it "timeout defaults to nil" do
-      expect(default_config.timeout).to be_nil
+      expect(default_config.timeouts).to be_nil
     end
 
     it "on defaults to [StandardError]" do
