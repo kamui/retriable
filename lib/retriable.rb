@@ -62,9 +62,9 @@ module Retriable
           timeout = nil
         elsif  index < timeouts.size
          timeout = timeouts[index]
-         last_timeout_value = timeout
+         last_value = timeout
          else
-          timeout = last_timeout_value
+          timeout = last_value
         end
 
         return Timeout.timeout(timeout) { return yield(try) } if timeout

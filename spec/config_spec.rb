@@ -30,7 +30,7 @@ describe Retriable::Config do
       expect(default_config.intervals).to be_nil
     end
 
-    it "timeout defaults to nil" do
+    it "timeouts defaults to nil" do
       expect(default_config.timeouts).to be_nil
     end
 
