@@ -10,8 +10,9 @@ rvm:
   - 2.3.7
   - 2.4.4
   - 2.5.1
+  - 2.6.0
   - ruby-head
-  - jruby-9.2.0.0
+  - jruby-9.2.5.0
   - jruby-head
   - rbx-3.99
 script:
