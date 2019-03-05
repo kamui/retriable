@@ -82,6 +82,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
 | **`on`** | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on). |
 | **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
+| **`on_final_failure`** | `nil` | `Proc` to call after the final try is rescued. [Read more](#callbacks). |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
 | **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time in seconds that code is allowed to keep being retried. |
 | **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
@@ -202,14 +203,18 @@ end
 
 ### Callbacks
 
-`#retriable` also provides a callback called `:on_retry` that will run after an exception is rescued. This callback provides the `exception` that was raised in the current try, the `try_number`, the `elapsed_time` for all tries so far, and the time in seconds of the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
+`#retriable` also provides callbacks called `:on_retry`  and `:on_final_failure` that will run after an exception is rescued.  The `:on_retry` callback provides the `exception` that was raised in the current try, the `try_number`, the `elapsed_time` for all tries so far, and the time in seconds of the `next_interval`. The `:on_final_failure` callback provides everything but the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
 ```ruby
 do_this_on_each_retry = Proc.new do |exception, try, elapsed_time, next_interval|
   log "#{exception.class}: '#{exception.message}' - #{try} tries in #{elapsed_time} seconds and #{next_interval} seconds until the next try."
 end
 
-Retriable.retriable(on_retry: do_this_on_each_retry) do
+do_this_on_final_retry = Proc.new do |exception, try, elapsed_time|
+  log "#{exception.class}: '#{exception.message}' - #{try} tries in #{elapsed_time} seconds. No more retries"
+end
+
+Retriable.retriable(on_retry: do_this_on_each_retry, on_final_failure: do_this_on_final_retry) do
   # code here...
 end
 ```

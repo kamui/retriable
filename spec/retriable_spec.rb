@@ -222,6 +222,22 @@ describe Retriable do
     it "raises ArgumentError on invalid options" do
       expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
     end
+
+    context "with an on_final_failure handler" do
+      it "calls the on_final_failure proc once at the end" do
+        exceptions = []
+        handler = ->(exception, try, _elapsed_time) { exceptions[try] = exception }
+        expect do
+          described_class.retriable(on_final_failure: handler, tries: 3) do
+            increment_tries
+            raise StandardError, "foo"
+          end
+        end.to raise_error(StandardError, /foo/)
+        expect(exceptions[1]).to be_nil
+        expect(exceptions[2]).to be_nil
+        expect(exceptions[3]).to be_a(StandardError)
+      end
+    end
   end
 
   context "#configure" do
