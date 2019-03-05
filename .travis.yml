@@ -23,8 +23,8 @@ matrix:
     - rvm: rbx-3.99
 
 before_install:
-  - gem install rubygems-update -v '<3' && update_rubygems
-  - gem install bundler
+  - gem install rubygems-update -v '<3' --no-document && update_rubygems
+  - gem install bundler -v 1.17.3
 
 addons:
   code_climate:
