@@ -1,5 +1,7 @@
 ## HEAD
 
+* Add `on_final_failure` callback
+
 ## 3.1.2
 
 * Replace `minitest` gem with `rspec`
