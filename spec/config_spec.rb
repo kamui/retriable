@@ -42,6 +42,10 @@ describe Retriable::Config do
       expect(default_config.on_retry).to be_nil
     end
 
+    it "on_max_elapsed_time handler defaults to nil" do
+      expect(default_config.on_max_elapsed_time).to be_nil
+    end
+
     it "contexts defaults to {}" do
       expect(default_config.contexts).to eq({})
     end

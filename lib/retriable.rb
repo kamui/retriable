@@ -35,6 +35,7 @@ module Retriable
     timeout           = local_config.timeout
     on                = local_config.on
     on_retry          = local_config.on_retry
+    on_max_elapsed_time  = local_config.on_max_elapsed_time
     sleep_disabled    = local_config.sleep_disabled
 
     exception_list = on.is_a?(Hash) ? on.keys : on
@@ -68,7 +69,14 @@ module Retriable
 
         interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
-        raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
+        raise if try >= tries
+
+        current_elapsed_time = elapsed_time.call
+        if (current_elapsed_time + interval) > max_elapsed_time
+          on_max_elapsed_time.call(exception, try, current_elapsed_time) if on_max_elapsed_time
+          raise
+        end
+
         sleep interval if sleep_disabled != true
       end
     end

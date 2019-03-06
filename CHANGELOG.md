@@ -1,5 +1,7 @@
 ## HEAD
 
+* Add `on_max_elapsed_time` callback
+
 ## 3.1.2
 
 * Replace `minitest` gem with `rspec`

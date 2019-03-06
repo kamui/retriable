@@ -9,6 +9,7 @@ module Retriable
       :timeout,
       :on,
       :on_retry,
+      :on_max_elapsed_time,
       :contexts,
     ].freeze
 
@@ -28,6 +29,7 @@ module Retriable
       @timeout          = nil
       @on               = [StandardError]
       @on_retry         = nil
+      @on_max_elapsed_time = nil
       @contexts         = {}
 
       opts.each do |k, v|

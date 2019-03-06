@@ -219,6 +219,44 @@ describe Retriable do
       expect(@tries).to eq(2)
     end
 
+    it "calls the on_max_elapsed_time proc" do
+      described_class.configure { |c| c.sleep_disabled = false }
+
+      exceptions = []
+      actual_elapsed_time = nil
+      handler = Proc.new do |exception, try, elapsed_time|
+        exceptions[try] = exception
+        actual_elapsed_time = elapsed_time
+      end
+
+      expect do
+        described_class.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0,
+                                  max_elapsed_time: 2.0, on_max_elapsed_time: handler) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(exceptions[1]).to be_nil
+      expect(exceptions[2]).to be_a(StandardError)
+      expect(actual_elapsed_time).not_to be_nil
+      expect(actual_elapsed_time).to be > 1
+    end
+
+    it "does not call the on_max_elapsed_time proc if max elapsed time is not reached" do
+      described_class.configure { |c| c.sleep_disabled = false }
+
+      handler = Proc.new do |_exception, _try, _elapsed_time|
+        raise NonStandardError, "this callback should not have been called"
+      end
+
+      expect do
+        described_class.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0,
+                                  max_elapsed_time: 10.0, on_max_elapsed_time: handler) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+    end
+
     it "raises ArgumentError on invalid options" do
       expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
     end
