@@ -203,7 +203,7 @@ end
 
 ### Callbacks
 
-`#retriable` also provides callbacks called `:on_retry`  and `:on_final_failure` that will run after an exception is rescued.  The `:on_retry` callback provides the `exception` that was raised in the current try, the `try_number`, the `elapsed_time` for all tries so far, and the time in seconds of the `next_interval`. The `:on_final_failure` callback provides everything but the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
+`#retriable` also provides callbacks called `:on_retry`  and `:on_final_failure` that will run after an exception is rescued or fails, respectively. The callbacks provides the `exception` that was raised in the current try, the `try_number`, the `elapsed_time` for all tries so far, and the time in seconds of the `next_interval`. The `:on_final_failure` callback provides everything but the `next_interval`. As these are specified in a `Proc`, unnecessary variables can be left out of the parameter list.
 
 ```ruby
 do_this_on_each_retry = Proc.new do |exception, try, elapsed_time, next_interval|

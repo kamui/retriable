@@ -233,6 +233,7 @@ describe Retriable do
             raise StandardError, "foo"
           end
         end.to raise_error(StandardError, /foo/)
+
         expect(exceptions[1]).to be_nil
         expect(exceptions[2]).to be_nil
         expect(exceptions[3]).to be_a(StandardError)
