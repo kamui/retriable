@@ -2,7 +2,7 @@ require_relative "exponential_backoff"
 
 module Retriable
   class Config
-    ATTRIBUTES = ExponentialBackoff::ATTRIBUTES + [
+    ATTRIBUTES = (ExponentialBackoff::ATTRIBUTES + [
       :sleep_disabled,
       :max_elapsed_time,
       :intervals,
@@ -10,7 +10,7 @@ module Retriable
       :on,
       :on_retry,
       :contexts,
-    ].freeze
+    ]).freeze
 
     attr_accessor(*ATTRIBUTES)
 
