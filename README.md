@@ -81,6 +81,7 @@ Here are the available options, in some vague order of relevance to most common 
 | ------ | ------- | ---------- |
 | **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
 | **`on`** | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on). |
+| **`not`** | `[]` | Type of exceptions not to retry. Takes precedence over `on`. [Read more](#configuring-which-options-not-to-retry-with-not)
 | **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
 | **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time in seconds that code is allowed to keep being retried. |
@@ -100,6 +101,17 @@ Here are the available options, in some vague order of relevance to most common 
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
   - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
 
+#### Configuring Which Options Not to Retry With :not
+**`:not`** Can take the same form as `:on`.
+
+Example usage:
+```ruby
+class MyError < StandardError; end
+
+Retriable.retriable(on: StandardError, not: MyError) do
+  raise MyError, "No retries!"
+end
+```
 
 ### Configuration
 

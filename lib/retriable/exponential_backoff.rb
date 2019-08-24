@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Retriable
   class ExponentialBackoff
     ATTRIBUTES = [
@@ -19,6 +21,7 @@ module Retriable
 
       opts.each do |k, v|
         raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
+
         instance_variable_set(:"@#{k}", v)
       end
     end

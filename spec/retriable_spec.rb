@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Retriable do
   let(:time_table_handler) do
     ->(_exception, try, _elapsed_time, next_interval) { @next_interval_table[try] = next_interval }
@@ -204,6 +206,26 @@ describe Retriable do
         expect(exceptions[2]).to be_a(NonStandardError)
         expect(exceptions[2].message).to eq("bar")
         expect(exceptions[3]).to be_a(StandardError)
+      end
+    end
+
+    context "with :not parameter" do
+      it "does not retry on :not exception" do
+        expect do
+          described_class.retriable(not: StandardError) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+
+        expect(@tries).to eq(1)
+      end
+
+      it "gives precedence to :not over :on" do
+        expect do
+          described_class.retriable(on: StandardError, not: IndexError) do
+            increment_tries_with_exception(@tries >= 1 ? IndexError : StandardError)
+          end
+        end.to raise_error(IndexError)
+
+        expect(@tries).to eq(2)
       end
     end
 
