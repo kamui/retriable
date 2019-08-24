@@ -14,6 +14,18 @@ module Retriable
     @config ||= Config.new
   end
 
+  def enable
+    @enabled = true
+  end
+
+  def enabled?
+    @enabled != false
+  end
+
+  def disable
+    @enabled = false
+  end
+
   def with_context(context_key, options = {}, &block)
     if !config.contexts.key?(context_key)
       raise ArgumentError, "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
@@ -59,7 +71,9 @@ module Retriable
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
-      rescue *[*exception_list] => exception
+      rescue *exception_list => exception
+        raise unless enabled?
+
         if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
