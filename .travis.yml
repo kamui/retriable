@@ -14,17 +14,26 @@ rvm:
   - jruby-9.2.7.0
   - jruby-head
   - rbx-3.99
-script:
-  - bundle exec rspec
 
 matrix:
   allow_failures:
     - rvm: rbx-3.99
 
+env:
+  global:
+    - CC_TEST_REPORTER_ID=20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
+
 before_install:
   - gem install rubygems-update -v '<3' --no-document && update_rubygems
   - gem install bundler -v 1.17.3
 
-addons:
-  code_climate:
-    repo_token: 20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+
+script:
+  - bundle exec rspec
+
+after_script:
+  - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT
