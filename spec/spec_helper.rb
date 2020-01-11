@@ -1,10 +1,4 @@
-require "codeclimate-test-reporter"
 require "simplecov"
-
-CodeClimate::TestReporter.configure do |config|
-  config.logger.level = Logger::WARN
-end
-
 SimpleCov.start
 
 require "pry"
