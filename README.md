@@ -82,6 +82,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
 | **`on`** | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on). |
 | **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
+| **`sleep_disabled`** | `false` | Whent true, disable exponential backoff and attempt retries immediately. |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
 | **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time in seconds that code is allowed to keep being retried. |
 | **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
