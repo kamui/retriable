@@ -83,7 +83,7 @@ module Retriable
         elsif matcher.is_a?(Proc)
           matcher.call(exception, *proc_args)
         else
-          raise ArgumentError, 'Exception hash values must be Proc or Regexp'
+          raise ArgumentError, "Exception hash values must be Proc or Regexp"
         end
       end
     end

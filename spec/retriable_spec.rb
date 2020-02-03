@@ -209,7 +209,7 @@ describe Retriable do
 
     it "#retriable retries with a hash exception where the value is a proc that returns true" do
       matcher = lambda do |e, _try, _elapsed_time, _next_interval|
-        e.message == 'something went wrong'
+        e.message == "something went wrong"
       end
       tries = 0
       expect do
