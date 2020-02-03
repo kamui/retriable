@@ -70,7 +70,7 @@ module Retriable
     end
   end
 
-  def matched_exception?(on, exception, *additional_args)
+  def matched_exception?(on, exception, *proc_args)
     return true unless on.is_a?(Hash)
 
     on.any? do |expected_exception, matchers|
@@ -81,7 +81,7 @@ module Retriable
         if matcher.is_a?(Regexp)
           exception.message =~ matcher
         elsif matcher.is_a?(Proc)
-          matcher.call(exception, *additional_args)
+          matcher.call(exception, *proc_args)
         else
           raise ArgumentError, 'Exception hash values must be Proc or Regexp'
         end

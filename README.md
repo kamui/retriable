@@ -99,7 +99,7 @@ Here are the available options, in some vague order of relevance to most common 
   - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Proc` (retries exceptions ONLY if it returns truthy)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
-  - An array of `Proc` and/or `Regexp` (retries exceptions ONLY if at least one exception matches `Regexp` or the `Proc` evaluates to `true`)
+  - An array of `Proc` and/or `Regexp` (retries exceptions ONLY if at least one exception message matches a `Regexp` or at least one `Proc` returns `truthy`)
 
 
 ### Configuration
@@ -136,7 +136,6 @@ You can also use a hash to specify that you only want to retry exceptions with c
 A `Regexp` (or array of `Regexp`s). If any of the `Regexp`s match the exception's message, the block will be retried.
 A `Proc` (or array of `Proc`s) that evaluates the exception being handled and returns `true` if the block should be retried. If any of the procs in the list return `true`, the block will be retried.
 You can also mix and match `Proc`s and `Regexp`s in an `Array`
->>>>>>> Accept Proc in the `:on` argument
 
 ```ruby
 Retriable.retriable(on: {
