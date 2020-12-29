@@ -1,3 +1,7 @@
+inherit_from: .rubocop_todo.yml
+AllCops:
+  TargetRubyVersion: 2.0
+
 Style/StringLiterals:
   EnforcedStyle: double_quotes
 

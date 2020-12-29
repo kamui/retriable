@@ -49,7 +49,7 @@ module Retriable
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
-        rand_factor:    rand_factor
+        rand_factor:    rand_factor,
       ).intervals
     end
 
@@ -59,7 +59,7 @@ module Retriable
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
-      rescue *[*exception_list] => exception
+      rescue *exception_list => exception
         if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })

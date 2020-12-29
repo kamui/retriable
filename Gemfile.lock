@@ -1,0 +1,78 @@
+PATH
+  remote: .
+  specs:
+    retriable (3.1.2)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ast (2.4.2)
+    coderay (1.1.3)
+    diff-lcs (1.4.4)
+    docile (1.3.5)
+    ffi (1.12.2)
+    json (2.5.1)
+    listen (3.0.8)
+      rb-fsevent (~> 0.9, >= 0.9.4)
+      rb-inotify (~> 0.9, >= 0.9.7)
+    method_source (1.0.0)
+    parallel (1.13.0)
+    parser (2.7.2.0)
+      ast (~> 2.4.1)
+    powerpack (0.1.3)
+    pry (0.13.1)
+      coderay (~> 1.1)
+      method_source (~> 1.0)
+    rainbow (2.2.2)
+      rake
+    rake (12.3.3)
+    rb-fsevent (0.10.4)
+    rb-inotify (0.9.10)
+      ffi (>= 0.5.0, < 2)
+    rspec (3.10.0)
+      rspec-core (~> 3.10.0)
+      rspec-expectations (~> 3.10.0)
+      rspec-mocks (~> 3.10.0)
+    rspec-core (3.10.1)
+      rspec-support (~> 3.10.0)
+    rspec-expectations (3.10.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.10.0)
+    rspec-mocks (3.10.1)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.10.0)
+    rspec-support (3.10.1)
+    rubocop (0.50.0)
+      parallel (~> 1.10)
+      parser (>= 2.3.3.1, < 3.0)
+      powerpack (~> 0.1)
+      rainbow (>= 2.2.2, < 3.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (~> 1.0, >= 1.0.1)
+    rubocop-rspec (1.5.1)
+      rubocop (>= 0.41.2)
+    ruby-progressbar (1.11.0)
+    ruby_dep (1.3.1)
+    simplecov (0.17.1)
+      docile (~> 1.1)
+      json (>= 1.8, < 3)
+      simplecov-html (~> 0.10.0)
+    simplecov-html (0.10.2)
+    unicode-display_width (1.7.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  bundler
+  listen (~> 3.0.8)
+  pry
+  retriable!
+  rspec
+  rubocop (>= 0.50, < 0.51)
+  rubocop-rspec
+  ruby_dep (~> 1.3.1)
+  simplecov
+
+BUNDLED WITH
+   1.17.3
