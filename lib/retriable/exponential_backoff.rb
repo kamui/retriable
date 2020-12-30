@@ -24,18 +24,22 @@ rand_factor
     end
 
     def intervals
-      intervals = Array.new(tries) do |iteration|
-        [base_interval * multiplier**iteration, max_interval].min
-      end
-
-      return intervals if rand_factor.zero?
-
-      intervals.map { |i| randomize(i) }
+      Enumerator.new(tries) do |result|
+        try = 0
+        loop do
+          interval = [base_interval * multiplier**try, max_interval].min
+          result << randomize(interval)
+          try += 1
+          raise StopIteration if tries && try >= tries
+        end
+      end.lazy
     end
 
     private
 
     def randomize(interval)
+      return interval if rand_factor.zero?
+
       delta = rand_factor * interval * 1.0
       min = interval - delta
       max = interval + delta

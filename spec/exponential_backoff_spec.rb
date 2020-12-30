@@ -20,7 +20,7 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates 10 randomized intervals" do
-    expect(described_class.new(tries: 9).intervals).to eq([
+    expect(described_class.new(tries: 9).intervals.to_a).to eq([
       0.5244067512211441,
       0.9113920238761231,
       1.2406087918999114,
@@ -38,7 +38,7 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates intervals with a defined base interval" do
-    expect(described_class.new(base_interval: 1).intervals).to eq([
+    expect(described_class.new(base_interval: 1).intervals.to_a).to eq([
       1.0488135024422882,
       1.8227840477522461,
       2.4812175837998227
@@ -46,7 +46,7 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates intervals with a defined multiplier" do
-    expect(described_class.new(multiplier: 1).intervals).to eq([
+    expect(described_class.new(multiplier: 1).intervals.to_a).to eq([
       0.5244067512211441,
       0.607594682584082,
       0.5513816852888495
@@ -54,11 +54,11 @@ describe Retriable::ExponentialBackoff do
   end
 
   it "generates intervals with a defined max interval" do
-    expect(described_class.new(max_interval: 1.0, rand_factor: 0.0).intervals).to eq([0.5, 0.75, 1.0])
+    expect(described_class.new(max_interval: 1.0, rand_factor: 0.0).intervals.to_a).to eq([0.5, 0.75, 1.0])
   end
 
   it "generates intervals with a defined rand_factor" do
-    expect(described_class.new(rand_factor: 0.2).intervals).to eq([
+    expect(described_class.new(rand_factor: 0.2).intervals.to_a).to eq([
       0.5097627004884576,
       0.8145568095504492,
       1.1712435167599646
@@ -67,6 +67,6 @@ describe Retriable::ExponentialBackoff do
 
   it "generates 10 non-randomized intervals" do
     non_random_intervals = 9.times.inject([0.5]) { |memo, _i| memo + [memo.last * 1.5] }
-    expect(described_class.new(tries: 10, rand_factor: 0.0).intervals).to eq(non_random_intervals)
+    expect(described_class.new(tries: 10, rand_factor: 0.0).intervals.to_a).to eq(non_random_intervals)
   end
 end

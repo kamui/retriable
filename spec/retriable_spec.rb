@@ -132,6 +132,59 @@ describe Retriable do
       end
     end
 
+    context "with interval enumerator" do
+      let(:intervals_with_size) do
+        Enumerator.new(4) { |result| loop { result << 0.00001 } }
+      end
+      let(:intervals_with_one_result) do
+        Enumerator.new(4) { |result| loop { result << 0.00001; raise StopIteration } }
+      end
+
+      it "uses size of Enumerator if it can be determined without iterating" do
+        expect do
+          described_class.retriable(on: StandardError, tries: 6, intervals: intervals_with_size, max_elapsed_time: 1.2) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+        expect(@tries).to eq(5)
+      end
+
+      it "recognizes if Enumerator stops iterating" do
+        expect do
+          described_class.retriable(on: StandardError, tries: 6, intervals: intervals_with_one_result, max_elapsed_time: 1.2) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+        expect(@tries).to eq(2)
+      end
+
+      it "lazily iterates through the enumerator" do
+        start_time = Time.now
+        intervals = Enumerator.new { |result| loop { result << 0.00001; sleep 0.2 } }
+        expect do
+          described_class.retriable(on: StandardError, tries: 6, intervals: intervals, max_elapsed_time: 1.2) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+        expect(@tries).to eq(6)
+        expect(Time.now - start_time).to be < 2
+      end
+    end
+
+    context "with unlimited tries" do
+      let(:args) { { on: StandardError, tries: nil, rand_factor: 0.0, multiplier: 1, base_interval: 0.00001 } }
+
+      it "keeps going indefinitely" do
+        start_time = Time.now.to_i
+        expect do
+          described_class.retriable(args) do
+            increment_tries_with_exception(NonStandardError) if start_time + 3 < Time.now.to_i
+            increment_tries_with_exception
+          end
+        end.to raise_error(NonStandardError)
+        expect(@tries).to be > 100
+      end
+    end
     context "with an array :on parameter" do
       it "handles both kinds of exceptions" do
         described_class.retriable(on: [StandardError, NonStandardError]) do
@@ -211,7 +264,7 @@ describe Retriable do
       described_class.configure { |c| c.sleep_disabled = false }
 
       expect do
-        described_class.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0, max_elapsed_time: 2.0) do
+        described_class.retriable(base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0, max_elapsed_time: 2) do
           increment_tries_with_exception
         end
       end.to raise_error(StandardError)
