@@ -1,6 +1,6 @@
 # Send builds to container-based infrastructure
 # http://docs.travis-ci.com/user/workers/container-based-infrastructure/
-dist: trusty
+dist: xenial
 language: ruby
 rvm:
   - 2.0.0
@@ -10,6 +10,8 @@ rvm:
   - 2.4.6
   - 2.5.5
   - 2.6.2
+  - 2.7
+  - 3.0
   - ruby-head
   - jruby-9.2.9.0
   - jruby-head
@@ -24,8 +26,8 @@ env:
     - CC_TEST_REPORTER_ID=20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
 
 before_install:
-  - gem install rubygems-update -v '<3' --no-document && update_rubygems
   - gem install bundler -v 1.17.3
+  - bundle install
 
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
@@ -33,7 +35,7 @@ before_script:
   - ./cc-test-reporter before-build
 
 script:
-  - bundle exec rspec
+  - bundle exec rake test:ci
 
 after_script:
   - ./cc-test-reporter after-build --exit-code $TRAVIS_TEST_RESULT

@@ -1,12 +1,12 @@
 module Retriable
   class ExponentialBackoff
     ATTRIBUTES = %i[
-tries
-base_interval
-multiplier
-max_interval
-rand_factor
-].freeze
+      tries
+      base_interval
+      multiplier
+      max_interval
+      rand_factor
+    ].freeze
 
     attr_accessor(*ATTRIBUTES)
 
@@ -18,7 +18,7 @@ rand_factor
       @multiplier    = 1.5
 
       opts.each do |k, v|
-        raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
+        raise ArgumentError, "#{k} is not a valid option" unless ATTRIBUTES.include?(k)
         instance_variable_set(:"@#{k}", v)
       end
     end
@@ -32,7 +32,7 @@ rand_factor
           try += 1
           raise StopIteration if tries && try >= tries
         end
-      end.lazy
+      end
     end
 
     private
