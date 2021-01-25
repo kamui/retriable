@@ -1,9 +1,9 @@
-require "simplecov"
+require 'simplecov'
 SimpleCov.start
 
-require "pry"
-require_relative "../lib/retriable"
-require_relative "support/exceptions.rb"
+require 'pry'
+require_relative '../lib/retriable'
+require_relative 'support/exceptions.rb'
 
 RSpec.configure do |config|
   config.before(:each) do

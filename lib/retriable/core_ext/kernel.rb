@@ -1,4 +1,4 @@
-require_relative "../../retriable"
+require_relative '../../retriable'
 
 module Kernel
   def retriable(opts = {}, &block)

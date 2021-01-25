@@ -1,25 +1,31 @@
-Style/StringLiterals:
-  EnforcedStyle: double_quotes
-
-Style/Documentation:
-  Enabled: false
-
-Style/TrailingCommaInArguments:
-  EnforcedStyleForMultiline: comma
-
-Lint/InheritException:
-  Enabled: false
+AllCops:
+  TargetRubyVersion: 2.0
 
 Layout/IndentArray:
+  EnforcedStyle: consistent
+
+Layout/SpaceAroundOperators:
+  AllowForAlignment: true
+
+
+Lint/InheritException:
+  Exclude:
+    - 'spec/support/exceptions.rb'
+
+
+Metrics/AbcSize:
   Enabled: false
 
-Layout/IndentHash:
-  Enabled: false
-
-Style/NegatedIf:
+Metrics/BlockLength:
   Enabled: false
 
 Metrics/ClassLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/MethodLength:
   Enabled: false
 
 Metrics/ModuleLength:
@@ -28,11 +34,31 @@ Metrics/ModuleLength:
 Metrics/LineLength:
   Max: 120
 
-Metrics/MethodLength:
+Metrics/PerceivedComplexity:
   Enabled: false
 
-Metrics/BlockLength:
+
+RSpec/ExampleLength:
   Enabled: false
 
-Metrics/AbcSize:
+RSpec/FilePath:
+  # rspec thinks these should be in spec/retriable/
+  # There is a SpecSuffixOnly option that should fix this
+  # but it's being silently ignored
+  Exclude:
+    - 'spec/config_spec.rb'
+    - 'spec/exponential_backoff_spec.rb'
+
+RSpec/InstanceVariable:
+  Exclude:
+    - 'spec/retriable_spec.rb'
+
+
+Style/Documentation:
   Enabled: false
+
+Style/NegatedIf:
+  Enabled: false
+
+Style/TrailingCommaInArguments:
+  EnforcedStyleForMultiline: comma

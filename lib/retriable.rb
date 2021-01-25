@@ -1,7 +1,7 @@
-require "timeout"
-require_relative "retriable/config"
-require_relative "retriable/exponential_backoff"
-require_relative "retriable/version"
+require 'timeout'
+require_relative 'retriable/config'
+require_relative 'retriable/exponential_backoff'
+require_relative 'retriable/version'
 
 module Retriable
   module_function
@@ -15,8 +15,9 @@ module Retriable
   end
 
   def with_context(context_key, options = {}, &block)
-    if !config.contexts.key?(context_key)
-      raise ArgumentError, "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
+    unless config.contexts.key?(context_key)
+      raise ArgumentError, "#{context_key} not found in Retriable.config.contexts. "\
+                           "Available contexts: #{config.contexts.keys}"
     end
 
     retriable(config.contexts[context_key].merge(options), &block) if block
@@ -42,35 +43,53 @@ module Retriable
     elapsed_time = -> { Time.now - start_time }
 
     if intervals
-      tries = intervals.size + 1
+      tries = intervals.size + 1 if intervals.size
     else
-      intervals = ExponentialBackoff.new(
-        tries:          tries - 1,
+      backoff = ExponentialBackoff.new(
+        tries:          tries ? tries - 1 : nil,
         base_interval:  base_interval,
         multiplier:     multiplier,
         max_interval:   max_interval,
-        rand_factor:    rand_factor
-      ).intervals
+        rand_factor:    rand_factor,
+      )
+      intervals = backoff.intervals
     end
 
-    tries.times do |index|
-      try = index + 1
-
+    # TODO: Ideally this would be it's own function, but would probably require
+    #   a separate class to efficiently pass on the processed config
+    run_try = proc do |interval, try|
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
-      rescue *[*exception_list] => exception
+      rescue *exception_list => exception
         if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
           end
         end
-
-        interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
-        raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
-        sleep interval if sleep_disabled != true
+
+        # Note: Tries can't always be calculated if a custom Enumerator is given
+        #   for the intervals argument. (Enumerator#size will return nil, per docs)
+        #   So we'll just let the enumerator run out, and then invoke run_try once more.
+        #   With a nil timeout.
+        raise unless interval
+        raise if max_elapsed_time && elapsed_time.call + interval > max_elapsed_time
+        sleep interval unless sleep_disabled
+        throw :failed
       end
     end
+
+    try = 0
+    intervals.each do |interval|
+      try += 1
+      # Use throw/catch to distinguish between success and caught exception
+      catch :failed do
+        result = run_try.call(interval, try)
+        return result
+      end
+      break if tries && (try + 1 >= tries)
+    end
+    run_try.call(nil, try + 1)
   end
 end
