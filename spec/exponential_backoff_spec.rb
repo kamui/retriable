@@ -21,15 +21,15 @@ describe Retriable::ExponentialBackoff do
 
   it "generates 10 randomized intervals" do
     expect(described_class.new(tries: 9).intervals).to eq([
-      0.5244067512211441,
-      0.9113920238761231,
-      1.2406087918999114,
-      1.7632403621664823,
-      2.338001204738311,
-      4.350816718580626,
-      5.339852157217869,
-      11.889873261212443,
-      18.756037881636484,
+      0.43727005942368125,
+      0.6559050891355219,
+      0.9838576337032829,
+      1.4757864505549243,
+      2.2136796758323865,
+      3.3205195137485797,
+      4.98077927062287,
+      7.471168905934304,
+      11.206753358901457
     ])
   end
 
@@ -39,18 +39,18 @@ describe Retriable::ExponentialBackoff do
 
   it "generates intervals with a defined base interval" do
     expect(described_class.new(base_interval: 1).intervals).to eq([
-      1.0488135024422882,
-      1.8227840477522461,
-      2.4812175837998227,
+      0.8745401188473625,
+      1.3118101782710438,
+      1.9677152674065659
     ])
   end
 
   it "generates intervals with a defined multiplier" do
     expect(described_class.new(multiplier: 1).intervals).to eq([
-      0.5244067512211441,
-      0.607594682584082,
-      0.5513816852888495,
-    ])
+     0.43727005942368125,
+     0.43727005942368125,
+     0.43727005942368125
+   ])
   end
 
   it "generates intervals with a defined max interval" do
@@ -59,9 +59,9 @@ describe Retriable::ExponentialBackoff do
 
   it "generates intervals with a defined rand_factor" do
     expect(described_class.new(rand_factor: 0.2).intervals).to eq([
-      0.5097627004884576,
-      0.8145568095504492,
-      1.1712435167599646,
+      0.47490802376947255,
+      0.7123620356542087,
+      1.0685430534813132
     ])
   end
 
