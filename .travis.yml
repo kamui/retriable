@@ -6,18 +6,22 @@ rvm:
   - 2.0.0
   - 2.1.10
   - 2.2.10
-  - 2.3.7
-  - 2.4.6
-  - 2.5.5
-  - 2.6.2
+  - 2.3.8
+  - 2.4.10
+  - 2.5.8
+  - 2.6.6
+  - 2.7.2
+  - 3.0.0
   - ruby-head
   - jruby-9.2.16.0
   - jruby-head
-  - rbx-3.99
+  - rbx-5.0
 
 matrix:
   allow_failures:
-    - rvm: rbx-3.99
+    - rvm: ruby-head
+    - rvm: jruby-head
+    - rvm: rbx-5.0
 
 env:
   global:
@@ -25,7 +29,7 @@ env:
 
 before_install:
   - gem install rubygems-update -v '<3' --no-document && update_rubygems
-  - gem install bundler -v 1.17.3
+  - gem install bundler -v '~>1'
 
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
