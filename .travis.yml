@@ -14,10 +14,12 @@ rvm:
   - 3.0
   - ruby-head
   - jruby-9.2.16.0
+  - truffleruby-head
 
 matrix:
   allow_failures:
     - rvm: ruby-head
+    - rvm: truffleruby-head
 
 env:
   global:
