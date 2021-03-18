@@ -14,12 +14,10 @@ rvm:
   - 3.0
   - ruby-head
   - jruby-9.2.16.0
-  - rbx-4.20
 
 matrix:
   allow_failures:
     - rvm: ruby-head
-    - rvm: rbx-4.20
 
 env:
   global:
