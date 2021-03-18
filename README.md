@@ -89,7 +89,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
 | **`rand_factor`** | `0.5` | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
 | **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array). |
-| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. The implementation uses `Timeout::timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). Proceed with caution, recommend you implement your own timeout method. |
+| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. The implementation uses `Timeout::timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). Proceed with caution. |
 #### Configuring Which Options to Retry With :on
 **`:on`** Can take the form:
 
@@ -142,7 +142,9 @@ Retriable.retriable(on: {
 end
 ```
 
-You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try. The implementation uses `Timeout::timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). The recommendation is that you're better off impelenting your own timeout methods depending on what your code is doing than use this feature. This may be deprecated in future versions.
+You can also specify a timeout if you want the code block to only try for X amount of seconds. This timeout is per try.
+
+The implementation uses `Timeout::timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). You can use this option, but you need to be very careful because the code in the block, including libraries or other code it calls, could be interrupted by the timeout at any line. You must ensure you have the right rescue logic and guards in place ([Thread.handle_interrupt](https://www.rubydoc.info/stdlib/core/Thread.handle_interrupt)) to handle that possible behavior. If that's not possible, the recommendation is that you're better off impelenting your own timeout methods depending on what your code is doing than use this feature.
 
 ```ruby
 Retriable.retriable(timeout: 60) do
