@@ -1,6 +1,6 @@
 # Retriable
 
-[![Build Status](https://secure.travis-ci.org/kamui/retriable.svg)](http://travis-ci.org/kamui/retriable)
+[![Build Status](https://travis-ci.org/kamui/retriable.svg?branch=master)](http://travis-ci.org/kamui/retriable)
 [![Code Climate](https://codeclimate.com/github/kamui/retriable/badges/gpa.svg)](https://codeclimate.com/github/kamui/retriable)
 [![Test Coverage](https://codeclimate.com/github/kamui/retriable/badges/coverage.svg)](https://codeclimate.com/github/kamui/retriable/coverage)
 [![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
