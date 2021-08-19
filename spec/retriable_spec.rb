@@ -222,6 +222,17 @@ describe Retriable do
     it "raises ArgumentError on invalid options" do
       expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
     end
+
+    it "raises without retries when disabled" do
+      begin
+        described_class.disable
+        expect(described_class.enabled?).to be_falsey
+        expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+        expect(@tries).to eq(1)
+      ensure
+        described_class.enable
+      end
+    end
   end
 
   context "#configure" do
@@ -261,5 +272,9 @@ describe Retriable do
     it "raises an ArgumentError when the context isn't found" do
       expect { described_class.with_context(:wtf) { increment_tries } }.to raise_error(ArgumentError, /wtf not found/)
     end
+  end
+
+  it "is enabled by default" do
+    expect(described_class.enabled?).to be_truthy
   end
 end

@@ -310,64 +310,17 @@ end
 
 When you are running tests for your app it often takes a long time to retry blocks that fail. This is because Retriable will default to 3 tries with exponential backoff. Ideally your tests will run as quickly as possible.
 
-You can disable retrying by setting `tries` to 1 in the test environment. If you want to test that the code is retrying an error, you want to [turn off exponential backoff](#turn-off-exponential-backoff).
-
-Under Rails, you could change your initializer to have different options in test, as follows:
-
+You can disable retrying in the test environment:
 ```ruby
-# config/initializers/retriable.rb
-Retriable.configure do |c|
-  # ... default configuration
+Retriable.enabled?
+=> true
 
-  if Rails.env.test?
-    c.tries = 1
-  end
-end
+Retriable.disable
+
+Retriable.enabled?
+=> false
 ```
-
-Alternately, if you are using RSpec, you could override the Retriable confguration in your `spec_helper`.
-
-```ruby
-# spec/spec_helper.rb
-Retriable.configure do |c|
-  c.tries = 1
-end
-```
-
-If you have defined contexts for your configuration, you'll need to change values for each context, because those values take precedence over the default configured value.
-
-For example assuming you have configured a `google_api` context:
-```ruby
-# config/initializers/retriable.rb
-Retriable.configure do |c|
-  c.contexts[:google_api] = {
-      tries:         5,
-      base_interval: 3,
-      on:            [
-          Net::ReadTimeout,
-          Signet::AuthorizationError,
-          Errno::ECONNRESET,
-          OpenSSL::SSL::SSLError
-      ]
-  }
-end
-```
-
-Then in your test environment, you would need to set each context and the default value:
-
-```ruby
-# spec/spec_helper.rb
-Retriable.configure do |c|
-  c.multiplier    = 1.0
-  c.rand_factor   = 0.0
-  c.base_interval = 0
-
-  c.contexts.keys.each do |context|
-    c.contexts[context][:tries]         = 1
-    c.contexts[context][:base_interval] = 0
-  end
-end
-```
+If you want to test that the code is retrying an error, you want to [turn off exponential backoff](#turn-off-exponential-backoff).
 
 ## Proxy Wrapper Object
 
