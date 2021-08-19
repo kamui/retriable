@@ -1,5 +1,6 @@
-# coding: utf-8
-lib = File.expand_path("../lib", __FILE__)
+# frozen_string_literal: true
+
+lib = File.expand_path("lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "retriable/version"
 
@@ -24,8 +25,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec", "~> 3"
 
   if RUBY_VERSION < "2.3"
-    spec.add_development_dependency "ruby_dep", "~> 1.3.1"
     spec.add_development_dependency "listen", "~> 3.0.8"
+    spec.add_development_dependency "ruby_dep", "~> 1.3.1"
   else
     spec.add_development_dependency "listen", "~> 3.1"
   end

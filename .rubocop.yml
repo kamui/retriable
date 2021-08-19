@@ -7,13 +7,22 @@ Style/Documentation:
 Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
 
+Style/SafeNavigation:
+  Enabled: false
+
+Style/SymbolArray:
+  EnforcedStyle: brackets
+
+Style/TrailingCommaInArrayLiteral:
+  EnforcedStyleForMultiline: consistent_comma
+
 Lint/InheritException:
   Enabled: false
 
-Layout/IndentArray:
+Layout/IndentFirstArrayElement:
   Enabled: false
 
-Layout/IndentHash:
+Layout/IndentFirstHashElement:
   Enabled: false
 
 Style/NegatedIf:
@@ -27,6 +36,8 @@ Metrics/ModuleLength:
 
 Metrics/LineLength:
   Max: 120
+  Exclude:
+    - retriable.gemspec
 
 Metrics/MethodLength:
   Enabled: false
@@ -35,4 +46,13 @@ Metrics/BlockLength:
   Enabled: false
 
 Metrics/AbcSize:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Gemspec:
   Enabled: false

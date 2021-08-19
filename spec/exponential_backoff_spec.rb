@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Retriable::ExponentialBackoff do
   context "defaults" do
     let(:backoff_config) { described_class.new }

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "exponential_backoff"
 
 module Retriable
@@ -8,6 +10,7 @@ module Retriable
       :intervals,
       :timeout,
       :on,
+      :not,
       :on_retry,
       :contexts,
     ]).freeze
@@ -27,11 +30,13 @@ module Retriable
       @intervals        = nil
       @timeout          = nil
       @on               = [StandardError]
+      @not              = []
       @on_retry         = nil
       @contexts         = {}
 
       opts.each do |k, v|
         raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
+
         instance_variable_set(:"@#{k}", v)
       end
     end
