@@ -69,9 +69,13 @@ module Retriable
           end
         end
 
-        if ignore_list.is_a?(Hash)
+        if ignore.is_a?(Hash)
           raise if ignore_list.any? do |e|
             exception.is_a?(e) && ([*ignore[e]].empty? || [*ignore[e]].any? { |pattern| exception.message =~ pattern })
+          end
+        elsif ignore.is_a?(Array)
+          raise if ignore_list.any? do |e|
+            exception.is_a?(e) && [*ignore[e]].empty?
           end
         end
 
