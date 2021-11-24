@@ -38,8 +38,8 @@ module Retriable
     sleep_disabled    = local_config.sleep_disabled
     ignore            = local_config.ignore
 
-    exception_list = on.is_a?(Hash) ? on.keys : on
-    ignore_list = ignore.is_a?(Hash) ? ignore.keys : ignore
+    exception_list = on.is_a?(Hash) ? on.keys : [on].flatten
+    ignore_list = ignore.is_a?(Hash) ? ignore.keys : [ignore].flatten
     rescue_list = exception_list + ignore_list
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
@@ -75,7 +75,7 @@ module Retriable
           end
         elsif ignore.is_a?(Array)
           raise if ignore_list.any? do |e|
-            exception.is_a?(e) && [*ignore[e]].empty?
+            exception.is_a?(e)
           end
         end
 
