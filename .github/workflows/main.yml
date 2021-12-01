@@ -43,14 +43,5 @@ jobs:
       - name: ruby version
         run: ruby -v
 
-      - name: Install Code Climate test reporter
-        run: |
-          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
-          chmod +x ./cc-test-reporter
-          ./cc-test-reporter before-build
-
       - name: Run rspec
         run: bundle exec rspec
-
-      - name: Code Climate test reporter after build
-        run: ./cc-test-reporter after-build
