@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  ci:
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        ruby:
+          [
+            "2.0",
+            "2.1",
+            "2.2",
+            "2.3",
+            "2.4",
+            "2.5",
+            "2.6",
+            "2.7",
+            "3.0",
+            jruby,
+            truffleruby,
+          ]
+    env:
+      CC_TEST_REPORTER_ID: 20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Setup ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: ruby version
+        run: ruby -v
+
+      - name: Install Code Climate test reporter
+        run: |
+          curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+          chmod +x ./cc-test-reporter
+          ./cc-test-reporter before-build
+
+      - name: Run rspec
+        run: bundle exec rspec
+
+      - name: Code Climate test reporter after build
+        run: ./cc-test-reporter after-build

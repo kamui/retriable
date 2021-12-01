@@ -1,6 +1,6 @@
 # Retriable
 
-[![Build Status](https://travis-ci.org/kamui/retriable.svg?branch=master)](http://travis-ci.org/kamui/retriable)
+![Build Status](https://github.com/kamui/retriable/actions/workflows/main.yml/badge.svg)
 [![Code Climate](https://codeclimate.com/github/kamui/retriable/badges/gpa.svg)](https://codeclimate.com/github/kamui/retriable)
 [![Test Coverage](https://codeclimate.com/github/kamui/retriable/badges/coverage.svg)](https://codeclimate.com/github/kamui/retriable/coverage)
 [![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
@@ -36,6 +36,7 @@ gem 'retriable', '~> 3.1'
 ```
 
 ## Usage
+
 Code in a `Retriable.retriable` block will be retried if an exception is raised.
 
 ```ruby
@@ -52,45 +53,48 @@ end
 ```
 
 ### Defaults
+
 By default, `Retriable` will:
-* rescue any exception inherited from `StandardError`
-* make 3 tries (including the initial attempt) before raising the last exception
-* use randomized exponential backoff to calculate each succeeding try interval.
+
+- rescue any exception inherited from `StandardError`
+- make 3 tries (including the initial attempt) before raising the last exception
+- use randomized exponential backoff to calculate each succeeding try interval.
 
 The default interval table with 10 tries looks like this (in seconds, rounded to the nearest millisecond):
 
-| Retry #  | Min      | Average  | Max      |
-| -------- | -------- | -------- | -------- |
-| 1        | `0.25`   | `0.5`    | `0.75`   |
-| 2        | `0.375`  | `0.75`   | `1.125`  |
-| 3        | `0.563`  | `1.125`  | `1.688`  |
-| 4        | `0.844`  | `1.688`  | `2.531`  |
-| 5        | `1.266`  | `2.531`  | `3.797`  |
-| 6        | `1.898`  | `3.797`  | `5.695`  |
-| 7        | `2.848`  | `5.695`  | `8.543`  |
-| 8        | `4.271`  | `8.543`  | `12.814` |
-| 9        | `6.407`  | `12.814` | `19.222` |
-| 10       | **stop** | **stop** | **stop** |
-
+| Retry # | Min      | Average  | Max      |
+| ------- | -------- | -------- | -------- |
+| 1       | `0.25`   | `0.5`    | `0.75`   |
+| 2       | `0.375`  | `0.75`   | `1.125`  |
+| 3       | `0.563`  | `1.125`  | `1.688`  |
+| 4       | `0.844`  | `1.688`  | `2.531`  |
+| 5       | `1.266`  | `2.531`  | `3.797`  |
+| 6       | `1.898`  | `3.797`  | `5.695`  |
+| 7       | `2.848`  | `5.695`  | `8.543`  |
+| 8       | `4.271`  | `8.543`  | `12.814` |
+| 9       | `6.407`  | `12.814` | `19.222` |
+| 10      | **stop** | **stop** | **stop** |
 
 ### Options
 
 Here are the available options, in some vague order of relevance to most common use patterns:
 
-| Option | Default | Definition |
-| ------ | ------- | ---------- |
-| **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
-| **`on`** | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on). |
-| **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
-| **`sleep_disabled`** | `false` | When true, disable exponential backoff and attempt retries immediately. |
-| **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
-| **`max_elapsed_time`** | `900` (15 min) | The maximum amount of total time in seconds that code is allowed to keep being retried. |
-| **`max_interval`** | `60` | The maximum interval in seconds that any individual retry can reach. |
-| **`multiplier`** | `1.5` | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval. |
-| **`rand_factor`** | `0.5` | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])` |
-| **`intervals`** | `nil` | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array). |
-| **`timeout`** | `nil` | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. The implementation uses `Timeout::timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). Proceed with caution. |
+| Option                 | Default           | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **`on`**               | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. [Read more](#callbacks).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **`sleep_disabled`**   | `false`           | When true, disable exponential backoff and attempt retries immediately.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **`base_interval`**    | `0.5`             | The initial interval in seconds between tries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| **`max_elapsed_time`** | `900` (15 min)    | The maximum amount of total time in seconds that code is allowed to keep being retried.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **`max_interval`**     | `60`              | The maximum interval in seconds that any individual retry can reach.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **`multiplier`**       | `1.5`             | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| **`rand_factor`**      | `0.5`             | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])`                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **`intervals`**        | `nil`             | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **`timeout`**          | `nil`             | Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. The implementation uses `Timeout::timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). Proceed with caution. |
+
 #### Configuring Which Options to Retry With :on
+
 **`:on`** Can take the form:
 
 - An `Exception` class (retry every exception of this type, including subclasses)
@@ -99,7 +103,6 @@ Here are the available options, in some vague order of relevance to most common 
   - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
   - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
-
 
 ### Configuration
 
@@ -130,7 +133,7 @@ Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
 end
 ```
 
-You can also use a hash to specify that you only want to retry exceptions with certain messages (see [the documentation above](#configuring-which-options-to-retry-with-on)).  This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/Username has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
+You can also use a hash to specify that you only want to retry exceptions with certain messages (see [the documentation above](#configuring-which-options-to-retry-with-on)). This example will retry all `ActiveRecord::RecordNotUnique` exceptions, `ActiveRecord::RecordInvalid` exceptions where the message matches either `/Parent must exist/` or `/Username has already been taken/`, or `Mysql2::Error` exceptions where the message matches `/Duplicate entry/`.
 
 ```ruby
 Retriable.retriable(on: {
@@ -174,7 +177,7 @@ This example makes 5 total attempts. If the first attempt fails, the 2nd attempt
 
 ### Turn off Exponential Backoff
 
-Exponential backoff is enabled by default.  If you want to simply retry code every second, 5 times maximum, you can do this:
+Exponential backoff is enabled by default. If you want to simply retry code every second, 5 times maximum, you can do this:
 
 ```ruby
 Retriable.retriable(tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 0.0) do
@@ -182,7 +185,7 @@ Retriable.retriable(tries: 5, base_interval: 1.0, multiplier: 1.0, rand_factor: 
 end
 ```
 
-This works by starting at a 1 second `base_interval`.  Setting the `multipler` to 1.0 means each subsequent try will increase 1x, which is still `1.0` seconds, and then a `rand_factor` of 0.0 means that there's no randomization of that interval. (By default, it would randomize 0.5 seconds, which would mean normally the intervals would randomize between 0.5 and 1.5 seconds, but in this case `rand_factor` is basically being disabled.)
+This works by starting at a 1 second `base_interval`. Setting the `multipler` to 1.0 means each subsequent try will increase 1x, which is still `1.0` seconds, and then a `rand_factor` of 0.0 means that there's no randomization of that interval. (By default, it would randomize 0.5 seconds, which would mean normally the intervals would randomize between 0.5 and 1.5 seconds, but in this case `rand_factor` is basically being disabled.)
 
 Another way to accomplish this would be to create an array with a fixed interval. In this example, `Array.new(5, 1)` creates an array with 5 elements, all with the value 1. The code block will retry up to 5 times, and wait 1 second between each attempt.
 
@@ -236,7 +239,7 @@ end
 
 ## Contexts
 
-Contexts allow you to coordinate sets of Retriable options across an application.  Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable.config` as a simple `Hash` and is accessible by name. For example:
+Contexts allow you to coordinate sets of Retriable options across an application. Each context is basically an argument hash for `Retriable.retriable` that is stored in the `Retriable.config` as a simple `Hash` and is accessible by name. For example:
 
 ```ruby
 Retriable.configure do |c|
@@ -337,6 +340,7 @@ end
 If you have defined contexts for your configuration, you'll need to change values for each context, because those values take precedence over the default configured value.
 
 For example assuming you have configured a `google_api` context:
+
 ```ruby
 # config/initializers/retriable.rb
 Retriable.configure do |c|
@@ -383,7 +387,9 @@ RetriableProxy.for_object(api_endpoint, on: Net::TimeoutError)
 The randomized exponential backoff implementation was inspired by the one used in Google's [google-http-java-client](https://code.google.com/p/google-http-java-client/wiki/ExponentialBackoff) project.
 
 ## Development
+
 ### Running Specs
+
 ```bash
 bundle exec rspec
 ```
