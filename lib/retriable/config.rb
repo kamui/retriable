@@ -8,6 +8,7 @@ module Retriable
       :intervals,
       :timeout,
       :on,
+      :ignore,
       :on_retry,
       :contexts,
     ]).freeze
@@ -27,6 +28,7 @@ module Retriable
       @intervals        = nil
       @timeout          = nil
       @on               = [StandardError]
+      @ignore           = []
       @on_retry         = nil
       @contexts         = {}
 

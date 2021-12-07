@@ -145,6 +145,78 @@ describe Retriable do
       end
     end
 
+    context "with an array :ignore parameter" do
+      it "does not retry :ignore exception" do
+        expect do
+          described_class.retriable(ignore: [NonStandardError]) do
+            increment_tries
+
+            raise StandardError if @tries == 1
+            raise NonStandardError if @tries == 2
+          end
+        end.to raise_error(NonStandardError)
+
+        expect(@tries).to eq(2)
+      end
+
+      it "overrides :on parameter" do
+        expect do
+          described_class.retriable(ignore: [StandardError]) do
+            increment_tries
+
+            raise StandardError if @tries == 1
+          end
+        end.to raise_error(StandardError)
+      end
+    end
+
+    context "with a hash :ignore parameter" do
+      let(:ignore_hash) { { NonStandardError => /NonStandardError occurred/ } }
+
+      it "where the value is an exception message pattern" do
+        expect do
+          described_class.retriable(ignore: ignore_hash) { increment_tries_with_exception(NonStandardError) }
+        end.to raise_error(NonStandardError, /NonStandardError occurred/)
+
+        expect(@tries).to eq(1)
+      end
+
+      it "matches exception subclasses when message matches pattern" do
+        expect do
+          described_class.retriable(ignore: ignore_hash.merge(DifferentError => [/shouldn't happen/, /also not/])) do
+            increment_tries_with_exception(SecondNonStandardError)
+          end
+        end.to raise_error(SecondNonStandardError, /SecondNonStandardError occurred/)
+
+        expect(@tries).to eq(1)
+      end
+
+      it "does not ignore matching exception subclass but not message" do
+        expect do
+          described_class.retriable(ignore: ignore_hash) do
+            increment_tries
+            raise SecondNonStandardError, "not a match"
+          end
+        end.to raise_error(SecondNonStandardError, /not a match/)
+
+        expect(@tries).to eq(3)
+      end
+
+      it "successfully ignores when the values are arrays of exception message patterns" do
+        ignore_hash = { StandardError => nil, NonStandardError => [/foo/, /bar/] }
+
+        expect do
+          described_class.retriable(ignore: ignore_hash) do
+            increment_tries
+
+            raise NonStandardError, "foo" if @tries == 1
+          end
+        end.to raise_error(NonStandardError, /foo/)
+
+        expect(@tries).to eq(1)
+      end
+    end
+
     context "with a hash :on parameter" do
       let(:on_hash) { { NonStandardError => /NonStandardError occurred/ } }
 

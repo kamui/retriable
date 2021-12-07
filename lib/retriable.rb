@@ -36,8 +36,11 @@ module Retriable
     on                = local_config.on
     on_retry          = local_config.on_retry
     sleep_disabled    = local_config.sleep_disabled
+    ignore            = local_config.ignore
 
-    exception_list = on.is_a?(Hash) ? on.keys : on
+    exception_list = on.is_a?(Hash) ? on.keys : [on].flatten
+    ignore_list = ignore.is_a?(Hash) ? ignore.keys : [ignore].flatten
+    rescue_list = exception_list + ignore_list
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
@@ -59,7 +62,17 @@ module Retriable
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
-      rescue *[*exception_list] => exception
+      rescue *rescue_list => exception
+        if ignore.is_a?(Hash)
+          raise if ignore_list.any? do |e|
+            exception.is_a?(e) && ([*ignore[e]].empty? || [*ignore[e]].any? { |pattern| exception.message =~ pattern })
+          end
+        elsif ignore.is_a?(Array)
+          raise if ignore_list.any? do |e|
+            exception.is_a?(e)
+          end
+        end
+
         if on.is_a?(Hash)
           raise unless exception_list.any? do |e|
             exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
