@@ -63,12 +63,6 @@ module Retriable
         return Timeout.timeout(timeout) { return yield(try) } if timeout
         return yield(try)
       rescue *rescue_list => exception
-        if on.is_a?(Hash)
-          raise unless exception_list.any? do |e|
-            exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
-          end
-        end
-
         if ignore.is_a?(Hash)
           raise if ignore_list.any? do |e|
             exception.is_a?(e) && ([*ignore[e]].empty? || [*ignore[e]].any? { |pattern| exception.message =~ pattern })
@@ -76,6 +70,12 @@ module Retriable
         elsif ignore.is_a?(Array)
           raise if ignore_list.any? do |e|
             exception.is_a?(e)
+          end
+        end
+
+        if on.is_a?(Hash)
+          raise unless exception_list.any? do |e|
+            exception.is_a?(e) && ([*on[e]].empty? || [*on[e]].any? { |pattern| exception.message =~ pattern })
           end
         end
 
