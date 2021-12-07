@@ -81,6 +81,7 @@ Here are the available options, in some vague order of relevance to most common 
 | ------ | ------- | ---------- |
 | **`tries`** | `3` | Number of attempts to make at running your code block (includes initial attempt). |
 | **`on`** | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on). |
+| **`ignore`** | `[NonStandardError]` | Type of exceptions to ignore from retrying. [Read more](#configuring-which-options-to-retry-with-ignore). |
 | **`on_retry`** | `nil` | `Proc` to call after each try is rescued. [Read more](#callbacks). |
 | **`sleep_disabled`** | `false` | When true, disable exponential backoff and attempt retries immediately. |
 | **`base_interval`** | `0.5` | The initial interval in seconds between tries. |
@@ -99,6 +100,16 @@ Here are the available options, in some vague order of relevance to most common 
   - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
   - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
+
+#### Configuring Which Options to Retry With :ignore
+**`:ignore`** Can take the form:
+
+- An `Exception` class (ignore every exception of this type, including subclasses)
+- An `Array` of `Exception` classes (ignore any exception of one of these types, including subclasses)
+- A `Hash` where the keys are `Exception` classes and the values are one of:
+  - `nil` (ignore every exception of the key's type, including subclasses)
+  - A single `Regexp` pattern (ignores exceptions ONLY if their `message` matches the pattern)
+  - An array of patterns (ignores exceptions ONLY if their `message` matches at least one of the patterns)
 
 
 ### Configuration
@@ -137,6 +148,16 @@ Retriable.retriable(on: {
   ActiveRecord::RecordNotUnique => nil,
   ActiveRecord::RecordInvalid => [/Parent must exist/, /Username has already been taken/],
   Mysql2::Error => /Duplicate entry/
+}) do
+  # code here...
+end
+```
+
+Conversely you can also specify the errors to ignore from retries (see [the documentation above](#configuring-which-options-to-retry-with-ignore)). This example will ignore all `ActiveRecord::RecordNotUnique` exceptions where the message matches either `/Parent must exist/` or `/Username has already been taken/`.
+
+```ruby
+Retriable.retriable(ignore: {
+  ActiveRecord::RecordNotUnique => [/Parent must exist/, /Username has already been taken/]
 }) do
   # code here...
 end
