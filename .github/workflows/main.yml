@@ -12,7 +12,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        # Ruby 2.1, 2.2, 2.3 does not compile correctly under ubuntu > 20.04
+        os: [ubuntu-20.04]
         ruby:
           [
             "2.0",
