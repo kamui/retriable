@@ -227,7 +227,7 @@ begin
     # some code
   end
 rescue => e
-  # run this if retriable ends up re-rasing the exception
+  # run this if retriable ends up re-raising the exception
 else
   # run this if retriable doesn't raise any exceptions
 ensure
