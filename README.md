@@ -371,15 +371,6 @@ Retriable.configure do |c|
 end
 ```
 
-## Proxy Wrapper Object
-
-[@julik](https://github.com/julik) has created a gem called [retriable_proxy](https://github.com/julik/retriable_proxy) that extends `retriable` with the ability to wrap objects and specify which methods you want to be retriable, like so:
-
-```ruby
-# api_endpoint is an instance of some kind of class that connects to an API
-RetriableProxy.for_object(api_endpoint, on: Net::TimeoutError)
-```
-
 ## Credits
 
 The randomized exponential backoff implementation was inspired by the one used in Google's [google-http-java-client](https://code.google.com/p/google-http-java-client/wiki/ExponentialBackoff) project.
