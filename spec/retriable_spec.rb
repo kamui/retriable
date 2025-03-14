@@ -207,6 +207,34 @@ describe Retriable do
       end
     end
 
+    it "#retriable retries with a hash exception where the value is a proc that returns true" do
+      matcher = lambda do |e, _try, _elapsed_time, _next_interval|
+        e.message == "something went wrong"
+      end
+      tries = 0
+      expect {
+        subject.retriable on: { NonStandardError => matcher }, tries: 2 do
+          tries += 1
+          raise NonStandardError, "something went wrong"
+        end
+      }.to raise_error NonStandardError
+
+      expect(tries).to eq 2
+    end
+
+    it "#retriable does not retry with a hash exception where the value is a proc that returns false" do
+      matcher = ->(e, *_args) { e.message == "something went wrong" }
+      tries = 0
+      expect {
+        subject.retriable on: { NonStandardError => matcher }, tries: 2 do
+          tries += 1
+          raise NonStandardError, "not a match"
+        end
+      }.to raise_error NonStandardError
+
+      expect(tries).to eq 1
+    end
+
     it "runs for a max elapsed time of 2 seconds" do
       described_class.configure { |c| c.sleep_disabled = false }
 
