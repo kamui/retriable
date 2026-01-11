@@ -12,8 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # Ruby 2.1, 2.2, 2.3 does not compile correctly under ubuntu > 20.04
-        os: [ubuntu-20.04]
+        os: [ubuntu-24.04]
         ruby:
           [
             "2.0",
@@ -36,7 +35,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup ruby
         uses: ruby/setup-ruby@v1
