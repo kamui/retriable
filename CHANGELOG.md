@@ -1,5 +1,8 @@
-## HEAD
+# HEAD
 
+## 3.2.0
+
+- Require ruby 2.3+.
 - Fix: Ensure `tries` value is overridden by `intervals` parameter if both are provided and add a test for this. This is always what the README stated but the code didn't actually do it.
 
 ## 3.1.2
