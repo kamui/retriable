@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 source "https://rubygems.org"
 
 gemspec
@@ -13,4 +15,5 @@ end
 
 group :development, :test do
   gem "pry"
+  gem "rake", "~> 13.0"
 end

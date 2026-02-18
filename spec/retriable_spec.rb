@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Retriable do
   let(:time_table_handler) do
     ->(_exception, try, _elapsed_time, next_interval) { @next_interval_table[try] = next_interval }
@@ -144,7 +146,7 @@ describe Retriable do
             max_interval: 100.0,
             rand_factor: 0.8,
             multiplier: 2.0,
-            on_retry: time_table_handler
+            on_retry: time_table_handler,
           ) do
             increment_tries_with_exception
           end

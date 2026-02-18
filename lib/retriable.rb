@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "timeout"
 require_relative "retriable/config"
 require_relative "retriable/exponential_backoff"
@@ -58,6 +60,7 @@ module Retriable
 
       begin
         return Timeout.timeout(timeout) { return yield(try) } if timeout
+
         return yield(try)
       rescue *[*exception_list] => exception
         if on.is_a?(Hash)
@@ -68,7 +71,9 @@ module Retriable
 
         interval = intervals[index]
         on_retry.call(exception, try, elapsed_time.call, interval) if on_retry
+
         raise if try >= tries || (elapsed_time.call + interval) > max_elapsed_time
+
         sleep interval if sleep_disabled != true
       end
     end

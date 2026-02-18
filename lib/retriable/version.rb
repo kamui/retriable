@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Retriable
-  VERSION = "3.2.0".freeze
+  VERSION = "3.2.0"
 end
