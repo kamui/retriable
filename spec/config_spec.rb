@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 describe Retriable::Config do
   let(:default_config) { described_class.new }
 
