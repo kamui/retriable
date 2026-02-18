@@ -328,6 +328,8 @@ Retriable.configure do |c|
 end
 ```
 
+Note: In this and the following examples, `Retriable.configure` sets a default config, it doesn't override the configuration for the `retriable` method calls. Calling `Retriable.retriable` with options will override the default configuration for that call. So if you have `tries` set to 5 in `Retriable.configure`, but then you call `Retriable.retriable(tries: 3)`, that call will use 3 tries instead of 5. The configuration is basically a default set of options that can be overridden by passing options to the `retriable` method or by using contexts.
+
 Alternately, if you are using RSpec, you could override the Retriable confguration in your `spec_helper`.
 
 ```ruby
