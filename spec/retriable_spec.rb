@@ -130,6 +130,34 @@ describe Retriable do
         expect(@next_interval_table).to eq(interval_hash)
         expect(@tries).to eq(intervals.size + 1)
       end
+
+      it "intervals option overrides tries, base_interval, max_interval, rand_factor, and multiplier" do
+        # Even though we specify tries: 10, base_interval: 1.0, max_interval: 100.0,
+        # rand_factor: 0.8, and multiplier: 2.0, the explicit intervals should take precedence
+        custom_intervals = [0.1, 0.2, 0.3]
+
+        expect do
+          described_class.retriable(
+            intervals: custom_intervals,
+            tries: 10,
+            base_interval: 1.0,
+            max_interval: 100.0,
+            rand_factor: 0.8,
+            multiplier: 2.0,
+            on_retry: time_table_handler
+          ) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+
+        # Should have 4 tries (3 intervals + 1), not 10
+        expect(@tries).to eq(4)
+        # Should use the exact intervals provided, not generate them
+        expect(@next_interval_table[1]).to eq(0.1)
+        expect(@next_interval_table[2]).to eq(0.2)
+        expect(@next_interval_table[3]).to eq(0.3)
+        expect(@next_interval_table[4]).to be_nil
+      end
     end
 
     context "with an array :on parameter" do

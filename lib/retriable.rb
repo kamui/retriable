@@ -41,9 +41,7 @@ module Retriable
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
-    if intervals
-      tries = intervals.size + 1
-    else
+    if !intervals
       intervals = ExponentialBackoff.new(
         tries:          tries - 1,
         base_interval:  base_interval,
@@ -52,6 +50,8 @@ module Retriable
         rand_factor:    rand_factor
       ).intervals
     end
+
+    tries = intervals.size + 1
 
     tries.times do |index|
       try = index + 1
