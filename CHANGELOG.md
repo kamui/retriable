@@ -1,5 +1,8 @@
 # HEAD
 
+## 3.2.1
+- Remove executables from gemspec as it was poluting the path for some users. Thanks @hsbt.
+
 ## 3.2.0
 
 - Require ruby 2.3+.
