@@ -1,5 +1,7 @@
 # HEAD
 
+- Refactor `Retriable.retriable` internals into focused private helpers to improve readability while preserving behavior.
+
 ## 3.2.1
 - Remove executables from gemspec as it was poluting the path for some users. Thanks @hsbt.
 
