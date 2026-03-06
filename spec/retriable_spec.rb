@@ -96,6 +96,14 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
+    it "does not call on_retry when explicitly set to false" do
+      expect do
+        described_class.retriable(on_retry: false, tries: 3) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(3)
+    end
+
     context "with rand_factor 0.0 and an on_retry handler" do
       let(:tries) { 6 }
       let(:no_rand_timetable) { { 1 => 0.5, 2 => 0.75, 3 => 1.125 } }
@@ -255,6 +263,22 @@ describe Retriable do
   end
 
   context "#configure" do
+    it "does not expose internal retriable helpers as public API" do
+      internal_methods = %i[
+        execute_tries
+        build_intervals
+        call_with_timeout
+        call_on_retry
+        can_retry?
+        retriable_exception?
+        hash_exception_match?
+      ]
+
+      internal_methods.each do |method_name|
+        expect(described_class.respond_to?(method_name)).to be(false)
+      end
+    end
+
     it "raises NoMethodError on invalid configuration" do
       expect { described_class.configure { |c| c.does_not_exist = 123 } }.to raise_error(NoMethodError)
     end
