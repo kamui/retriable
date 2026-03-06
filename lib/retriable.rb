@@ -45,32 +45,18 @@ module Retriable
 
     tries = intervals.size + 1
 
-    execution_context = {
-      tries: tries,
-      intervals: intervals,
-      timeout: timeout,
-      exception_list: exception_list,
-      on: on,
-      on_retry: on_retry,
-      elapsed_time: elapsed_time,
-      max_elapsed_time: max_elapsed_time,
-      sleep_disabled: sleep_disabled
-    }
-
-    execute_tries(execution_context, &block)
+    execute_tries(
+      tries: tries, intervals: intervals, timeout: timeout,
+      exception_list: exception_list, on: on, on_retry: on_retry,
+      elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
+      sleep_disabled: sleep_disabled, &block
+    )
   end
 
-  def execute_tries(execution_context, &block)
-    tries = execution_context[:tries]
-    intervals = execution_context[:intervals]
-    timeout = execution_context[:timeout]
-    exception_list = execution_context[:exception_list]
-    on = execution_context[:on]
-    on_retry = execution_context[:on_retry]
-    elapsed_time = execution_context[:elapsed_time]
-    max_elapsed_time = execution_context[:max_elapsed_time]
-    sleep_disabled = execution_context[:sleep_disabled]
-
+  def execute_tries( # rubocop:disable Metrics/ParameterLists
+    tries:, intervals:, timeout:, exception_list:,
+    on:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
+  )
     tries.times do |index|
       try = index + 1
 
@@ -84,7 +70,7 @@ module Retriable
 
         raise unless can_retry?(try, tries, elapsed_time.call, interval, max_elapsed_time)
 
-        sleep interval if sleep_disabled != true
+        sleep interval unless sleep_disabled
       end
     end
   end
@@ -117,6 +103,9 @@ module Retriable
     try < tries && (elapsed_time + interval) <= max_elapsed_time
   end
 
+  # When `on` is a Hash, we need to verify the exception matches a pattern.
+  # When `on` is an Array, the `rescue *exception_list` clause already
+  # guarantees the exception is retriable, so we return true unconditionally.
   def retriable_exception?(exception, on, exception_list)
     return false if on.is_a?(Hash) && !hash_exception_match?(exception, on, exception_list)
 
