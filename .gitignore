@@ -4,6 +4,8 @@
 /_yardoc/
 /coverage/
 /doc/
+/docs/plans/
+/.worktrees/
 /pkg/
 /spec/reports/
 /tmp/
