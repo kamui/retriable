@@ -1,3 +1,7 @@
+AllCops:
+  NewCops: enable
+  TargetRubyVersion: 2.3
+
 Style/StringLiterals:
   EnforcedStyle: double_quotes
 
@@ -11,12 +15,6 @@ Style/TrailingCommaInArguments:
   EnforcedStyleForMultiline: comma
 
 Lint/InheritException:
-  Enabled: false
-
-Layout/FirstArrayElementIndentation:
-  Enabled: false
-
-Layout/FirstHashElementIndentation:
   Enabled: false
 
 Style/NegatedIf:
