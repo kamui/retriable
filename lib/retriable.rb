@@ -70,7 +70,7 @@ module Retriable
 
         raise unless can_retry?(try, tries, elapsed_time.call, interval, max_elapsed_time)
 
-        sleep interval unless sleep_disabled
+        sleep interval if sleep_disabled != true
       end
     end
   end
