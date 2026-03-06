@@ -11,8 +11,8 @@ Gem::Specification.new do |spec|
   spec.email         = ["jack@jackchu.com"]
   spec.summary       = "Retriable is a simple DSL to retry failed code blocks with randomized exponential backoff"
   spec.description   = "Retriable is a simple DSL to retry failed code blocks with randomized " \
-                       "exponential backoff. This is especially useful when interacting external " \
-                       "api/services or file system calls."
+                       "exponential backoff. This is especially useful when interacting with external " \
+                       "APIs/services or file system calls."
   spec.homepage      = "https://github.com/kamui/retriable"
   spec.license       = "MIT"
 
