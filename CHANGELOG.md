@@ -1,6 +1,7 @@
 # HEAD
 
 - Refactor `Retriable.retriable` internals into focused private helpers to improve readability while preserving behavior.
+- Modernize `.rubocop.yml` with explicit modern defaults to enable new cops while preserving existing project style policies.
 
 ## 3.2.1
 - Remove executables from gemspec as it was polluting the path for some users. Thanks @hsbt.
