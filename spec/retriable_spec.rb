@@ -96,6 +96,28 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
+    it "does not call on_retry when explicitly set to false" do
+      callback_called = false
+      original_on_retry = described_class.config.on_retry
+
+      begin
+        described_class.configure do |c|
+          c.on_retry = proc { |_exception, _try, _elapsed_time, _next_interval| callback_called = true }
+        end
+
+        expect do
+          described_class.retriable(on_retry: false, tries: 3) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+
+        expect(@tries).to eq(3)
+        expect(callback_called).to be(false)
+      ensure
+        described_class.configure do |c|
+          c.on_retry = original_on_retry
+        end
+      end
+    end
+
     context "with rand_factor 0.0 and an on_retry handler" do
       let(:tries) { 6 }
       let(:no_rand_timetable) { { 1 => 0.5, 2 => 0.75, 3 => 1.125 } }
@@ -255,6 +277,17 @@ describe Retriable do
   end
 
   context "#configure" do
+    it "exposes only the intended public API" do
+      public_api_methods = %i[
+        retriable
+        with_context
+        configure
+        config
+      ]
+
+      expect(described_class.singleton_methods(false)).to match_array(public_api_methods)
+    end
+
     it "raises NoMethodError on invalid configuration" do
       expect { described_class.configure { |c| c.does_not_exist = 123 } }.to raise_error(NoMethodError)
     end
@@ -273,6 +306,22 @@ describe Retriable do
     it "stops at first try if the block does not raise an exception" do
       described_class.with_context(:sql) { increment_tries }
       expect(@tries).to eq(1)
+    end
+
+    it "returns nil when called without a block" do
+      expect(described_class.with_context(:sql)).to be_nil
+      expect(@tries).to eq(0)
+    end
+
+    it "passes try count through to the context block" do
+      seen_tries = []
+
+      described_class.with_context(:api) do |try|
+        seen_tries << try
+        raise StandardError if try < 3
+      end
+
+      expect(seen_tries).to eq([1, 2, 3])
     end
 
     it "respects the context options" do
