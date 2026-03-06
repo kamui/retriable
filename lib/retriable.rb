@@ -104,8 +104,9 @@ module Retriable
   end
 
   # When `on` is a Hash, we need to verify the exception matches a pattern.
-  # When `on` is an Array, the `rescue *exception_list` clause already
-  # guarantees the exception is retriable, so we return true unconditionally.
+  # When `on` is not a Hash (e.g., Array or Class/Module), the
+  # `rescue *exception_list` clause already guarantees the exception is retriable,
+  # so we return true unconditionally.
   def retriable_exception?(exception, on, exception_list)
     return false if on.is_a?(Hash) && !hash_exception_match?(exception, on, exception_list)
 
