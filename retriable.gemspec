@@ -1,5 +1,6 @@
 # frozen_string_literal: true
-lib = File.expand_path("../lib", __FILE__)
+
+lib = File.expand_path("lib", __dir__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "retriable/version"
 
@@ -9,7 +10,9 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Jack Chu"]
   spec.email         = ["jack@jackchu.com"]
   spec.summary       = "Retriable is a simple DSL to retry failed code blocks with randomized exponential backoff"
-  spec.description   = "Retriable is a simple DSL to retry failed code blocks with randomized exponential backoff. This is especially useful when interacting external api/services or file system calls."
+  spec.description   = "Retriable is a simple DSL to retry failed code blocks with randomized " \
+                       "exponential backoff. This is especially useful when interacting external " \
+                       "api/services or file system calls."
   spec.homepage      = "https://github.com/kamui/retriable"
   spec.license       = "MIT"
 
