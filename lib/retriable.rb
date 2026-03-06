@@ -117,7 +117,7 @@ module Retriable
   end
 
   def retriable_exception?(exception, on, exception_list)
-    return false if on.is_a?(Hash) && hash_exception_match?(exception, on, exception_list) == false
+    return false if on.is_a?(Hash) && !hash_exception_match?(exception, on, exception_list)
 
     true
   end

@@ -263,20 +263,15 @@ describe Retriable do
   end
 
   context "#configure" do
-    it "does not expose internal retriable helpers as public API" do
-      internal_methods = %i[
-        execute_tries
-        build_intervals
-        call_with_timeout
-        call_on_retry
-        can_retry?
-        retriable_exception?
-        hash_exception_match?
+    it "exposes only the intended public API" do
+      public_api_methods = %i[
+        retriable
+        with_context
+        configure
+        config
       ]
 
-      internal_methods.each do |method_name|
-        expect(described_class.respond_to?(method_name)).to be(false)
-      end
+      expect(described_class.singleton_methods(false)).to match_array(public_api_methods)
     end
 
     it "raises NoMethodError on invalid configuration" do
