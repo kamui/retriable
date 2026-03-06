@@ -39,6 +39,7 @@ module Retriable
     max_elapsed_time = local_config.max_elapsed_time
 
     exception_list = on.is_a?(Hash) ? on.keys : on
+    exception_list = [*exception_list]
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
