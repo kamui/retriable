@@ -299,6 +299,22 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
+    it "returns nil when called without a block" do
+      expect(described_class.with_context(:sql)).to be_nil
+      expect(@tries).to eq(0)
+    end
+
+    it "passes try count through to the context block" do
+      seen_tries = []
+
+      described_class.with_context(:api) do |try|
+        seen_tries << try
+        raise StandardError if try < 3
+      end
+
+      expect(seen_tries).to eq([1, 2, 3])
+    end
+
     it "respects the context options" do
       expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(api_tries)
