@@ -122,11 +122,13 @@ module Retriable
     end
   end
 
-  private_class_method :execute_tries,
-                       :build_intervals,
-                       :call_with_timeout,
-                       :call_on_retry,
-                       :can_retry?,
-                       :retriable_exception?,
-                       :hash_exception_match?
+  private_class_method(
+    :execute_tries,
+    :build_intervals,
+    :call_with_timeout,
+    :call_on_retry,
+    :can_retry?,
+    :retriable_exception?,
+    :hash_exception_match?,
+  )
 end
