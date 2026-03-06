@@ -97,11 +97,23 @@ describe Retriable do
     end
 
     it "does not call on_retry when explicitly set to false" do
+      callback_called = false
+      original_on_retry = described_class.config.on_retry
+
+      described_class.configure do |c|
+        c.on_retry = proc { |_exception, _try, _elapsed_time, _next_interval| callback_called = true }
+      end
+
       expect do
         described_class.retriable(on_retry: false, tries: 3) { increment_tries_with_exception }
       end.to raise_error(StandardError)
 
       expect(@tries).to eq(3)
+      expect(callback_called).to be(false)
+    ensure
+      described_class.configure do |c|
+        c.on_retry = original_on_retry
+      end
     end
 
     context "with rand_factor 0.0 and an on_retry handler" do
