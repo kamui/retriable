@@ -3,6 +3,7 @@
 ## 3.4.0
 
 - Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
+- Add opt-in infinite retries via `tries: :infinite`, requiring a finite `max_elapsed_time` safety bound.
 
 ## 3.3.0
 

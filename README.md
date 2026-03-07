@@ -81,7 +81,7 @@ Here are the available options, in some vague order of relevance to most common 
 
 | Option                 | Default           | Definition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt). Pass `:infinite` to keep retrying until success or until `max_elapsed_time` is reached.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | **`on`**               | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **`retry_if`**         | `nil`             | Callable (for example a `Proc` or lambda) that receives the rescued exception and returns true/false to decide whether to retry. [Read more](#advanced-retry-matching-with-retry_if).                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. [Read more](#callbacks).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -201,6 +201,19 @@ end
 ```
 
 This example makes 5 total attempts. If the first attempt fails, the 2nd attempt occurs 0.5 seconds later.
+
+### Infinite Retries (Opt-in)
+
+You can opt in to infinite retries with `tries: :infinite`. This is useful for long-running worker processes where retrying should continue until success, but it should be used carefully.
+
+```ruby
+Retriable.retriable(tries: :infinite, max_elapsed_time: 300) do
+  # code here...
+end
+```
+
+`max_elapsed_time` must be a finite number when using `tries: :infinite`.
+Retriable raises `ArgumentError` if `max_elapsed_time` is unbounded.
 
 ### Turn off Exponential Backoff
 
