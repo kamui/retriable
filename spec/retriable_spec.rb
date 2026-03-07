@@ -71,6 +71,54 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
+    it "supports infinite retries until the block succeeds" do
+      described_class.retriable(tries: :infinite) do
+        increment_tries
+        raise StandardError if @tries < 5
+      end
+
+      expect(@tries).to eq(5)
+    end
+
+    it "stops infinite retries at max_elapsed_time" do
+      start_time = Time.now
+      timeline = [
+        start_time,
+        start_time,
+        start_time,
+        start_time + 0.01,
+        start_time + 0.01,
+      ]
+      allow(Time).to receive(:now) { timeline.shift || timeline.last }
+
+      expect do
+        described_class.retriable(
+          tries: :infinite,
+          base_interval: 0.01,
+          multiplier: 1.0,
+          rand_factor: 0.0,
+          sleep_disabled: true,
+          max_elapsed_time: 0.015,
+        ) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(2)
+    end
+
+    it "raises ArgumentError for infinite retries without a finite max_elapsed_time" do
+      expect do
+        described_class.retriable(tries: :infinite, max_elapsed_time: Float::INFINITY) { increment_tries }
+      end.to raise_error(ArgumentError, /max_elapsed_time/)
+    end
+
+    it "raises ArgumentError for infinite retries with empty intervals" do
+      expect do
+        described_class.retriable(tries: :infinite, intervals: []) { increment_tries_with_exception }
+      end.to raise_error(ArgumentError, /intervals/)
+    end
+
     it "will timeout after 1 second" do
       expect { described_class.retriable(timeout: 1) { sleep(1.1) } }.to raise_error(Timeout::Error)
     end
@@ -181,6 +229,16 @@ describe Retriable do
         expect(@next_interval_table[2]).to eq(0.2)
         expect(@next_interval_table[3]).to eq(0.3)
         expect(@next_interval_table[4]).to be_nil
+      end
+
+      it "allows non-integer tries when intervals are provided" do
+        expect do
+          described_class.retriable(intervals: [0.1], tries: :ignored) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+
+        expect(@tries).to eq(2)
       end
     end
 
