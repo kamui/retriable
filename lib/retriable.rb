@@ -27,11 +27,10 @@ module Retriable
     retriable(config.contexts[context_key].merge(options), &block)
   end
 
-  def retriable(opts = {}, &block)
+  def retriable(opts = {}, &block) # rubocop:disable Metrics/PerceivedComplexity
     local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
 
     tries = local_config.tries
-    intervals = build_intervals(local_config, tries)
     timeout = local_config.timeout
     on = local_config.on
     retry_if = local_config.retry_if
@@ -39,15 +38,38 @@ module Retriable
     sleep_disabled = local_config.sleep_disabled
     max_elapsed_time = local_config.max_elapsed_time
 
+    if tries == :infinite
+      unless finite_number?(max_elapsed_time)
+        raise ArgumentError,
+              "max_elapsed_time must be finite when tries is :infinite"
+      end
+
+      if local_config.intervals
+        raise ArgumentError, "intervals must not be empty for infinite retries" if local_config.intervals.empty?
+
+        custom = local_config.intervals
+        interval_for = ->(i) { custom[[i, custom.size - 1].min] }
+      else
+        backoff = ExponentialBackoff.new(
+          base_interval: local_config.base_interval, multiplier: local_config.multiplier,
+          max_interval: local_config.max_interval, rand_factor: local_config.rand_factor
+        )
+        interval_for = ->(i) { backoff.interval_for(i) }
+      end
+      max_tries = nil
+    else
+      intervals = build_intervals(local_config, tries)
+      max_tries = intervals.size + 1
+      interval_for = ->(i) { intervals[i] }
+    end
+
     exception_list = on.is_a?(Hash) ? on.keys : on
     exception_list = [*exception_list]
     start_time = Time.now
     elapsed_time = -> { Time.now - start_time }
 
-    tries = intervals.size + 1
-
     execute_tries(
-      tries: tries, intervals: intervals, timeout: timeout,
+      max_tries: max_tries, interval_for: interval_for, timeout: timeout,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &block
@@ -55,21 +77,21 @@ module Retriable
   end
 
   def execute_tries( # rubocop:disable Metrics/ParameterLists
-    tries:, intervals:, timeout:, exception_list:,
+    max_tries:, interval_for:, timeout:, exception_list:,
     on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
   )
-    tries.times do |index|
-      try = index + 1
-
+    try = 0
+    loop do
+      try += 1
       begin
         return call_with_timeout(timeout, try, &block)
       rescue *exception_list => e
         raise unless retriable_exception?(e, on, exception_list, retry_if)
 
-        interval = intervals[index]
+        interval = interval_for.call(try - 1)
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
-        raise unless can_retry?(try, tries, elapsed_time.call, interval, max_elapsed_time)
+        raise unless can_retry?(try, max_tries, elapsed_time.call, interval, max_elapsed_time)
 
         sleep interval if sleep_disabled != true
       end
@@ -100,8 +122,14 @@ module Retriable
     on_retry.call(exception, try, elapsed_time, interval)
   end
 
-  def can_retry?(try, tries, elapsed_time, interval, max_elapsed_time)
-    try < tries && (elapsed_time + interval) <= max_elapsed_time
+  def can_retry?(try, max_tries, elapsed_time, interval, max_elapsed_time)
+    return false if max_tries && try >= max_tries
+
+    (elapsed_time + interval) <= max_elapsed_time
+  end
+
+  def finite_number?(value)
+    value.is_a?(Numeric) && (!value.respond_to?(:finite?) || value.finite?)
   end
 
   # When `on` is a Hash, we need to verify the exception matches a pattern.
@@ -131,6 +159,7 @@ module Retriable
     :call_with_timeout,
     :call_on_retry,
     :can_retry?,
+    :finite_number?,
     :retriable_exception?,
     :hash_exception_match?,
   )

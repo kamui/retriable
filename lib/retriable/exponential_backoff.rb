@@ -27,13 +27,14 @@ module Retriable
     end
 
     def intervals
-      intervals = Array.new(tries) do |iteration|
-        [base_interval * multiplier**iteration, max_interval].min
-      end
+      Array.new(tries) { |iteration| interval_for(iteration) }
+    end
 
-      return intervals if rand_factor.zero?
+    def interval_for(iteration)
+      interval = [base_interval * (multiplier**iteration), max_interval].min
+      return interval if rand_factor.zero?
 
-      intervals.map { |i| randomize(i) }
+      randomize(interval)
     end
 
     private
