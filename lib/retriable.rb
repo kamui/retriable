@@ -18,7 +18,8 @@ module Retriable
 
   def with_context(context_key, options = {}, &block)
     if !config.contexts.key?(context_key)
-      raise ArgumentError, "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
+      raise ArgumentError,
+            "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
     end
 
     return unless block_given?
@@ -33,6 +34,7 @@ module Retriable
     intervals = build_intervals(local_config, tries)
     timeout = local_config.timeout
     on = local_config.on
+    retry_if = local_config.retry_if
     on_retry = local_config.on_retry
     sleep_disabled = local_config.sleep_disabled
     max_elapsed_time = local_config.max_elapsed_time
@@ -46,7 +48,7 @@ module Retriable
 
     execute_tries(
       tries: tries, intervals: intervals, timeout: timeout,
-      exception_list: exception_list, on: on, on_retry: on_retry,
+      exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &block
     )
@@ -54,7 +56,7 @@ module Retriable
 
   def execute_tries( # rubocop:disable Metrics/ParameterLists
     tries:, intervals:, timeout:, exception_list:,
-    on:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
+    on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
   )
     tries.times do |index|
       try = index + 1
@@ -62,7 +64,7 @@ module Retriable
       begin
         return call_with_timeout(timeout, try, &block)
       rescue *exception_list => e
-        raise unless retriable_exception?(e, on, exception_list)
+        raise unless retriable_exception?(e, on, exception_list, retry_if)
 
         interval = intervals[index]
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
@@ -105,9 +107,11 @@ module Retriable
   # When `on` is a Hash, we need to verify the exception matches a pattern.
   # For any non-Hash `on` value (e.g., Array of classes, single Exception class,
   # or Module), the `rescue *exception_list` clause already guarantees the
-  # exception is retriable, so we return true unconditionally.
-  def retriable_exception?(exception, on, exception_list)
+  # exception is retriable with respect to `on`; `retry_if`, if provided, is an
+  # additional gate that can still cause this method to return false.
+  def retriable_exception?(exception, on, exception_list, retry_if)
     return false if on.is_a?(Hash) && !hash_exception_match?(exception, on, exception_list)
+    return false if retry_if && !retry_if.call(exception)
 
     true
   end

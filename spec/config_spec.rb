@@ -40,6 +40,10 @@ describe Retriable::Config do
       expect(default_config.on).to eq([StandardError])
     end
 
+    it "retry_if defaults to nil" do
+      expect(default_config.retry_if).to be_nil
+    end
+
     it "on_retry handler defaults to nil" do
       expect(default_config.on_retry).to be_nil
     end

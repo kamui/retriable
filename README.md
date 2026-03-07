@@ -83,6 +83,7 @@ Here are the available options, in some vague order of relevance to most common 
 | ---------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **`on`**               | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| **`retry_if`**         | `nil`             | Callable (for example a `Proc` or lambda) that receives the rescued exception and returns true/false to decide whether to retry. [Read more](#advanced-retry-matching-with-retry_if).                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. [Read more](#callbacks).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | **`sleep_disabled`**   | `false`           | When true, disable exponential backoff and attempt retries immediately.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **`base_interval`**    | `0.5`             | The initial interval in seconds between tries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
@@ -103,6 +104,32 @@ Here are the available options, in some vague order of relevance to most common 
   - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
   - An array of patterns (retries exceptions ONLY if their `message` matches at least one of the patterns)
+
+#### Advanced Retry Matching With :retry_if
+
+Use **`:retry_if`** when retry logic depends on details that `:on` does not cover. The Proc receives the rescued exception and should return `true` to retry or `false` to re-raise immediately.
+
+```ruby
+def caused_by?(error, klass)
+  current = error
+  while current
+    return true if current.is_a?(klass)
+
+    current = current.cause
+  end
+
+  false
+end
+
+Retriable.retriable(
+  on: [Faraday::ConnectionFailed],
+  retry_if: ->(exception) { caused_by?(exception, Errno::ECONNRESET) }
+) do
+  # code here...
+end
+```
+
+`:retry_if` runs after the exception type has matched `:on`.
 
 ### Configuration
 

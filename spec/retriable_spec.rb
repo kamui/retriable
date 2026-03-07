@@ -259,6 +259,50 @@ describe Retriable do
       end
     end
 
+    context "with a :retry_if parameter" do
+      it "retries only when retry_if returns true" do
+        described_class.retriable(tries: 3, retry_if: ->(_exception) { @tries < 3 }) do
+          increment_tries
+          raise StandardError, "StandardError occurred" if @tries < 3
+        end
+
+        expect(@tries).to eq(3)
+      end
+
+      it "does not retry when retry_if returns false" do
+        expect do
+          described_class.retriable(tries: 3, retry_if: ->(_exception) { false }) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+
+        expect(@tries).to eq(1)
+      end
+
+      it "can retry based on the wrapped exception cause" do
+        root_cause_class = Class.new(StandardError)
+        wrapper_class = Class.new(StandardError)
+
+        described_class.retriable(
+          on: [wrapper_class],
+          tries: 3,
+          retry_if: ->(exception) { exception.cause.is_a?(root_cause_class) },
+        ) do
+          increment_tries
+
+          if @tries < 3
+            begin
+              raise root_cause_class, "root cause"
+            rescue root_cause_class
+              raise wrapper_class, "wrapped"
+            end
+          end
+        end
+
+        expect(@tries).to eq(3)
+      end
+    end
+
     it "runs for a max elapsed time of 2 seconds" do
       described_class.configure { |c| c.sleep_disabled = false }
 
