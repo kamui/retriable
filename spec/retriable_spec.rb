@@ -404,6 +404,19 @@ describe Retriable do
         .to raise_error(ArgumentError, /missing not found/)
     end
 
+    it "ignores non-hash override contexts values in with_context" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 1 }
+      end
+
+      described_class.override do |c|
+        c.contexts = 123
+      end
+
+      described_class.with_context(:api) { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
     it "shows merged context keys in with_context missing-context errors" do
       described_class.configure do |c|
         c.contexts[:configured] = { tries: 2 }
@@ -415,6 +428,23 @@ describe Retriable do
 
       expect { described_class.with_context(:missing) { increment_tries } }
         .to raise_error(ArgumentError, /override_only/)
+    end
+
+    it "does not snapshot configured contexts when adding override-only contexts" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 2 }
+      end
+
+      described_class.override do |c|
+        c.contexts[:test_only] = { tries: 1 }
+      end
+
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 5 }
+      end
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(5)
     end
   end
 

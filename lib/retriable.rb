@@ -8,6 +8,8 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
+  NO_CHANGE = Object.new.freeze
+
   def deep_dup(value)
     case value
     when Hash
@@ -59,10 +61,7 @@ module Retriable
     yield(proxy)
 
     getter_values.each do |attribute, value|
-      next if overridden_values.key?(attribute)
-      next if value == base_config[attribute]
-
-      overridden_values[attribute] = value
+      collect_implicit_override(overridden_values, base_config, attribute, value)
     end
 
     @override_config = overridden_values.empty? ? nil : overridden_values
@@ -208,9 +207,55 @@ module Retriable
 
   def merged_context_options(contexts, context_key, options)
     context_options = contexts[context_key].merge(options)
-    return context_options unless override_config&.dig(:contexts, context_key)
 
-    deep_merge(context_options, override_config[:contexts][context_key])
+    return context_options unless override_config
+
+    override_contexts = override_config[:contexts]
+    return context_options unless override_contexts.is_a?(Hash)
+
+    override_context_options = override_contexts[context_key]
+    return context_options unless override_context_options
+
+    deep_merge(context_options, override_context_options)
+  end
+
+  def contexts_override_delta(base_contexts, override_contexts)
+    base_contexts = {} unless base_contexts.is_a?(Hash)
+    override_contexts = {} unless override_contexts.is_a?(Hash)
+
+    override_contexts.each_with_object({}) do |(context_key, override_value), delta|
+      delta_value = context_delta_value(base_contexts, context_key, override_value)
+      delta[context_key] = delta_value unless delta_value.equal?(NO_CHANGE)
+    end
+  end
+
+  def context_delta_value(base_contexts, context_key, override_value)
+    return override_value unless base_contexts.key?(context_key)
+
+    base_value = base_contexts[context_key]
+
+    if base_value.is_a?(Hash) && override_value.is_a?(Hash)
+      nested_delta = contexts_override_delta(base_value, override_value)
+      return NO_CHANGE if nested_delta.empty?
+
+      return nested_delta
+    end
+
+    return NO_CHANGE if base_value == override_value
+
+    override_value
+  end
+
+  def collect_implicit_override(overridden_values, base_config, attribute, value)
+    return if overridden_values.key?(attribute)
+
+    if attribute == :contexts
+      context_delta = contexts_override_delta(base_config[:contexts], value)
+      overridden_values[:contexts] = context_delta unless context_delta.empty?
+      return
+    end
+
+    overridden_values[attribute] = value if value != base_config[attribute]
   end
 
   private_class_method(
@@ -226,5 +271,8 @@ module Retriable
     :override_config,
     :merged_contexts,
     :merged_context_options,
+    :contexts_override_delta,
+    :context_delta_value,
+    :collect_implicit_override,
   )
 end
