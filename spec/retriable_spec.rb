@@ -327,6 +327,8 @@ describe Retriable do
         with_context
         configure
         config
+        override
+        reset_override
       ]
 
       expect(described_class.singleton_methods(false)).to match_array(public_api_methods)
@@ -334,6 +336,56 @@ describe Retriable do
 
     it "raises NoMethodError on invalid configuration" do
       expect { described_class.configure { |c| c.does_not_exist = 123 } }.to raise_error(NoMethodError)
+    end
+  end
+
+  context "#override" do
+    after(:each) do
+      described_class.reset_override
+    end
+
+    it "takes precedence over both global config and local options" do
+      described_class.configure { |c| c.tries = 2 }
+      described_class.override { |c| c.tries = 1 }
+
+      expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(1)
+    end
+
+    it "can override local intervals with nil to use configured backoff" do
+      described_class.configure { |c| c.tries = 3 }
+      described_class.override { |c| c.intervals = nil }
+
+      expect do
+        described_class.retriable(intervals: [0.5, 1.0], on_retry: time_table_handler) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(3)
+      expect(@next_interval_table[1]).to be_between(0.0, 1.0)
+    end
+
+    it "applies override context values after with_context local options" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 3, base_interval: 1.0 }
+      end
+
+      described_class.override do |c|
+        c.contexts[:api] = { tries: 1 }
+      end
+
+      described_class.with_context(:api, tries: 10) { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
+    it "can define a context only in override config" do
+      described_class.override do |c|
+        c.contexts[:test_only] = { tries: 1 }
+      end
+
+      described_class.with_context(:test_only) { increment_tries }
+      expect(@tries).to eq(1)
     end
   end
 

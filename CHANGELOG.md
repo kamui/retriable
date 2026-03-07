@@ -1,6 +1,7 @@
 # HEAD
 
 - Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
+- Add `override` and `reset_override` APIs to force retry settings over local call options when needed (for example, test short-circuiting).
 
 ## 3.3.0
 

@@ -142,6 +142,33 @@ Retriable.configure do |c|
 end
 ```
 
+`#configure` sets defaults only. Per-call options passed to `Retriable.retriable` and
+`Retriable.with_context` still take precedence.
+
+### Override
+
+If you need to force values globally (including over per-call options), use
+`#override`:
+
+```ruby
+Retriable.override do |c|
+  c.tries = 1
+  c.base_interval = 0
+end
+```
+
+`#override` precedence:
+
+```
+override > local options > configure defaults
+```
+
+To clear an override:
+
+```ruby
+Retriable.reset_override
+```
+
 ### Example Usage
 
 This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
@@ -340,29 +367,31 @@ end
 
 When you are running tests for your app it often takes a long time to retry blocks that fail. This is because Retriable will default to 3 tries with exponential backoff. Ideally your tests will run as quickly as possible.
 
-You can disable retrying by setting `tries` to 1 in the test environment. If you want to test that the code is retrying an error, you want to [turn off exponential backoff](#turn-off-exponential-backoff).
+If you want to short-circuit retries in tests, including calls that pass local options, use `Retriable.override` and set `tries` to `1`.
 
 Under Rails, you could change your initializer to have different options in test, as follows:
 
 ```ruby
 # config/initializers/retriable.rb
-Retriable.configure do |c|
-  # ... default configuration
-
-  if Rails.env.test?
+if Rails.env.test?
+  Retriable.override do |c|
     c.tries = 1
+    c.base_interval = 0
+    c.rand_factor = 0
   end
 end
 ```
 
-Note: In this and the following examples, `Retriable.configure` sets a default config, it doesn't override the configuration for the `retriable` method calls. Calling `Retriable.retriable` with options will override the default configuration for that call. So if you have `tries` set to 5 in `Retriable.configure`, but then you call `Retriable.retriable(tries: 3)`, that call will use 3 tries instead of 5. The configuration is basically a default set of options that can be overridden by passing options to the `retriable` method or by using contexts.
+If you need to run a specific test with normal retry behavior, call `Retriable.reset_override` for that example and then reapply your test override afterward.
 
 Alternately, if you are using RSpec, you could override the Retriable confguration in your `spec_helper`.
 
 ```ruby
 # spec/spec_helper.rb
-Retriable.configure do |c|
+Retriable.override do |c|
   c.tries = 1
+  c.base_interval = 0
+  c.rand_factor = 0
 end
 ```
 
@@ -390,7 +419,7 @@ Then in your test environment, you would need to set each context and the defaul
 
 ```ruby
 # spec/spec_helper.rb
-Retriable.configure do |c|
+Retriable.override do |c|
   c.multiplier    = 1.0
   c.rand_factor   = 0.0
   c.base_interval = 0
