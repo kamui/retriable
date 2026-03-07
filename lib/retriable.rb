@@ -8,8 +8,6 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
-  NO_CHANGE = Object.new.freeze
-
   def deep_dup(value)
     case value
     when Hash
@@ -224,26 +222,10 @@ module Retriable
     override_contexts = {} unless override_contexts.is_a?(Hash)
 
     override_contexts.each_with_object({}) do |(context_key, override_value), delta|
-      delta_value = context_delta_value(base_contexts, context_key, override_value)
-      delta[context_key] = delta_value unless delta_value.equal?(NO_CHANGE)
+      next if base_contexts.key?(context_key) && base_contexts[context_key] == override_value
+
+      delta[context_key] = override_value
     end
-  end
-
-  def context_delta_value(base_contexts, context_key, override_value)
-    return override_value unless base_contexts.key?(context_key)
-
-    base_value = base_contexts[context_key]
-
-    if base_value.is_a?(Hash) && override_value.is_a?(Hash)
-      nested_delta = contexts_override_delta(base_value, override_value)
-      return NO_CHANGE if nested_delta.empty?
-
-      return nested_delta
-    end
-
-    return NO_CHANGE if base_value == override_value
-
-    override_value
   end
 
   def collect_implicit_override(overridden_values, base_config, attribute, value)
@@ -272,7 +254,6 @@ module Retriable
     :merged_contexts,
     :merged_context_options,
     :contexts_override_delta,
-    :context_delta_value,
     :collect_implicit_override,
   )
 end
