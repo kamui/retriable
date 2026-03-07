@@ -8,6 +8,27 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
+  def deep_dup(value)
+    case value
+    when Hash
+      value.each_with_object({}) { |(key, item), copy| copy[key] = deep_dup(item) }
+    when Array
+      value.map { |item| deep_dup(item) }
+    else
+      value
+    end
+  end
+
+  def deep_merge(base, overrides)
+    base.merge(overrides) do |_key, base_value, override_value|
+      if base_value.is_a?(Hash) && override_value.is_a?(Hash)
+        deep_merge(base_value, override_value)
+      else
+        override_value
+      end
+    end
+  end
+
   def configure
     yield(config)
   end
@@ -16,19 +37,61 @@ module Retriable
     @config ||= Config.new
   end
 
+  def override
+    base_config = config.to_h
+    overridden_values = {}
+    getter_values = {}
+    proxy = Object.new
+
+    Config::ATTRIBUTES.each do |attribute|
+      attr = attribute
+
+      proxy.define_singleton_method(attr) do
+        getter_values[attr] ||= Retriable.send(:deep_dup, base_config[attr])
+      end
+
+      proxy.define_singleton_method("#{attr}=") do |value|
+        getter_values[attr] = value
+        overridden_values[attr] = value
+      end
+    end
+
+    yield(proxy)
+
+    getter_values.each do |attribute, value|
+      collect_implicit_override(overridden_values, base_config, attribute, value)
+    end
+
+    @override_config = overridden_values.empty? ? nil : overridden_values
+  end
+
+  def reset_override
+    @override_config = nil
+  end
+
   def with_context(context_key, options = {}, &block)
-    if !config.contexts.key?(context_key)
+    contexts = merged_contexts
+
+    if !contexts.key?(context_key)
       raise ArgumentError,
-            "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
+            "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
     return unless block_given?
 
-    retriable(config.contexts[context_key].merge(options), &block)
+    context_options = merged_context_options(contexts, context_key, options)
+
+    retriable(context_options, &block)
   end
 
   def retriable(opts = {}, &block)
-    local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
+    if opts.empty? && !override_config
+      local_config = config
+    else
+      local_config_hash = config.to_h.merge(opts)
+      local_config_hash = deep_merge(local_config_hash, override_config) if override_config
+      local_config = Config.new(local_config_hash)
+    end
 
     tries = local_config.tries
     intervals = build_intervals(local_config, tries)
@@ -125,7 +188,61 @@ module Retriable
     end
   end
 
+  def override_config
+    @override_config
+  end
+
+  def merged_contexts
+    contexts = deep_dup(config.contexts)
+    return contexts unless override_config&.key?(:contexts)
+
+    override_contexts = override_config[:contexts]
+    return deep_merge(contexts, override_contexts) if override_contexts.is_a?(Hash)
+    return {} if override_contexts.nil?
+
+    contexts
+  end
+
+  def merged_context_options(contexts, context_key, options)
+    context_options = contexts[context_key].merge(options)
+
+    return context_options unless override_config
+
+    override_contexts = override_config[:contexts]
+    return context_options unless override_contexts.is_a?(Hash)
+
+    override_context_options = override_contexts[context_key]
+    return context_options unless override_context_options
+
+    deep_merge(context_options, override_context_options)
+  end
+
+  def contexts_override_delta(base_contexts, override_contexts)
+    base_contexts = {} unless base_contexts.is_a?(Hash)
+    override_contexts = {} unless override_contexts.is_a?(Hash)
+
+    override_contexts.each_with_object({}) do |(context_key, override_value), delta|
+      next if base_contexts.key?(context_key) && base_contexts[context_key] == override_value
+
+      delta[context_key] = override_value
+    end
+  end
+
+  def collect_implicit_override(overridden_values, base_config, attribute, value)
+    return if overridden_values.key?(attribute)
+
+    if attribute == :contexts
+      context_delta = contexts_override_delta(base_config[:contexts], value)
+      overridden_values[:contexts] = context_delta unless context_delta.empty?
+      return
+    end
+
+    overridden_values[attribute] = value if value != base_config[attribute]
+  end
+
   private_class_method(
+    :deep_dup,
+    :deep_merge,
     :execute_tries,
     :build_intervals,
     :call_with_timeout,
@@ -133,5 +250,10 @@ module Retriable
     :can_retry?,
     :retriable_exception?,
     :hash_exception_match?,
+    :override_config,
+    :merged_contexts,
+    :merged_context_options,
+    :contexts_override_delta,
+    :collect_implicit_override,
   )
 end
