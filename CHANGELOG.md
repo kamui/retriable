@@ -1,5 +1,7 @@
 # HEAD
 
+- Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
+
 ## 3.3.0
 
 - Refactor `Retriable.retriable` internals into focused private helpers to improve readability while preserving behavior.
