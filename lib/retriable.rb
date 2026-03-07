@@ -44,13 +44,15 @@ module Retriable
     proxy = Object.new
 
     Config::ATTRIBUTES.each do |attribute|
-      proxy.define_singleton_method(attribute) do
-        getter_values[attribute] ||= Retriable.send(:deep_dup, base_config[attribute])
+      attr = attribute
+
+      proxy.define_singleton_method(attr) do
+        getter_values[attr] ||= Retriable.send(:deep_dup, base_config[attr])
       end
 
-      proxy.define_singleton_method("#{attribute}=") do |value|
-        getter_values[attribute] = value
-        overridden_values[attribute] = value
+      proxy.define_singleton_method("#{attr}=") do |value|
+        getter_values[attr] = value
+        overridden_values[attr] = value
       end
     end
 
