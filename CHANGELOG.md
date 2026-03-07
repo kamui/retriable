@@ -1,9 +1,10 @@
 # HEAD
 
+- Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
+
 ## 3.3.0
 
 - Refactor `Retriable.retriable` internals into focused private helpers to improve readability while preserving behavior.
-- Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
 - Modernize `.rubocop.yml` with explicit modern defaults to enable new cops while preserving existing project style policies.
 
 ## 3.2.1
