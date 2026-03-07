@@ -71,29 +71,28 @@ module Retriable
   end
 
   def with_context(context_key, options = {}, &block)
-    contexts = deep_dup(config.contexts)
-    contexts = deep_merge(contexts, override_config[:contexts]) if override_config&.key?(:contexts)
+    contexts = merged_contexts
 
     if !contexts.key?(context_key)
       raise ArgumentError,
-            "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
+            "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
     return unless block_given?
 
-    context_options = contexts[context_key].merge(options)
-
-    if override_config&.dig(:contexts, context_key)
-      context_options = deep_merge(context_options, override_config[:contexts][context_key])
-    end
+    context_options = merged_context_options(contexts, context_key, options)
 
     retriable(context_options, &block)
   end
 
   def retriable(opts = {}, &block)
-    local_config_hash = config.to_h.merge(opts)
-    local_config_hash = deep_merge(local_config_hash, override_config) if override_config
-    local_config = Config.new(local_config_hash)
+    if opts.empty? && !override_config
+      local_config = config
+    else
+      local_config_hash = config.to_h.merge(opts)
+      local_config_hash = deep_merge(local_config_hash, override_config) if override_config
+      local_config = Config.new(local_config_hash)
+    end
 
     tries = local_config.tries
     intervals = build_intervals(local_config, tries)
@@ -194,6 +193,24 @@ module Retriable
     @override_config
   end
 
+  def merged_contexts
+    contexts = deep_dup(config.contexts)
+    return contexts unless override_config&.key?(:contexts)
+
+    override_contexts = override_config[:contexts]
+    return deep_merge(contexts, override_contexts) if override_contexts.is_a?(Hash)
+    return {} if override_contexts.nil?
+
+    contexts
+  end
+
+  def merged_context_options(contexts, context_key, options)
+    context_options = contexts[context_key].merge(options)
+    return context_options unless override_config&.dig(:contexts, context_key)
+
+    deep_merge(context_options, override_config[:contexts][context_key])
+  end
+
   private_class_method(
     :deep_dup,
     :deep_merge,
@@ -205,5 +222,7 @@ module Retriable
     :retriable_exception?,
     :hash_exception_match?,
     :override_config,
+    :merged_contexts,
+    :merged_context_options,
   )
 end

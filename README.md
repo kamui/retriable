@@ -384,7 +384,7 @@ end
 
 If you need to run a specific test with normal retry behavior, call `Retriable.reset_override` for that example and then reapply your test override afterward.
 
-Alternately, if you are using RSpec, you could override the Retriable confguration in your `spec_helper`.
+Alternately, if you are using RSpec, you could override the Retriable configuration in your `spec_helper`.
 
 ```ruby
 # spec/spec_helper.rb

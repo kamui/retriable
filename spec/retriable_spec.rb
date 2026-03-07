@@ -35,6 +35,13 @@ describe Retriable do
   end
 
   context "#retriable" do
+    it "reuses the singleton config when no local options or overrides are provided" do
+      expect(described_class::Config).not_to receive(:new)
+
+      described_class.retriable { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
     it "raises a LocalJumpError if not given a block" do
       expect { described_class.retriable }.to raise_error(LocalJumpError)
       expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
@@ -386,6 +393,28 @@ describe Retriable do
 
       described_class.with_context(:test_only) { increment_tries }
       expect(@tries).to eq(1)
+    end
+
+    it "treats nil override contexts as empty in with_context" do
+      described_class.override do |c|
+        c.contexts = nil
+      end
+
+      expect { described_class.with_context(:missing) { increment_tries } }
+        .to raise_error(ArgumentError, /missing not found/)
+    end
+
+    it "shows merged context keys in with_context missing-context errors" do
+      described_class.configure do |c|
+        c.contexts[:configured] = { tries: 2 }
+      end
+
+      described_class.override do |c|
+        c.contexts[:override_only] = { tries: 1 }
+      end
+
+      expect { described_class.with_context(:missing) { increment_tries } }
+        .to raise_error(ArgumentError, /override_only/)
     end
   end
 
