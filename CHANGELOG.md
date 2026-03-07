@@ -1,5 +1,7 @@
 # HEAD
 
+## 3.4.0
+
 - Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
 
 ## 3.3.0
