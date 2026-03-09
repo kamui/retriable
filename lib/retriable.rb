@@ -41,8 +41,8 @@ module Retriable
 
     exception_list = on.is_a?(Hash) ? on.keys : on
     exception_list = [*exception_list]
-    start_time = Time.now
-    elapsed_time = -> { Time.now - start_time }
+    start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    elapsed_time = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time }
 
     tries = intervals.size + 1
 
@@ -101,7 +101,10 @@ module Retriable
   end
 
   def can_retry?(try, tries, elapsed_time, interval, max_elapsed_time)
-    try < tries && (elapsed_time + interval) <= max_elapsed_time
+    return false unless try < tries
+    return true if max_elapsed_time.nil?
+
+    (elapsed_time + interval) <= max_elapsed_time
   end
 
   # When `on` is a Hash, we need to verify the exception matches a pattern.
