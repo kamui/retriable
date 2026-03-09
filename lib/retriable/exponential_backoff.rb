@@ -39,7 +39,7 @@ module Retriable
     private
 
     def randomize(interval)
-      delta = rand_factor * interval
+      delta = rand_factor * interval.to_f
       min = interval - delta
       max = interval + delta
       rand(min..max)
