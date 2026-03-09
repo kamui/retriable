@@ -1,5 +1,9 @@
 # HEAD
 
+- Fix: Use `Process.clock_gettime(CLOCK_MONOTONIC)` for elapsed time tracking so retry timing is immune to wall-clock adjustments (NTP, manual changes).
+- Fix: Handle `max_elapsed_time: nil` gracefully instead of raising `NoMethodError`.
+- Remove dead `* 1.0` float coercion in `ExponentialBackoff#randomize`.
+
 ## 3.4.0
 
 - Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.

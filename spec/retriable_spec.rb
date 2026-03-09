@@ -315,6 +315,38 @@ describe Retriable do
       expect(@tries).to eq(2)
     end
 
+    it "retries up to tries limit when max_elapsed_time is nil" do
+      expect do
+        described_class.retriable(tries: 4, max_elapsed_time: nil) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(4)
+    end
+
+    it "uses monotonic clock for elapsed time tracking" do
+      # Stub Process.clock_gettime to return controlled values so we can
+      # verify elapsed_time passed to on_retry is derived from the monotonic clock.
+      clock_calls = 0
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC) do
+        value = clock_calls.to_f
+        clock_calls += 1
+        value
+      end
+
+      elapsed_times = []
+      on_retry = ->(_exception, _try, elapsed_time, _next_interval) { elapsed_times << elapsed_time }
+
+      expect do
+        described_class.retriable(tries: 3, on_retry: on_retry) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      # start_time (call 0) + at least one elapsed_time computation per retry
+      expect(clock_calls).to be >= 3
+      # elapsed_time values should be positive and non-decreasing
+      expect(elapsed_times).to all(be > 0)
+      expect(elapsed_times).to eq(elapsed_times.sort)
+    end
+
     it "raises ArgumentError on invalid options" do
       expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
     end
