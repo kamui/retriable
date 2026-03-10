@@ -18,6 +18,17 @@ module Retriable
     end
   end
 
+  def deep_dup(obj)
+    case obj
+    when Hash
+      obj.each_with_object({}) { |(k, v), h| h[k] = deep_dup(v) }
+    when Array
+      obj.map { |v| deep_dup(v) }
+    else
+      obj
+    end
+  end
+
   def configure
     yield(config)
   end
@@ -30,7 +41,7 @@ module Retriable
     opts.each_key do |k|
       raise ArgumentError, "#{k} is not a valid option" unless Config::ATTRIBUTES.include?(k)
     end
-    @override_config = opts.empty? ? nil : opts
+    @override_config = opts.empty? ? nil : deep_dup(opts).freeze
   end
 
   def reset_override
@@ -178,7 +189,9 @@ module Retriable
   end
 
   def merged_context_options(contexts, context_key, options)
-    context_options = contexts[context_key].merge(options)
+    base = contexts[context_key]
+    base = {} unless base.is_a?(Hash)
+    context_options = base.merge(options)
 
     return context_options unless override_config
 
@@ -186,13 +199,14 @@ module Retriable
     return context_options unless override_contexts.is_a?(Hash)
 
     override_context_options = override_contexts[context_key]
-    return context_options unless override_context_options
+    return context_options unless override_context_options.is_a?(Hash)
 
     deep_merge(context_options, override_context_options)
   end
 
   private_class_method(
     :deep_merge,
+    :deep_dup,
     :execute_tries,
     :build_intervals,
     :call_with_timeout,

@@ -494,6 +494,18 @@ describe Retriable do
     it "raises ArgumentError on invalid override options" do
       expect { described_class.override(does_not_exist: 123) }.to raise_error(ArgumentError)
     end
+
+    it "deep-dups the provided options to prevent external mutation" do
+      opts = { tries: 1 }
+      described_class.override(opts)
+
+      # Mutate the original hash after override was set
+      opts[:tries] = 99
+
+      # Override should still use the original value (tries: 1), not the mutated one
+      expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(1)
+    end
   end
 
   context "#with_context" do
@@ -542,6 +554,15 @@ describe Retriable do
 
     it "raises an ArgumentError when the context isn't found" do
       expect { described_class.with_context(:wtf) { increment_tries } }.to raise_error(ArgumentError, /wtf not found/)
+    end
+
+    it "treats non-Hash context values as empty options" do
+      described_class.configure do |c|
+        c.contexts[:broken] = nil
+      end
+
+      described_class.with_context(:broken) { increment_tries }
+      expect(@tries).to eq(1)
     end
   end
 end

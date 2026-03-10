@@ -2,6 +2,8 @@
 
 - Add `override` and `reset_override` APIs to force retry settings over local call options when needed (for example, test short-circuiting).
 
+## 3.4.1
+
 - Fix: Use `Process.clock_gettime(CLOCK_MONOTONIC)` for elapsed time tracking so retry timing is immune to wall-clock adjustments (NTP, manual changes).
 - Fix: Handle `max_elapsed_time: nil` gracefully instead of raising `NoMethodError`.
 - Remove dead `* 1.0` float coercion in `ExponentialBackoff#randomize`.

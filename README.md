@@ -394,7 +394,7 @@ Alternately, if you are using RSpec, you could override the Retriable configurat
 Retriable.override(tries: 1, base_interval: 0, rand_factor: 0)
 ```
 
-If you have defined contexts for your configuration, you'll need to change values for each context, because those values take precedence over the default configured value.
+If you have defined contexts for your configuration, top-level override values (such as `tries: 1`) already take precedence over context-specific values. However, if you need to override context-specific options (for example, clearing a context's `:intervals` array or changing its `:on` exception list), pass `:contexts` to `Retriable.override`:
 
 For example assuming you have configured a `google_api` context:
 
@@ -414,7 +414,7 @@ Retriable.configure do |c|
 end
 ```
 
-Then in your test environment, you would need to set each context and the default value:
+Then in your test environment, you can override both top-level defaults and per-context options:
 
 ```ruby
 # Build context overrides from existing configured context keys
