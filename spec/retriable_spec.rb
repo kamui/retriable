@@ -35,6 +35,13 @@ describe Retriable do
   end
 
   context "#retriable" do
+    it "reuses the singleton config when no local options or overrides are provided" do
+      expect(described_class::Config).not_to receive(:new)
+
+      described_class.retriable { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
     it "raises a LocalJumpError if not given a block" do
       expect { described_class.retriable }.to raise_error(LocalJumpError)
       expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
@@ -359,6 +366,8 @@ describe Retriable do
         with_context
         configure
         config
+        override
+        reset_override
       ]
 
       expect(described_class.singleton_methods(false)).to match_array(public_api_methods)
@@ -366,6 +375,124 @@ describe Retriable do
 
     it "raises NoMethodError on invalid configuration" do
       expect { described_class.configure { |c| c.does_not_exist = 123 } }.to raise_error(NoMethodError)
+    end
+  end
+
+  context "#override" do
+    after(:each) do
+      described_class.reset_override
+    end
+
+    it "takes precedence over both global config and local options" do
+      described_class.configure { |c| c.tries = 2 }
+      described_class.override(tries: 1)
+
+      expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(1)
+    end
+
+    it "can override local intervals with nil to use configured backoff" do
+      described_class.configure { |c| c.tries = 3 }
+      described_class.override(intervals: nil)
+
+      expect do
+        described_class.retriable(intervals: [0.5, 1.0], on_retry: time_table_handler) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(3)
+      expect(@next_interval_table[1]).to be_between(0.0, 1.0)
+    end
+
+    it "applies override context values after with_context local options" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 3, base_interval: 1.0 }
+      end
+
+      described_class.override(contexts: { api: { tries: 1 } })
+
+      described_class.with_context(:api, tries: 10) { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
+    it "can define a context only in override config" do
+      described_class.override(contexts: { test_only: { tries: 1 } })
+
+      described_class.with_context(:test_only) { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
+    it "reuses configured contexts when override does not include contexts" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 1 }
+      end
+
+      described_class.override(tries: 1)
+
+      described_class.with_context(:api) { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
+    it "treats non-hash configured contexts as empty when override contexts are hash" do
+      begin
+        described_class.configure { |c| c.contexts = nil }
+
+        described_class.override(contexts: { api: { tries: 1 } })
+
+        described_class.with_context(:api) { increment_tries }
+        expect(@tries).to eq(1)
+      ensure
+        described_class.configure { |c| c.contexts = {} }
+      end
+    end
+
+    it "treats nil override contexts as empty in with_context" do
+      described_class.override(contexts: nil)
+
+      expect { described_class.with_context(:missing) { increment_tries } }
+        .to raise_error(ArgumentError, /missing not found/)
+    end
+
+    it "ignores non-hash override contexts values in with_context" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 1 }
+      end
+
+      described_class.override(contexts: 123)
+
+      described_class.with_context(:api) { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
+    it "shows merged context keys in with_context missing-context errors" do
+      described_class.configure do |c|
+        c.contexts[:configured] = { tries: 2 }
+      end
+
+      described_class.override(contexts: { override_only: { tries: 1 } })
+
+      expect { described_class.with_context(:missing) { increment_tries } }
+        .to raise_error(ArgumentError, /override_only/)
+    end
+
+    it "does not snapshot configured contexts when adding override-only contexts" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 2 }
+      end
+
+      described_class.override(contexts: { test_only: { tries: 1 } })
+
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 5 }
+      end
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(5)
+    end
+
+    it "raises ArgumentError on invalid override options" do
+      expect { described_class.override(does_not_exist: 123) }.to raise_error(ArgumentError)
     end
   end
 
