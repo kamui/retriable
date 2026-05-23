@@ -328,6 +328,18 @@ describe Retriable do
       expect(@tries).to eq(2)
     end
 
+    it "does not count skipped sleep intervals against max elapsed time" do
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return(0.0)
+
+      expect do
+        described_class.retriable(tries: 3, base_interval: 1.0, rand_factor: 0.0, max_elapsed_time: 0.1) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(3)
+    end
+
     it "retries up to tries limit when max_elapsed_time is nil" do
       expect do
         described_class.retriable(tries: 4, max_elapsed_time: nil) { increment_tries_with_exception }

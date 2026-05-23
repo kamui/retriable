@@ -1,5 +1,6 @@
 # HEAD
 
+- Fix: Do not count skipped sleep intervals against `max_elapsed_time` when `sleep_disabled` is true.
 - Add `override` and `reset_override` APIs to force retry settings over local call options when needed (for example, test short-circuiting).
 
 ## 3.4.1
