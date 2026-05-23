@@ -86,7 +86,8 @@ module Retriable
         interval = intervals[index]
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
-        raise unless can_retry?(try, tries, elapsed_time.call, interval, max_elapsed_time)
+        elapsed_interval = sleep_disabled == true ? 0 : interval
+        raise unless can_retry?(try, tries, elapsed_time.call, elapsed_interval, max_elapsed_time)
 
         sleep interval if sleep_disabled != true
       end
