@@ -101,6 +101,8 @@ describe Retriable do
         start_time,
         start_time + 0.01,
         start_time + 0.01,
+        start_time + 0.02,
+        start_time + 0.02,
       ]
       allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC) { timeline.shift || timeline.last }
 
@@ -117,7 +119,7 @@ describe Retriable do
         end
       end.to raise_error(StandardError)
 
-      expect(@tries).to eq(2)
+      expect(@tries).to eq(3)
     end
 
     it "raises ArgumentError for infinite retries without a finite max_elapsed_time" do
