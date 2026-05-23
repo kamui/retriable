@@ -1,11 +1,15 @@
 # frozen_string_literal: true
 
+require "rbconfig"
+
 describe Retriable do
   let(:time_table_handler) do
     ->(_exception, try, _elapsed_time, next_interval) { @next_interval_table[try] = next_interval }
   end
 
   before(:each) do
+    described_class.instance_variable_set(:@config, nil)
+    described_class.reset_override
     described_class.configure { |c| c.sleep_disabled = true }
     @tries = 0
     @next_interval_table = {}
@@ -23,7 +27,9 @@ describe Retriable do
 
   context "global scope extension" do
     it "cannot be called in the global scope without requiring the core_ext/kernel" do
-      expect { retriable { puts "should raise NoMethodError" } }.to raise_error(NoMethodError)
+      script = "require 'retriable'; begin; retriable {}; rescue NoMethodError; exit 0; end; exit 1"
+
+      expect(system(RbConfig.ruby, "-Ilib", "-e", script)).to be(true)
     end
 
     it "can be called once the kernel extension is required" do
@@ -388,6 +394,46 @@ describe Retriable do
       described_class.override(tries: 1)
 
       expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(1)
+    end
+
+    it "lets override tries take precedence over local intervals" do
+      described_class.override(tries: 1)
+
+      expect do
+        described_class.retriable(intervals: [0.5, 1.0]) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+    end
+
+    it "lets override tries take precedence over context intervals" do
+      described_class.configure do |c|
+        c.contexts[:api] = { intervals: [0.5, 1.0] }
+      end
+      described_class.override(tries: 1)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(1)
+    end
+
+    it "lets override context tries take precedence over context intervals" do
+      described_class.configure do |c|
+        c.contexts[:api] = { intervals: [0.5, 1.0] }
+      end
+      described_class.override(contexts: { api: { tries: 1 } })
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(1)
+    end
+
+    it "replaces hash-valued options instead of deep-merging them" do
+      described_class.override(on: { NonStandardError => nil })
+
+      expect do
+        described_class.retriable(on: { StandardError => nil }, tries: 2) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
       expect(@tries).to eq(1)
     end
 

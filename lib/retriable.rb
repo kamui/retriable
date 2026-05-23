@@ -8,16 +8,6 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
-  def deep_merge(base, overrides)
-    base.merge(overrides) do |_key, base_value, override_value|
-      if base_value.is_a?(Hash) && override_value.is_a?(Hash)
-        deep_merge(base_value, override_value)
-      else
-        override_value
-      end
-    end
-  end
-
   def deep_dup(obj)
     case obj
     when Hash
@@ -58,7 +48,7 @@ module Retriable
 
     return unless block_given?
 
-    context_options = merged_context_options(contexts, context_key, options)
+    context_options = merged_context_options(context_key, options)
 
     retriable(context_options, &block)
   end
@@ -67,8 +57,7 @@ module Retriable
     if opts.empty? && !override_config
       local_config = config
     else
-      local_config_hash = config.to_h.merge(opts)
-      local_config_hash = deep_merge(local_config_hash, override_config) if override_config
+      local_config_hash = merge_override_options(config.to_h.merge(opts))
       local_config = Config.new(local_config_hash)
     end
 
@@ -174,22 +163,33 @@ module Retriable
     @override_config
   end
 
+  def merge_override_options(options)
+    return options unless override_config
+
+    merged_options = options.merge(override_config)
+    clear_intervals_for_forced_tries(merged_options, override_config)
+  end
+
+  def clear_intervals_for_forced_tries(options, overrides)
+    options[:intervals] = nil if overrides.key?(:tries) && !overrides.key?(:intervals)
+    options
+  end
+
   def merged_contexts
     return config.contexts unless override_config&.key?(:contexts)
 
     base_contexts = config.contexts
     override_contexts = override_config[:contexts]
 
-    if override_contexts.is_a?(Hash)
-      return deep_merge(base_contexts.is_a?(Hash) ? base_contexts : {}, override_contexts)
-    end
+    return (base_contexts.is_a?(Hash) ? base_contexts : {}).merge(override_contexts) if override_contexts.is_a?(Hash)
     return {} if override_contexts.nil?
 
     base_contexts
   end
 
-  def merged_context_options(contexts, context_key, options)
-    base = contexts[context_key]
+  def merged_context_options(context_key, options)
+    base_contexts = config.contexts.is_a?(Hash) ? config.contexts : {}
+    base = base_contexts[context_key]
     base = {} unless base.is_a?(Hash)
     context_options = base.merge(options)
 
@@ -201,11 +201,10 @@ module Retriable
     override_context_options = override_contexts[context_key]
     return context_options unless override_context_options.is_a?(Hash)
 
-    deep_merge(context_options, override_context_options)
+    clear_intervals_for_forced_tries(context_options.merge(override_context_options), override_context_options)
   end
 
   private_class_method(
-    :deep_merge,
     :deep_dup,
     :execute_tries,
     :build_intervals,
@@ -215,6 +214,8 @@ module Retriable
     :retriable_exception?,
     :hash_exception_match?,
     :override_config,
+    :merge_override_options,
+    :clear_intervals_for_forced_tries,
     :merged_contexts,
     :merged_context_options,
   )
