@@ -50,14 +50,16 @@ module Retriable
     end
 
     def validate!
+      validate_optional_non_negative_number(:max_elapsed_time, max_elapsed_time)
+      validate_optional_non_negative_number(:timeout, timeout)
+      validate_intervals
+      return if intervals
+
       validate_positive_integer(:tries, tries)
       validate_non_negative_number(:base_interval, base_interval)
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
       validate_rand_factor
-      validate_optional_non_negative_number(:max_elapsed_time, max_elapsed_time)
-      validate_optional_non_negative_number(:timeout, timeout)
-      validate_intervals
     end
 
     private

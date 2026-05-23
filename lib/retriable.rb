@@ -49,8 +49,8 @@ module Retriable
 
     local_config.validate!
 
-    tries = effective_tries(local_config)
-    next_interval = interval_provider(local_config, tries)
+    tries = local_config.tries
+    intervals = build_intervals(local_config, tries)
     timeout = local_config.timeout
     on = local_config.on
     retry_if = local_config.retry_if
@@ -63,8 +63,10 @@ module Retriable
     start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     elapsed_time = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time }
 
+    tries = intervals.size + 1
+
     execute_tries(
-      tries: tries, next_interval: next_interval, timeout: timeout,
+      tries: tries, intervals: intervals, timeout: timeout,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &block
@@ -72,7 +74,7 @@ module Retriable
   end
 
   def execute_tries( # rubocop:disable Metrics/ParameterLists
-    tries:, next_interval:, timeout:, exception_list:,
+    tries:, intervals:, timeout:, exception_list:,
     on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
   )
     tries.times do |index|
@@ -83,7 +85,7 @@ module Retriable
       rescue *exception_list => e
         raise unless retriable_exception?(e, on, exception_list, retry_if)
 
-        interval = next_interval.call(index)
+        interval = intervals[index]
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
         elapsed_interval = sleep_disabled == true ? 0 : interval
@@ -94,28 +96,16 @@ module Retriable
     end
   end
 
-  def effective_tries(local_config)
-    return local_config.intervals.size + 1 if local_config.intervals
+  def build_intervals(local_config, tries)
+    return local_config.intervals if local_config.intervals
 
-    local_config.tries
-  end
-
-  def interval_provider(local_config, tries)
-    return ->(index) { local_config.intervals[index] } if local_config.intervals
-
-    backoff = nil
-    lambda do |index|
-      next nil if index >= tries - 1
-
-      backoff ||= ExponentialBackoff.new(
-        tries: tries - 1,
-        base_interval: local_config.base_interval,
-        multiplier: local_config.multiplier,
-        max_interval: local_config.max_interval,
-        rand_factor: local_config.rand_factor,
-      )
-      backoff.interval_at(index)
-    end
+    ExponentialBackoff.new(
+      tries: tries - 1,
+      base_interval: local_config.base_interval,
+      multiplier: local_config.multiplier,
+      max_interval: local_config.max_interval,
+      rand_factor: local_config.rand_factor,
+    ).intervals
   end
 
   def call_with_timeout(timeout, try)
@@ -216,8 +206,7 @@ module Retriable
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,
-    :effective_tries,
-    :interval_provider,
+    :build_intervals,
     :call_with_timeout,
     :call_on_retry,
     :can_retry?,

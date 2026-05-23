@@ -29,29 +29,29 @@ module Retriable
     end
 
     def intervals
-      Array.new(tries) { |iteration| interval_at(iteration) }
-    end
+      intervals = Array.new(tries) do |iteration|
+        [base_interval * (multiplier**iteration), max_interval].min
+      end
 
-    def interval_at(iteration)
-      interval = [base_interval * (multiplier**iteration), max_interval].min
+      return intervals if rand_factor.zero?
 
-      rand_factor.zero? ? interval : randomize(interval)
+      intervals.map { |i| randomize(i) }
     end
 
     private
 
     def validate!
-      validate_positive_integer(:tries, tries)
+      validate_non_negative_integer(:tries, tries)
       validate_non_negative_number(:base_interval, base_interval)
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
       validate_rand_factor
     end
 
-    def validate_positive_integer(name, value)
-      return if value.is_a?(Integer) && value.positive?
+    def validate_non_negative_integer(name, value)
+      return if value.is_a?(Integer) && value >= 0
 
-      raise ArgumentError, "#{name} must be a positive integer"
+      raise ArgumentError, "#{name} must be a non-negative integer"
     end
 
     def validate_non_negative_number(name, value)
