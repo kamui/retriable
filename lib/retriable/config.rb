@@ -58,8 +58,13 @@ module Retriable
       validate_on(on)
       validate_intervals
       return if intervals
+      return validate_backoff_options if tries == :infinite
 
       validate_positive_integer(:tries, tries)
+      validate_backoff_options
+    end
+
+    def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
