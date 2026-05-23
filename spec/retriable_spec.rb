@@ -493,11 +493,15 @@ describe Retriable do
       end
     end
 
-    it "treats nil override contexts as empty in with_context" do
+    it "ignores nil override contexts values in with_context" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 1 }
+      end
+
       described_class.override(contexts: nil)
 
-      expect { described_class.with_context(:missing) { increment_tries } }
-        .to raise_error(ArgumentError, /missing not found/)
+      described_class.with_context(:api) { increment_tries }
+      expect(@tries).to eq(1)
     end
 
     it "ignores non-hash override contexts values in with_context" do
@@ -539,6 +543,15 @@ describe Retriable do
 
     it "raises ArgumentError on invalid override options" do
       expect { described_class.override(does_not_exist: 123) }.to raise_error(ArgumentError)
+    end
+
+    it "raises ArgumentError on empty override options" do
+      expect { described_class.override({}) }.to raise_error(ArgumentError, /empty override/)
+    end
+
+    it "raises ArgumentError on invalid context override options" do
+      expect { described_class.override(contexts: { api: { does_not_exist: 123 } }) }
+        .to raise_error(ArgumentError, /does_not_exist is not a valid option/)
     end
 
     it "deep-dups the provided options to prevent external mutation" do

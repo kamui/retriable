@@ -28,10 +28,10 @@ module Retriable
   end
 
   def override(opts = {})
-    opts.each_key do |k|
-      raise ArgumentError, "#{k} is not a valid option" unless Config::ATTRIBUTES.include?(k)
-    end
-    @override_config = opts.empty? ? nil : deep_dup(opts).freeze
+    raise ArgumentError, "empty override options are not allowed; use reset_override instead" if opts.empty?
+
+    validate_override_options(opts)
+    @override_config = deep_dup(opts).freeze
   end
 
   def reset_override
@@ -54,7 +54,7 @@ module Retriable
   end
 
   def retriable(opts = {}, &block)
-    if opts.empty? && !override_config
+    if opts.empty? && !@override_config
       local_config = config
     else
       local_config_hash = merge_override_options(config.to_h.merge(opts))
@@ -159,15 +159,33 @@ module Retriable
     end
   end
 
-  def override_config
-    @override_config
+  def validate_override_options(opts)
+    opts.each_key do |k|
+      raise ArgumentError, "#{k} is not a valid option" unless Config::ATTRIBUTES.include?(k)
+    end
+
+    contexts = opts[:contexts]
+    return unless contexts.is_a?(Hash)
+
+    contexts.each_value do |context_options|
+      validate_context_override_options(context_options)
+    end
+  end
+
+  def validate_context_override_options(context_options)
+    return unless context_options.is_a?(Hash)
+
+    context_attributes = Config::ATTRIBUTES - [:contexts]
+    context_options.each_key do |k|
+      raise ArgumentError, "#{k} is not a valid option" unless context_attributes.include?(k)
+    end
   end
 
   def merge_override_options(options)
-    return options unless override_config
+    return options unless @override_config
 
-    merged_options = options.merge(override_config)
-    clear_intervals_for_forced_tries(merged_options, override_config)
+    merged_options = options.merge(@override_config)
+    clear_intervals_for_forced_tries(merged_options, @override_config)
   end
 
   def clear_intervals_for_forced_tries(options, overrides)
@@ -176,15 +194,11 @@ module Retriable
   end
 
   def merged_contexts
-    return config.contexts unless override_config&.key?(:contexts)
+    override_contexts = @override_config && @override_config[:contexts]
+    return config.contexts unless override_contexts.is_a?(Hash)
 
     base_contexts = config.contexts
-    override_contexts = override_config[:contexts]
-
-    return (base_contexts.is_a?(Hash) ? base_contexts : {}).merge(override_contexts) if override_contexts.is_a?(Hash)
-    return {} if override_contexts.nil?
-
-    base_contexts
+    (base_contexts.is_a?(Hash) ? base_contexts : {}).merge(override_contexts)
   end
 
   def merged_context_options(context_key, options)
@@ -193,9 +207,9 @@ module Retriable
     base = {} unless base.is_a?(Hash)
     context_options = base.merge(options)
 
-    return context_options unless override_config
+    return context_options unless @override_config
 
-    override_contexts = override_config[:contexts]
+    override_contexts = @override_config[:contexts]
     return context_options unless override_contexts.is_a?(Hash)
 
     override_context_options = override_contexts[context_key]
@@ -206,6 +220,8 @@ module Retriable
 
   private_class_method(
     :deep_dup,
+    :validate_override_options,
+    :validate_context_override_options,
     :execute_tries,
     :build_intervals,
     :call_with_timeout,
@@ -213,7 +229,6 @@ module Retriable
     :can_retry?,
     :retriable_exception?,
     :hash_exception_match?,
-    :override_config,
     :merge_override_options,
     :clear_intervals_for_forced_tries,
     :merged_contexts,
