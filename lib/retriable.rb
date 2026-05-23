@@ -16,19 +16,36 @@ module Retriable
     @config ||= Config.new
   end
 
+  def override(opts = {})
+    raise ArgumentError, "empty override options are not allowed; use reset_override instead" if opts.empty?
+
+    validate_override_options(opts)
+    @override_config = opts
+  end
+
+  def reset_override
+    @override_config = nil
+  end
+
   def with_context(context_key, options = {}, &block)
-    if !config.contexts.key?(context_key)
+    contexts = available_contexts
+
+    if !contexts.key?(context_key)
       raise ArgumentError,
-            "#{context_key} not found in Retriable.config.contexts. Available contexts: #{config.contexts.keys}"
+            "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
     return unless block_given?
 
-    retriable(config.contexts[context_key].merge(options), &block)
+    retriable(context_options_for(context_key, options), &block)
   end
 
   def retriable(opts = {}, &block)
-    local_config = opts.empty? ? config : Config.new(config.to_h.merge(opts))
+    local_config = if opts.empty? && !@override_config
+                     config
+                   else
+                     Config.new(apply_override_options(config.to_h.merge(opts), @override_config))
+                   end
 
     tries = local_config.tries
     intervals = build_intervals(local_config, tries)
@@ -128,7 +145,63 @@ module Retriable
     end
   end
 
+  def validate_override_options(opts)
+    opts.each_key do |k|
+      raise ArgumentError, "#{k} is not a valid option" unless Config::ATTRIBUTES.include?(k)
+    end
+
+    contexts = opts[:contexts]
+    return unless contexts.is_a?(Hash)
+
+    contexts.each_value do |context_options|
+      validate_context_override_options(context_options)
+    end
+  end
+
+  def validate_context_override_options(context_options)
+    return unless context_options.is_a?(Hash)
+
+    context_attributes = Config::ATTRIBUTES - [:contexts]
+    context_options.each_key do |k|
+      raise ArgumentError, "#{k} is not a valid option" unless context_attributes.include?(k)
+    end
+  end
+
+  def apply_override_options(options, overrides)
+    return options unless overrides
+
+    options = options.merge(overrides)
+    options[:intervals] = nil if overrides.key?(:tries) && !overrides.key?(:intervals)
+    options
+  end
+
+  def available_contexts
+    config_contexts.merge(override_contexts)
+  end
+
+  def context_options_for(context_key, options)
+    context_options = config_contexts.fetch(context_key, {})
+    context_options = {} unless context_options.is_a?(Hash)
+    context_options = context_options.merge(options)
+
+    override_context_options = override_contexts[context_key]
+    return context_options unless override_context_options.is_a?(Hash)
+
+    apply_override_options(context_options, override_context_options)
+  end
+
+  def config_contexts
+    config.contexts.is_a?(Hash) ? config.contexts : {}
+  end
+
+  def override_contexts
+    contexts = @override_config && @override_config[:contexts]
+    contexts.is_a?(Hash) ? contexts : {}
+  end
+
   private_class_method(
+    :validate_override_options,
+    :validate_context_override_options,
     :execute_tries,
     :build_intervals,
     :call_with_timeout,
@@ -136,5 +209,10 @@ module Retriable
     :can_retry?,
     :retriable_exception?,
     :hash_exception_match?,
+    :apply_override_options,
+    :available_contexts,
+    :context_options_for,
+    :config_contexts,
+    :override_contexts,
   )
 end
