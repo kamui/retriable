@@ -554,16 +554,14 @@ describe Retriable do
         .to raise_error(ArgumentError, /does_not_exist is not a valid option/)
     end
 
-    it "deep-dups the provided options to prevent external mutation" do
+    it "does not copy the provided override options" do
       opts = { tries: 1 }
       described_class.override(opts)
 
-      # Mutate the original hash after override was set
-      opts[:tries] = 99
+      opts[:tries] = 2
 
-      # Override should still use the original value (tries: 1), not the mutated one
       expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
-      expect(@tries).to eq(1)
+      expect(@tries).to eq(2)
     end
   end
 

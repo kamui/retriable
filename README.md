@@ -164,6 +164,9 @@ override > local options > configure defaults
 thread until `#reset_override` runs. Prefer setting it once at boot (or in test
 helpers), and avoid toggling it per request in multi-threaded runtimes.
 
+`#override` stores the provided options directly. Do not mutate the options hash
+or nested values after passing them to `#override`.
+
 To clear an override:
 
 ```ruby

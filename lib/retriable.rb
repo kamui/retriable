@@ -8,17 +8,6 @@ require_relative "retriable/version"
 module Retriable
   module_function
 
-  def deep_dup(obj)
-    case obj
-    when Hash
-      obj.each_with_object({}) { |(k, v), h| h[k] = deep_dup(v) }
-    when Array
-      obj.map { |v| deep_dup(v) }
-    else
-      obj
-    end
-  end
-
   def configure
     yield(config)
   end
@@ -31,7 +20,7 @@ module Retriable
     raise ArgumentError, "empty override options are not allowed; use reset_override instead" if opts.empty?
 
     validate_override_options(opts)
-    @override_config = deep_dup(opts).freeze
+    @override_config = opts
   end
 
   def reset_override
@@ -39,7 +28,7 @@ module Retriable
   end
 
   def with_context(context_key, options = {}, &block)
-    contexts = merged_contexts
+    contexts = available_contexts
 
     if !contexts.key?(context_key)
       raise ArgumentError,
@@ -48,18 +37,15 @@ module Retriable
 
     return unless block_given?
 
-    context_options = merged_context_options(context_key, options)
-
-    retriable(context_options, &block)
+    retriable(context_options_for(context_key, options), &block)
   end
 
   def retriable(opts = {}, &block)
-    if opts.empty? && !@override_config
-      local_config = config
-    else
-      local_config_hash = merge_override_options(config.to_h.merge(opts))
-      local_config = Config.new(local_config_hash)
-    end
+    local_config = if opts.empty? && !@override_config
+                     config
+                   else
+                     Config.new(apply_override_options(config.to_h.merge(opts), @override_config))
+                   end
 
     tries = local_config.tries
     intervals = build_intervals(local_config, tries)
@@ -181,45 +167,39 @@ module Retriable
     end
   end
 
-  def merge_override_options(options)
-    return options unless @override_config
+  def apply_override_options(options, overrides)
+    return options unless overrides
 
-    merged_options = options.merge(@override_config)
-    clear_intervals_for_forced_tries(merged_options, @override_config)
-  end
-
-  def clear_intervals_for_forced_tries(options, overrides)
+    options = options.merge(overrides)
     options[:intervals] = nil if overrides.key?(:tries) && !overrides.key?(:intervals)
     options
   end
 
-  def merged_contexts
-    override_contexts = @override_config && @override_config[:contexts]
-    return config.contexts unless override_contexts.is_a?(Hash)
-
-    base_contexts = config.contexts
-    (base_contexts.is_a?(Hash) ? base_contexts : {}).merge(override_contexts)
+  def available_contexts
+    config_contexts.merge(override_contexts)
   end
 
-  def merged_context_options(context_key, options)
-    base_contexts = config.contexts.is_a?(Hash) ? config.contexts : {}
-    base = base_contexts[context_key]
-    base = {} unless base.is_a?(Hash)
-    context_options = base.merge(options)
-
-    return context_options unless @override_config
-
-    override_contexts = @override_config[:contexts]
-    return context_options unless override_contexts.is_a?(Hash)
+  def context_options_for(context_key, options)
+    context_options = config_contexts.fetch(context_key, {})
+    context_options = {} unless context_options.is_a?(Hash)
+    context_options = context_options.merge(options)
 
     override_context_options = override_contexts[context_key]
     return context_options unless override_context_options.is_a?(Hash)
 
-    clear_intervals_for_forced_tries(context_options.merge(override_context_options), override_context_options)
+    apply_override_options(context_options, override_context_options)
+  end
+
+  def config_contexts
+    config.contexts.is_a?(Hash) ? config.contexts : {}
+  end
+
+  def override_contexts
+    contexts = @override_config && @override_config[:contexts]
+    contexts.is_a?(Hash) ? contexts : {}
   end
 
   private_class_method(
-    :deep_dup,
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,
@@ -229,9 +209,10 @@ module Retriable
     :can_retry?,
     :retriable_exception?,
     :hash_exception_match?,
-    :merge_override_options,
-    :clear_intervals_for_forced_tries,
-    :merged_contexts,
-    :merged_context_options,
+    :apply_override_options,
+    :available_contexts,
+    :context_options_for,
+    :config_contexts,
+    :override_contexts,
   )
 end
