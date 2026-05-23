@@ -94,7 +94,7 @@ describe Retriable do
     end
 
     it "stops infinite retries at max_elapsed_time" do
-      start_time = Time.now
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       timeline = [
         start_time,
         start_time,
@@ -102,7 +102,7 @@ describe Retriable do
         start_time + 0.01,
         start_time + 0.01,
       ]
-      allow(Time).to receive(:now) { timeline.shift || timeline.last }
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC) { timeline.shift || timeline.last }
 
       expect do
         described_class.retriable(

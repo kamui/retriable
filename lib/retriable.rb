@@ -61,39 +61,13 @@ module Retriable
 
     # Config is mutable through `configure`, so validate again immediately before use.
     local_config.validate!
-
-    tries = local_config.tries
     timeout = local_config.timeout
     on = local_config.on
     retry_if = local_config.retry_if
     on_retry = local_config.on_retry
     sleep_disabled = local_config.sleep_disabled
     max_elapsed_time = local_config.max_elapsed_time
-
-    if tries == :infinite
-      unless finite_number?(max_elapsed_time)
-        raise ArgumentError,
-              "max_elapsed_time must be finite when tries is :infinite"
-      end
-
-      if local_config.intervals
-        raise ArgumentError, "intervals must not be empty for infinite retries" if local_config.intervals.empty?
-
-        custom = local_config.intervals
-        interval_for = ->(i) { custom[[i, custom.size - 1].min] }
-      else
-        backoff = ExponentialBackoff.new(
-          base_interval: local_config.base_interval, multiplier: local_config.multiplier,
-          max_interval: local_config.max_interval, rand_factor: local_config.rand_factor
-        )
-        interval_for = ->(i) { backoff.interval_for(i) }
-      end
-      max_tries = nil
-    else
-      intervals = build_intervals(local_config, tries)
-      max_tries = intervals.size + 1
-      interval_for = ->(i) { intervals[i] }
-    end
+    max_tries, interval_for = retry_plan(local_config)
 
     exception_list = on.is_a?(Hash) ? on.keys : on
     exception_list = [*exception_list]
@@ -141,6 +115,38 @@ module Retriable
       max_interval: local_config.max_interval,
       rand_factor: local_config.rand_factor,
     ).intervals
+  end
+
+  def retry_plan(local_config)
+    return infinite_retry_plan(local_config) if local_config.tries == :infinite
+
+    intervals = build_intervals(local_config, local_config.tries)
+    [intervals.size + 1, ->(i) { intervals[i] }]
+  end
+
+  def infinite_retry_plan(local_config)
+    unless finite_number?(local_config.max_elapsed_time)
+      raise ArgumentError,
+            "max_elapsed_time must be finite when tries is :infinite"
+    end
+
+    [nil, infinite_interval_provider(local_config)]
+  end
+
+  def infinite_interval_provider(local_config)
+    if local_config.intervals
+      raise ArgumentError, "intervals must not be empty for infinite retries" if local_config.intervals.empty?
+
+      custom = local_config.intervals
+      return ->(i) { custom.fetch(i) { custom.last } }
+    end
+
+    ExponentialBackoff.new(
+      base_interval: local_config.base_interval,
+      multiplier: local_config.multiplier,
+      max_interval: local_config.max_interval,
+      rand_factor: local_config.rand_factor,
+    ).interval_provider
   end
 
   def call_with_timeout(timeout, try)
@@ -258,6 +264,9 @@ module Retriable
     :validate_context_override_options,
     :execute_tries,
     :build_intervals,
+    :retry_plan,
+    :infinite_retry_plan,
+    :infinite_interval_provider,
     :call_with_timeout,
     :call_on_retry,
     :can_retry?,

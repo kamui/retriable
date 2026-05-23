@@ -71,4 +71,11 @@ describe Retriable::ExponentialBackoff do
     non_random_intervals = 9.times.inject([0.5]) { |memo, _i| memo + [memo.last * 1.5] }
     expect(described_class.new(tries: 10, rand_factor: 0.0).intervals).to eq(non_random_intervals)
   end
+
+  it "provides capped intervals lazily" do
+    interval_for = described_class.new(base_interval: 1.0, multiplier: 2.0, max_interval: 4.0, rand_factor: 0.0)
+                                  .interval_provider
+
+    expect(5.times.map { |index| interval_for.call(index) }).to eq([1.0, 2.0, 4.0, 4.0, 4.0])
+  end
 end
