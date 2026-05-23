@@ -24,19 +24,51 @@ module Retriable
 
         instance_variable_set(:"@#{k}", v)
       end
+
+      validate!
     end
 
     def intervals
-      intervals = Array.new(tries) do |iteration|
-        [base_interval * (multiplier**iteration), max_interval].min
-      end
+      Array.new(tries) { |iteration| interval_at(iteration) }
+    end
 
-      return intervals if rand_factor.zero?
+    def interval_at(iteration)
+      interval = [base_interval * (multiplier**iteration), max_interval].min
 
-      intervals.map { |i| randomize(i) }
+      rand_factor.zero? ? interval : randomize(interval)
     end
 
     private
+
+    def validate!
+      validate_positive_integer(:tries, tries)
+      validate_non_negative_number(:base_interval, base_interval)
+      validate_non_negative_number(:multiplier, multiplier)
+      validate_non_negative_number(:max_interval, max_interval)
+      validate_rand_factor
+    end
+
+    def validate_positive_integer(name, value)
+      return if value.is_a?(Integer) && value.positive?
+
+      raise ArgumentError, "#{name} must be a positive integer"
+    end
+
+    def validate_non_negative_number(name, value)
+      return if finite_number?(value) && value >= 0
+
+      raise ArgumentError, "#{name} must be a non-negative number"
+    end
+
+    def validate_rand_factor
+      return if finite_number?(rand_factor) && rand_factor >= 0 && rand_factor <= 1
+
+      raise ArgumentError, "rand_factor must be between 0 and 1"
+    end
+
+    def finite_number?(value)
+      value.is_a?(Numeric) && value.to_f.finite?
+    end
 
     def randomize(interval)
       delta = rand_factor * interval.to_f

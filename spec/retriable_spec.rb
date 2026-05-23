@@ -48,6 +48,13 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
+    it "does not build generated intervals when the first attempt succeeds" do
+      expect(described_class::ExponentialBackoff).not_to receive(:new)
+
+      described_class.retriable { increment_tries }
+      expect(@tries).to eq(1)
+    end
+
     it "raises a LocalJumpError if not given a block" do
       expect { described_class.retriable }.to raise_error(LocalJumpError)
       expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
@@ -374,6 +381,16 @@ describe Retriable do
 
     it "raises ArgumentError on invalid options" do
       expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
+    end
+
+    it "raises ArgumentError when tries is not a positive integer" do
+      expect { described_class.retriable(tries: 1.5) { increment_tries } }
+        .to raise_error(ArgumentError, /tries/)
+    end
+
+    it "raises ArgumentError when an interval is negative" do
+      expect { described_class.retriable(intervals: [-1]) { increment_tries } }
+        .to raise_error(ArgumentError, /intervals/)
     end
   end
 
