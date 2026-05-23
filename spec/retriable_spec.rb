@@ -375,6 +375,22 @@ describe Retriable do
     it "raises ArgumentError on invalid options" do
       expect { described_class.retriable(does_not_exist: 123) { increment_tries } }.to raise_error(ArgumentError)
     end
+
+    it "raises ArgumentError when tries is not a positive integer" do
+      expect { described_class.retriable(tries: 1.5) { increment_tries } }
+        .to raise_error(ArgumentError, /tries/)
+    end
+
+    it "raises ArgumentError when an interval is negative" do
+      expect { described_class.retriable(intervals: [-1]) { increment_tries } }
+        .to raise_error(ArgumentError, /intervals/)
+    end
+
+    it "does not validate generated backoff options when intervals are provided" do
+      described_class.retriable(intervals: [0], tries: 0, rand_factor: 1.1) { increment_tries }
+
+      expect(@tries).to eq(1)
+    end
   end
 
   context "#configure" do

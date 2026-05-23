@@ -47,6 +47,8 @@ module Retriable
                      Config.new(apply_override_options(config.to_h.merge(opts), @override_config))
                    end
 
+    local_config.validate!
+
     tries = local_config.tries
     intervals = build_intervals(local_config, tries)
     timeout = local_config.timeout

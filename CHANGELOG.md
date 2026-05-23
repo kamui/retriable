@@ -1,5 +1,7 @@
 # HEAD
 
+- Fix: Validate retry timing and count options before use to reject invalid retry configurations.
+
 ## 3.5.0
 
 - Fix: Do not count skipped sleep intervals against `max_elapsed_time` when `sleep_disabled` is true.

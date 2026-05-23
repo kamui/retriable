@@ -56,4 +56,9 @@ describe Retriable::Config do
   it "raises errors on invalid configuration" do
     expect { described_class.new(does_not_exist: 123) }.to raise_error(ArgumentError, /not a valid option/)
   end
+
+  it "raises errors on invalid timing configuration" do
+    expect { described_class.new(rand_factor: 1.1) }.to raise_error(ArgumentError, /rand_factor/)
+    expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
+  end
 end
