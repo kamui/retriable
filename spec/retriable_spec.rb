@@ -469,6 +469,35 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
+    it "does not apply context-only overrides to plain retriable calls" do
+      described_class.override(contexts: { api: { tries: 1 } })
+
+      expect { described_class.retriable(tries: 3) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(3)
+    end
+
+    it "keeps configured context matchers when top-level override values apply" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 3, on: NonStandardError }
+      end
+      described_class.override(tries: 1)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception(NonStandardError) } }
+        .to raise_error(NonStandardError)
+      expect(@tries).to eq(1)
+    end
+
+    it "combines local options with override-only contexts" do
+      described_class.override(contexts: { api: { tries: 1 } })
+
+      expect do
+        described_class.with_context(:api, on: NonStandardError) do
+          increment_tries_with_exception(NonStandardError)
+        end
+      end.to raise_error(NonStandardError)
+      expect(@tries).to eq(1)
+    end
+
     it "reuses configured contexts when override does not include contexts" do
       described_class.configure do |c|
         c.contexts[:api] = { tries: 1 }
@@ -513,6 +542,17 @@ describe Retriable do
 
       described_class.with_context(:api) { increment_tries }
       expect(@tries).to eq(1)
+    end
+
+    it "ignores non-hash per-context override values in with_context" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 2 }
+      end
+
+      described_class.override(contexts: { api: 123 })
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(2)
     end
 
     it "shows merged context keys in with_context missing-context errors" do
