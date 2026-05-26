@@ -166,16 +166,23 @@ module Retriable
       raise ArgumentError, "#{k} is not a valid option" unless Config::ATTRIBUTES.include?(k)
     end
 
-    contexts = opts[:contexts]
-    return unless contexts.is_a?(Hash)
+    return unless opts.key?(:contexts)
 
-    contexts.each_value do |context_options|
-      validate_context_override_options(context_options)
+    contexts = opts[:contexts]
+    return if contexts.nil?
+
+    raise ArgumentError, "contexts must be a Hash or nil, got #{contexts.inspect}" unless contexts.is_a?(Hash)
+
+    contexts.each do |context_key, context_options|
+      validate_context_override_options(context_key, context_options)
     end
   end
 
-  def validate_context_override_options(context_options)
-    return unless context_options.is_a?(Hash)
+  def validate_context_override_options(context_key, context_options)
+    unless context_options.is_a?(Hash)
+      raise ArgumentError,
+            "contexts[#{context_key.inspect}] must be a Hash, got #{context_options.inspect}"
+    end
 
     context_attributes = Config::ATTRIBUTES - [:contexts]
     context_options.each_key do |k|
