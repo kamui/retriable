@@ -9,7 +9,7 @@ describe Retriable do
 
   before(:each) do
     described_class.instance_variable_set(:@config, nil)
-    described_class.reset_override
+    Thread.current.thread_variable_set(Retriable::OVERRIDE_THREAD_KEY, nil)
     described_class.configure { |c| c.sleep_disabled = true }
     @tries = 0
     @next_interval_table = {}
@@ -415,8 +415,7 @@ describe Retriable do
         with_context
         configure
         config
-        override
-        reset_override
+        with_override
       ]
 
       expect(described_class.singleton_methods(false)).to match_array(public_api_methods)
@@ -427,25 +426,23 @@ describe Retriable do
     end
   end
 
-  context "#override" do
-    after(:each) do
-      described_class.reset_override
-    end
-
+  context "#with_override" do
     it "takes precedence over both global config and local options" do
       described_class.configure { |c| c.tries = 2 }
-      described_class.override(tries: 1)
 
-      expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+      described_class.with_override(tries: 1) do
+        expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
+      end
+
       expect(@tries).to eq(1)
     end
 
     it "lets override tries take precedence over local intervals" do
-      described_class.override(tries: 1)
-
-      expect do
-        described_class.retriable(intervals: [0.5, 1.0]) { increment_tries_with_exception }
-      end.to raise_error(StandardError)
+      described_class.with_override(tries: 1) do
+        expect do
+          described_class.retriable(intervals: [0.5, 1.0]) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+      end
 
       expect(@tries).to eq(1)
     end
@@ -454,9 +451,11 @@ describe Retriable do
       described_class.configure do |c|
         c.contexts[:api] = { intervals: [0.5, 1.0] }
       end
-      described_class.override(tries: 1)
 
-      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      described_class.with_override(tries: 1) do
+        expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      end
+
       expect(@tries).to eq(1)
     end
 
@@ -464,31 +463,34 @@ describe Retriable do
       described_class.configure do |c|
         c.contexts[:api] = { intervals: [0.5, 1.0] }
       end
-      described_class.override(contexts: { api: { tries: 1 } })
 
-      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      described_class.with_override(contexts: { api: { tries: 1 } }) do
+        expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      end
+
       expect(@tries).to eq(1)
     end
 
     it "replaces hash-valued options instead of deep-merging them" do
-      described_class.override(on: { NonStandardError => nil })
-
-      expect do
-        described_class.retriable(on: { StandardError => nil }, tries: 2) { increment_tries_with_exception }
-      end.to raise_error(StandardError)
+      described_class.with_override(on: { NonStandardError => nil }) do
+        expect do
+          described_class.retriable(on: { StandardError => nil }, tries: 2) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+      end
 
       expect(@tries).to eq(1)
     end
 
     it "can override local intervals with nil to use configured backoff" do
       described_class.configure { |c| c.tries = 3 }
-      described_class.override(intervals: nil)
 
-      expect do
-        described_class.retriable(intervals: [0.5, 1.0], on_retry: time_table_handler) do
-          increment_tries_with_exception
-        end
-      end.to raise_error(StandardError)
+      described_class.with_override(intervals: nil) do
+        expect do
+          described_class.retriable(intervals: [0.5, 1.0], on_retry: time_table_handler) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+      end
 
       expect(@tries).to eq(3)
       expect(@next_interval_table[1]).to be_between(0.0, 1.0)
@@ -499,23 +501,26 @@ describe Retriable do
         c.contexts[:api] = { tries: 3, base_interval: 1.0 }
       end
 
-      described_class.override(contexts: { api: { tries: 1 } })
+      described_class.with_override(contexts: { api: { tries: 1 } }) do
+        described_class.with_context(:api, tries: 10) { increment_tries }
+      end
 
-      described_class.with_context(:api, tries: 10) { increment_tries }
       expect(@tries).to eq(1)
     end
 
     it "can define a context only in override config" do
-      described_class.override(contexts: { test_only: { tries: 1 } })
+      described_class.with_override(contexts: { test_only: { tries: 1 } }) do
+        described_class.with_context(:test_only) { increment_tries }
+      end
 
-      described_class.with_context(:test_only) { increment_tries }
       expect(@tries).to eq(1)
     end
 
     it "does not apply context-only overrides to plain retriable calls" do
-      described_class.override(contexts: { api: { tries: 1 } })
+      described_class.with_override(contexts: { api: { tries: 1 } }) do
+        expect { described_class.retriable(tries: 3) { increment_tries_with_exception } }.to raise_error(StandardError)
+      end
 
-      expect { described_class.retriable(tries: 3) { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(3)
     end
 
@@ -523,21 +528,24 @@ describe Retriable do
       described_class.configure do |c|
         c.contexts[:api] = { tries: 3, on: NonStandardError }
       end
-      described_class.override(tries: 1)
 
-      expect { described_class.with_context(:api) { increment_tries_with_exception(NonStandardError) } }
-        .to raise_error(NonStandardError)
+      described_class.with_override(tries: 1) do
+        expect { described_class.with_context(:api) { increment_tries_with_exception(NonStandardError) } }
+          .to raise_error(NonStandardError)
+      end
+
       expect(@tries).to eq(1)
     end
 
     it "combines local options with override-only contexts" do
-      described_class.override(contexts: { api: { tries: 1 } })
+      described_class.with_override(contexts: { api: { tries: 1 } }) do
+        expect do
+          described_class.with_context(:api, on: NonStandardError) do
+            increment_tries_with_exception(NonStandardError)
+          end
+        end.to raise_error(NonStandardError)
+      end
 
-      expect do
-        described_class.with_context(:api, on: NonStandardError) do
-          increment_tries_with_exception(NonStandardError)
-        end
-      end.to raise_error(NonStandardError)
       expect(@tries).to eq(1)
     end
 
@@ -546,9 +554,10 @@ describe Retriable do
         c.contexts[:api] = { tries: 1 }
       end
 
-      described_class.override(tries: 1)
+      described_class.with_override(tries: 1) do
+        described_class.with_context(:api) { increment_tries }
+      end
 
-      described_class.with_context(:api) { increment_tries }
       expect(@tries).to eq(1)
     end
 
@@ -556,9 +565,10 @@ describe Retriable do
       begin
         described_class.configure { |c| c.contexts = nil }
 
-        described_class.override(contexts: { api: { tries: 1 } })
+        described_class.with_override(contexts: { api: { tries: 1 } }) do
+          described_class.with_context(:api) { increment_tries }
+        end
 
-        described_class.with_context(:api) { increment_tries }
         expect(@tries).to eq(1)
       ensure
         described_class.configure { |c| c.contexts = {} }
@@ -570,9 +580,10 @@ describe Retriable do
         c.contexts[:api] = { tries: 1 }
       end
 
-      described_class.override(contexts: nil)
+      described_class.with_override(contexts: nil) do
+        described_class.with_context(:api) { increment_tries }
+      end
 
-      described_class.with_context(:api) { increment_tries }
       expect(@tries).to eq(1)
     end
 
@@ -581,9 +592,10 @@ describe Retriable do
         c.contexts[:api] = { tries: 1 }
       end
 
-      described_class.override(contexts: 123)
+      described_class.with_override(contexts: 123) do
+        described_class.with_context(:api) { increment_tries }
+      end
 
-      described_class.with_context(:api) { increment_tries }
       expect(@tries).to eq(1)
     end
 
@@ -592,9 +604,10 @@ describe Retriable do
         c.contexts[:api] = { tries: 2 }
       end
 
-      described_class.override(contexts: { api: 123 })
+      described_class.with_override(contexts: { api: 123 }) do
+        expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
+      end
 
-      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(2)
     end
 
@@ -603,10 +616,10 @@ describe Retriable do
         c.contexts[:configured] = { tries: 2 }
       end
 
-      described_class.override(contexts: { override_only: { tries: 1 } })
-
-      expect { described_class.with_context(:missing) { increment_tries } }
-        .to raise_error(ArgumentError, /override_only/)
+      described_class.with_override(contexts: { override_only: { tries: 1 } }) do
+        expect { described_class.with_context(:missing) { increment_tries } }
+          .to raise_error(ArgumentError, /override_only/)
+      end
     end
 
     it "does not snapshot configured contexts when adding override-only contexts" do
@@ -614,37 +627,200 @@ describe Retriable do
         c.contexts[:api] = { tries: 2 }
       end
 
-      described_class.override(contexts: { test_only: { tries: 1 } })
+      described_class.with_override(contexts: { test_only: { tries: 1 } }) do
+        described_class.configure do |c|
+          c.contexts[:api] = { tries: 5 }
+        end
 
-      described_class.configure do |c|
-        c.contexts[:api] = { tries: 5 }
+        expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
       end
 
-      expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(5)
     end
 
     it "raises ArgumentError on invalid override options" do
-      expect { described_class.override(does_not_exist: 123) }.to raise_error(ArgumentError)
+      expect { described_class.with_override(does_not_exist: 123) { :noop } }.to raise_error(ArgumentError)
     end
 
     it "raises ArgumentError on empty override options" do
-      expect { described_class.override({}) }.to raise_error(ArgumentError, /empty override/)
+      expect { described_class.with_override({}) { :noop } }.to raise_error(ArgumentError, /empty override/)
+    end
+
+    it "raises ArgumentError when called without a block" do
+      expect { described_class.with_override(tries: 1) }.to raise_error(ArgumentError, /requires a block/)
     end
 
     it "raises ArgumentError on invalid context override options" do
-      expect { described_class.override(contexts: { api: { does_not_exist: 123 } }) }
+      expect { described_class.with_override(contexts: { api: { does_not_exist: 123 } }) { :noop } }
         .to raise_error(ArgumentError, /does_not_exist is not a valid option/)
     end
 
-    it "does not copy the provided override options" do
-      opts = { tries: 1 }
-      described_class.override(opts)
+    it "clears the override after the block returns" do
+      described_class.with_override(tries: 1) do
+        # active here
+      end
 
-      opts[:tries] = 2
+      expect { described_class.retriable(tries: 3) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(3)
+    end
 
-      expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }.to raise_error(StandardError)
-      expect(@tries).to eq(2)
+    it "clears the override when the block raises" do
+      expect do
+        described_class.with_override(tries: 1) { raise "boom" }
+      end.to raise_error(RuntimeError, "boom")
+
+      expect { described_class.retriable(tries: 3) { increment_tries_with_exception } }.to raise_error(StandardError)
+      expect(@tries).to eq(3)
+    end
+
+    it "returns the block's return value" do
+      result = described_class.with_override(tries: 1) { :return_value }
+      expect(result).to eq(:return_value)
+    end
+
+    it "restores the outer override when nested blocks exit" do
+      tries_seen = []
+      handler = ->(_exception, try, _elapsed, _next) { tries_seen << [Thread.current.object_id, try] }
+
+      described_class.with_override(tries: 2, on_retry: handler) do
+        described_class.with_override(tries: 4, on_retry: handler) do
+          expect { described_class.retriable { increment_tries_with_exception } }.to raise_error(StandardError)
+        end
+
+        # After the inner block exits, the outer tries: 2 override is restored.
+        @tries = 0
+        expect { described_class.retriable { increment_tries_with_exception } }.to raise_error(StandardError)
+        expect(@tries).to eq(2)
+      end
+    end
+  end
+
+  context "#with_override thread safety" do
+    # Coordinate threads with queues rather than sleep so tests are deterministic.
+    # sleep_disabled is already set to true in the top-level before(:each), so
+    # retriable calls do not actually sleep between attempts.
+
+    it "isolates overrides between threads" do
+      ready = Queue.new
+      proceed = Queue.new
+      results = {}
+      mutex = Mutex.new
+
+      threads = [1, 2].map do |id|
+        Thread.new do
+          described_class.with_override(tries: id) do
+            ready << true
+            proceed.pop
+            tries = 0
+            begin
+              described_class.retriable do
+                tries += 1
+                raise StandardError
+              end
+            rescue StandardError
+              mutex.synchronize { results[id] = tries }
+            end
+          end
+        end
+      end
+
+      2.times { ready.pop }
+      2.times { proceed << true }
+      threads.each(&:join)
+
+      expect(results).to eq(1 => 1, 2 => 2)
+    end
+
+    it "does not leak an active override into a sibling thread" do
+      override_active = Queue.new
+      sibling_done = Queue.new
+      sibling_tries = nil
+
+      setter = Thread.new do
+        described_class.with_override(tries: 1) do
+          override_active << true
+          sibling_done.pop
+        end
+      end
+
+      sibling = Thread.new do
+        override_active.pop
+        tries = 0
+        begin
+          described_class.retriable(tries: 3) do
+            tries += 1
+            raise StandardError
+          end
+        rescue StandardError
+          sibling_tries = tries
+        end
+        sibling_done << true
+      end
+
+      [setter, sibling].each(&:join)
+      expect(sibling_tries).to eq(3)
+    end
+
+    it "does not propagate an active override to a child thread" do
+      child_tries = nil
+
+      described_class.with_override(tries: 1) do
+        Thread.new do
+          tries = 0
+          begin
+            described_class.retriable(tries: 3) do
+              tries += 1
+              raise StandardError
+            end
+          rescue StandardError
+            child_tries = tries
+          end
+        end.join
+      end
+
+      expect(child_tries).to eq(3)
+    end
+
+    it "shares the active override with fibers in the same thread" do
+      fiber_tries = nil
+
+      Thread.new do
+        described_class.with_override(tries: 1) do
+          Fiber.new do
+            tries = 0
+            begin
+              described_class.retriable(tries: 10) do
+                tries += 1
+                raise StandardError
+              end
+            rescue StandardError
+              fiber_tries = tries
+            end
+          end.resume
+        end
+      end.join
+
+      expect(fiber_tries).to eq(1)
+    end
+
+    it "does not treat a main-thread override as a global default for other threads" do
+      other_thread_tries = nil
+
+      described_class.with_override(tries: 1) do
+        Thread.new do
+          tries = 0
+          begin
+            described_class.retriable(tries: 3) do
+              tries += 1
+              raise StandardError
+            end
+          rescue StandardError
+            other_thread_tries = tries
+          end
+        end.join
+      end
+
+      expect(other_thread_tries).to eq(3)
     end
   end
 

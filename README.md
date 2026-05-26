@@ -32,7 +32,7 @@ require 'retriable'
 In your Gemfile:
 
 ```ruby
-gem 'retriable', '~> 3.5'
+gem 'retriable', '~> 3.6'
 ```
 
 ## Usage
@@ -149,31 +149,46 @@ end
 
 ### Override
 
-If you need to force values globally (including over per-call options), use
-`#override`:
+`#with_override` is a block-scoped API for forcing retry options that should
+take precedence over both `#configure` defaults and per-call options. It is
+primarily intended for tests — it lets a test force values like `tries: 1` or
+`base_interval: 0` so the suite runs quickly and predictably, regardless of
+the application's `#configure` defaults. In application code, prefer
+`#configure` for app-level defaults and per-call options for caller-specific
+values.
 
 ```ruby
-Retriable.override(tries: 1, base_interval: 0)
+Retriable.with_override(tries: 1, base_interval: 0) do
+  Retriable.retriable do
+    # code here...
+  end
+end
 ```
 
-`#override` precedence:
+Precedence inside the block:
 
 ```
-override > local options > configure defaults
+with_override > local options > configure defaults
 ```
 
-`#override` uses process-global state. Once set, it affects every caller and
-thread until `#reset_override` runs. Prefer setting it once at boot (or in test
-helpers), and avoid toggling it per request in multi-threaded runtimes.
+`#with_override` requires a block and raises `ArgumentError` if called without
+one. The override is active only while the block is executing, and is
+automatically restored to its previous value when the block returns or raises.
+Nested `#with_override` calls work as expected: the inner block temporarily
+replaces the active override and the outer override is restored when the
+inner block exits.
 
-`#override` stores the provided options directly. Do not mutate the options hash
-or nested values after passing them to `#override`.
+`#with_override` is scoped to the **current thread**. The active override
+does not affect any other thread, and child threads spawned inside the block
+do not inherit it. This makes `#with_override` safe to use in parallel test
+runners. Fibers running inside the same thread share the thread's active
+override.
 
-To clear an override:
+`#with_override` stores the provided options directly. Do not mutate the
+options hash or nested values for the duration of the block.
 
-```ruby
-Retriable.reset_override
-```
+For test-integration patterns (RSpec `around`, helper methods, Minitest, etc.),
+see [docs/testing.md](docs/testing.md).
 
 ### Example Usage
 
@@ -369,72 +384,16 @@ retriable_with_context(:api) do
 end
 ```
 
-## Short Circuiting Retriable While Testing Your App
+## Testing
 
-When you are running tests for your app it often takes a long time to retry blocks that fail. This is because Retriable will default to 3 tries with exponential backoff. Ideally your tests will run as quickly as possible.
+`Retriable.with_override` is designed to short-circuit retries in your test
+suite so failing blocks do not slow tests down. The simplest pattern is an
+RSpec `around(:each)` hook (or your test framework's equivalent) that wraps
+every example in `with_override(tries: 1, base_interval: 0)`.
 
-If you want to short-circuit retries in tests, including calls that pass local options, use `Retriable.override` and set `tries` to `1`.
-
-Under Rails, keep shared defaults in `Retriable.configure` and apply test-only overrides conditionally:
-
-```ruby
-# config/initializers/retriable.rb
-Retriable.configure do |c|
-  c.tries = 3
-  c.base_interval = 0.5
-  c.rand_factor = 0.5
-end
-
-if Rails.env.test?
-  Retriable.override(tries: 1, base_interval: 0, rand_factor: 0)
-end
-```
-
-If you need to run a specific test with normal retry behavior, call `Retriable.reset_override` for that example and then reapply your test override afterward.
-
-Alternately, if you are using RSpec, you could override the Retriable configuration in your `spec_helper`.
-
-```ruby
-# spec/spec_helper.rb
-Retriable.override(tries: 1, base_interval: 0, rand_factor: 0)
-```
-
-If you have defined contexts for your configuration, top-level override values (such as `tries: 1`) already take precedence over context-specific values. However, if you need to override context-specific options (for example, clearing a context's `:intervals` array or changing its `:on` exception list), pass `:contexts` to `Retriable.override`:
-
-For example assuming you have configured a `google_api` context:
-
-```ruby
-# config/initializers/retriable.rb
-Retriable.configure do |c|
-  c.contexts[:google_api] = {
-      tries:         5,
-      base_interval: 3,
-      on:            [
-          Net::ReadTimeout,
-          Signet::AuthorizationError,
-          Errno::ECONNRESET,
-          OpenSSL::SSL::SSLError
-      ]
-  }
-end
-```
-
-Then in your test environment, you can override both top-level defaults and per-context options:
-
-```ruby
-# Build context overrides from existing configured context keys
-context_overrides = {}
-Retriable.config.contexts.each_key do |key|
-  context_overrides[key] = { tries: 1, base_interval: 0 }
-end
-
-Retriable.override(
-  multiplier: 1.0,
-  rand_factor: 0.0,
-  base_interval: 0,
-  contexts: context_overrides,
-)
-```
+For Rails integration, opting out of the override for specific tests, and
+overriding configured contexts in tests, see
+[docs/testing.md](docs/testing.md).
 
 ## Credits
 
