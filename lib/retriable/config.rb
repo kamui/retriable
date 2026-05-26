@@ -55,6 +55,7 @@ module Retriable
     def validate!
       validate_optional_non_negative_number(:max_elapsed_time, max_elapsed_time)
       validate_optional_non_negative_number(:timeout, timeout)
+      validate_on(on)
       validate_intervals
       return if intervals
 

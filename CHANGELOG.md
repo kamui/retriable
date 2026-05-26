@@ -1,5 +1,9 @@
 # HEAD
 
+## 3.6.1
+
+- Fix: Validate the `on:` option before retrying. Previously, passing a non-`Exception` value such as `Object`, `Kernel`, or a plain `Module` (which appear in every `Exception`'s ancestor chain) would silently retry process-critical exceptions like `SystemExit` and `Interrupt`. The `on:` option now requires an `Exception` subclass, an array of them, or a hash whose keys are such classes and whose values are `nil`, a `Regexp`, or an array of `Regexp`s. Invalid shapes raise `ArgumentError` before the block runs.
+
 ## 3.6.0
 
 - Breaking: `Retriable.override` and `Retriable.reset_override` are removed and replaced by block-scoped `Retriable.with_override(opts) { ... }`. The new API requires a block, restores the previous override (or absence of override) when the block exits via `ensure`, and is thread-local — overrides set in one thread do not affect other threads, and child threads do not inherit them. Fibers within a thread still share the thread's active override. Nested `with_override` calls correctly restore the outer override on inner exit. See the README and `docs/testing.md` for migration and testing patterns. This replaces the override API introduced in 3.5.0.

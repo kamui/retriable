@@ -406,6 +406,16 @@ describe Retriable do
 
       expect(@tries).to eq(1)
     end
+
+    it "rejects on: Object before invoking the block" do
+      block_invoked = false
+
+      expect do
+        described_class.retriable(on: Object) { block_invoked = true }
+      end.to raise_error(ArgumentError, /on must be an Exception class/)
+
+      expect(block_invoked).to be(false)
+    end
   end
 
   context "#configure" do
