@@ -6,6 +6,13 @@ require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
 
 module Retriable
+  # Thread-local storage key for the active #with_override block.
+  # We deliberately use Thread#thread_variable_set/get (true thread-local)
+  # rather than Thread.current[] (fiber-local) so that fibers within a thread
+  # share the same override. Changing this to Thread.current[] would silently
+  # break callers that use fiber-based concurrency.
+  OVERRIDE_THREAD_KEY = :retriable_override
+
   module_function
 
   def configure
@@ -16,15 +23,19 @@ module Retriable
     @config ||= Config.new
   end
 
-  def override(opts = {})
-    raise ArgumentError, "empty override options are not allowed; use reset_override instead" if opts.empty?
+  def with_override(opts = {})
+    raise ArgumentError, "empty override options are not allowed" if opts.empty?
+    raise ArgumentError, "with_override requires a block" unless block_given?
 
     validate_override_options(opts)
-    @override_config = opts
-  end
 
-  def reset_override
-    @override_config = nil
+    previous = Thread.current.thread_variable_get(OVERRIDE_THREAD_KEY)
+    Thread.current.thread_variable_set(OVERRIDE_THREAD_KEY, opts)
+    begin
+      yield
+    ensure
+      Thread.current.thread_variable_set(OVERRIDE_THREAD_KEY, previous)
+    end
   end
 
   def with_context(context_key, options = {}, &block)
@@ -41,10 +52,11 @@ module Retriable
   end
 
   def retriable(opts = {}, &block)
-    local_config = if opts.empty? && !@override_config
+    override_config = current_override
+    local_config = if opts.empty? && !override_config
                      config
                    else
-                     Config.new(apply_override_options(config.to_h.merge(opts), @override_config))
+                     Config.new(apply_override_options(config.to_h.merge(opts), override_config))
                    end
 
     # Config is mutable through `configure`, so validate again immediately before use.
@@ -199,8 +211,13 @@ module Retriable
   end
 
   def override_contexts
-    contexts = @override_config && @override_config[:contexts]
+    override_config = current_override
+    contexts = override_config && override_config[:contexts]
     contexts.is_a?(Hash) ? contexts : {}
+  end
+
+  def current_override
+    Thread.current.thread_variable_get(OVERRIDE_THREAD_KEY)
   end
 
   private_class_method(
@@ -218,5 +235,6 @@ module Retriable
     :context_options_for,
     :config_contexts,
     :override_contexts,
+    :current_override,
   )
 end
