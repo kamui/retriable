@@ -598,13 +598,19 @@ describe Retriable do
     end
 
     it "raises ArgumentError on non-hash override contexts values" do
-      expect { described_class.with_override(contexts: 123) { :noop } }
+      block_called = false
+
+      expect { described_class.with_override(contexts: 123) { block_called = true } }
         .to raise_error(ArgumentError, /contexts must be a Hash or nil/)
+      expect(block_called).to be(false)
     end
 
     it "raises ArgumentError on non-hash per-context override values" do
-      expect { described_class.with_override(contexts: { api: 123 }) { :noop } }
+      block_called = false
+
+      expect { described_class.with_override(contexts: { api: 123 }) { block_called = true } }
         .to raise_error(ArgumentError, /contexts\[:api\] must be a Hash/)
+      expect(block_called).to be(false)
     end
 
     it "shows merged context keys in with_context missing-context errors" do
