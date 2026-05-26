@@ -107,7 +107,7 @@ Here are the available options, in some vague order of relevance to most common 
 | **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | **`on`**               | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | **`retry_if`**         | `nil`             | Callable (for example a `Proc` or lambda) that receives the rescued exception and returns true/false to decide whether to retry. [Read more](#advanced-retry-matching-with-retry_if).                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. [Read more](#callbacks).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. Pass `false` to disable a callback set in `#configure` for a single call. [Read more](#callbacks).                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **`sleep_disabled`**   | `false`           | When true, disable exponential backoff and attempt retries immediately.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | **`base_interval`**    | `0.5`             | The initial interval in seconds between tries.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | **`max_elapsed_time`** | `900` (15 min)    | The maximum amount of total time in seconds that code is allowed to keep being retried. Set to `nil` to disable the time limit and retry based solely on `tries`.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -314,6 +314,26 @@ end
 
 Retriable.retriable(on_retry: do_this_on_each_retry) do
   # code here...
+end
+```
+
+#### Disabling a Configured Callback Per Call
+
+If `on_retry` is set in `Retriable.configure`, every call uses it by default. To opt a specific call out — for example, a critical call site that should not log on retry — pass `on_retry: false`. Passing `nil` does not work for this purpose because per-call options are merged over configured defaults; `false` is the explicit "disabled" sentinel.
+
+```ruby
+Retriable.configure do |c|
+  c.on_retry = ->(exception, try, elapsed_time, next_interval) { log(...) }
+end
+
+# Most calls use the configured callback.
+Retriable.retriable do
+  # ...
+end
+
+# This specific call opts out of the configured callback.
+Retriable.retriable(on_retry: false) do
+  # ...
 end
 ```
 
