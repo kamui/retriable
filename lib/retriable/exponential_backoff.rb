@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
+require_relative "validation"
+
 module Retriable
   class ExponentialBackoff
+    include Validation
+
     ATTRIBUTES = %i[
       tries
       base_interval
@@ -46,28 +50,6 @@ module Retriable
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
       validate_rand_factor
-    end
-
-    def validate_non_negative_integer(name, value)
-      return if value.is_a?(Integer) && value >= 0
-
-      raise ArgumentError, "#{name} must be a non-negative integer"
-    end
-
-    def validate_non_negative_number(name, value)
-      return if finite_number?(value) && value >= 0
-
-      raise ArgumentError, "#{name} must be a non-negative number"
-    end
-
-    def validate_rand_factor
-      return if finite_number?(rand_factor) && rand_factor >= 0 && rand_factor <= 1
-
-      raise ArgumentError, "rand_factor must be between 0 and 1"
-    end
-
-    def finite_number?(value)
-      value.is_a?(Numeric) && value.to_f.finite?
     end
 
     def randomize(interval)

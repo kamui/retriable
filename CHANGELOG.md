@@ -1,6 +1,6 @@
 # HEAD
 
-- Fix: Validate retry timing and count options before use to reject invalid retry configurations.
+- Fix: Validate retry timing and count options before use to reject invalid retry configurations. `tries` must now be a positive integer unless a custom `intervals` array is provided.
 
 ## 3.5.0
 
