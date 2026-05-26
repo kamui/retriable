@@ -613,6 +613,34 @@ describe Retriable do
       expect(block_called).to be(false)
     end
 
+    it "preserves outer override after rejected nested override contexts values" do
+      described_class.with_override(tries: 2) do
+        expect { described_class.with_override(tries: 1, contexts: 123) { :noop } }
+          .to raise_error(ArgumentError, /contexts must be a Hash or nil/)
+
+        expect { described_class.retriable(tries: 10) { increment_tries_with_exception } }
+          .to raise_error(StandardError)
+      end
+
+      expect(@tries).to eq(2)
+    end
+
+    it "preserves outer context override after rejected nested per-context values" do
+      described_class.configure do |c|
+        c.contexts[:api] = { tries: 10 }
+      end
+
+      described_class.with_override(contexts: { api: { tries: 2 } }) do
+        expect { described_class.with_override(contexts: { api: 123 }) { :noop } }
+          .to raise_error(ArgumentError, /contexts\[:api\] must be a Hash/)
+
+        expect { described_class.with_context(:api) { increment_tries_with_exception } }
+          .to raise_error(StandardError)
+      end
+
+      expect(@tries).to eq(2)
+    end
+
     it "shows merged context keys in with_context missing-context errors" do
       described_class.configure do |c|
         c.contexts[:configured] = { tries: 2 }
