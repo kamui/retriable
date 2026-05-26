@@ -13,6 +13,9 @@ module Retriable
   # break callers that use fiber-based concurrency.
   OVERRIDE_THREAD_KEY = :retriable_override
 
+  RetryPlan = Struct.new(:max_tries, :interval_for, keyword_init: true)
+  private_constant :RetryPlan
+
   module_function
 
   def configure
@@ -67,7 +70,7 @@ module Retriable
     on_retry = local_config.on_retry
     sleep_disabled = local_config.sleep_disabled
     max_elapsed_time = local_config.max_elapsed_time
-    max_tries, interval_for = retry_plan(local_config)
+    plan = retry_plan(local_config)
 
     exception_list = on.is_a?(Hash) ? on.keys : on
     exception_list = [*exception_list]
@@ -75,7 +78,7 @@ module Retriable
     elapsed_time = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time }
 
     execute_tries(
-      max_tries: max_tries, interval_for: interval_for, timeout: timeout,
+      max_tries: plan.max_tries, interval_for: plan.interval_for, timeout: timeout,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &block
@@ -105,11 +108,28 @@ module Retriable
     end
   end
 
-  def build_intervals(local_config, tries)
+  def retry_plan(local_config)
+    return infinite_retry_plan(local_config) if local_config.tries == :infinite
+
+    intervals = finite_intervals(local_config)
+    RetryPlan.new(max_tries: intervals.size + 1, interval_for: ->(i) { intervals[i] })
+  end
+
+  def infinite_retry_plan(local_config)
+    unless Config.finite_number?(local_config.max_elapsed_time)
+      raise ArgumentError,
+            "max_elapsed_time must be finite when tries is :infinite"
+    end
+    raise ArgumentError, "intervals must not be empty for infinite retries" if local_config.intervals == []
+
+    RetryPlan.new(max_tries: nil, interval_for: infinite_interval_provider(local_config))
+  end
+
+  def finite_intervals(local_config)
     return local_config.intervals if local_config.intervals
 
     ExponentialBackoff.new(
-      tries: tries - 1,
+      tries: local_config.tries - 1,
       base_interval: local_config.base_interval,
       multiplier: local_config.multiplier,
       max_interval: local_config.max_interval,
@@ -117,26 +137,8 @@ module Retriable
     ).intervals
   end
 
-  def retry_plan(local_config)
-    return infinite_retry_plan(local_config) if local_config.tries == :infinite
-
-    intervals = build_intervals(local_config, local_config.tries)
-    [intervals.size + 1, ->(i) { intervals[i] }]
-  end
-
-  def infinite_retry_plan(local_config)
-    unless finite_number?(local_config.max_elapsed_time)
-      raise ArgumentError,
-            "max_elapsed_time must be finite when tries is :infinite"
-    end
-
-    [nil, infinite_interval_provider(local_config)]
-  end
-
   def infinite_interval_provider(local_config)
     if local_config.intervals
-      raise ArgumentError, "intervals must not be empty for infinite retries" if local_config.intervals.empty?
-
       custom = local_config.intervals
       return ->(i) { custom.fetch(i) { custom.last } }
     end
@@ -166,10 +168,6 @@ module Retriable
     return true if max_elapsed_time.nil?
 
     (elapsed_time + interval) <= max_elapsed_time
-  end
-
-  def finite_number?(value)
-    value.is_a?(Numeric) && (!value.respond_to?(:finite?) || value.finite?)
   end
 
   # When `on` is a Hash, we need to verify the exception matches a pattern.
@@ -263,14 +261,13 @@ module Retriable
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,
-    :build_intervals,
     :retry_plan,
     :infinite_retry_plan,
+    :finite_intervals,
     :infinite_interval_provider,
     :call_with_timeout,
     :call_on_retry,
     :can_retry?,
-    :finite_number?,
     :retriable_exception?,
     :hash_exception_match?,
     :apply_override_options,

@@ -20,6 +20,10 @@ module Retriable
 
     attr_accessor(*ATTRIBUTES)
 
+    def self.finite_number?(value)
+      value.is_a?(Numeric) && value.to_f.finite?
+    end
+
     def initialize(opts = {})
       backoff = ExponentialBackoff.new
 
@@ -57,6 +61,7 @@ module Retriable
       validate_optional_non_negative_number(:timeout, timeout)
       validate_on(on)
       validate_intervals
+      validate_infinite_max_elapsed_time if tries == :infinite
       return if intervals
       return validate_backoff_options if tries == :infinite
 
@@ -79,6 +84,12 @@ module Retriable
       return if intervals.all? { |interval| finite_number?(interval) && interval >= 0 }
 
       raise ArgumentError, "intervals must contain only non-negative numbers"
+    end
+
+    def validate_infinite_max_elapsed_time
+      return if finite_number?(max_elapsed_time)
+
+      raise ArgumentError, "max_elapsed_time must be finite when tries is :infinite"
     end
   end
 end

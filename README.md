@@ -285,6 +285,7 @@ end
 
 `max_elapsed_time` must be a finite number when using `tries: :infinite`.
 Retriable raises `ArgumentError` if `max_elapsed_time` is unbounded.
+If you provide custom `intervals` with infinite retries, Retriable uses each interval once and then repeats the last interval until the block succeeds or `max_elapsed_time` is reached.
 
 ### Turn off Exponential Backoff
 

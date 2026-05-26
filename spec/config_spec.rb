@@ -131,4 +131,9 @@ describe Retriable::Config do
         .to raise_error(ArgumentError, /on must be an Exception class/)
     end
   end
+
+  it "requires max_elapsed_time when tries is infinite" do
+    expect { described_class.new(tries: :infinite, max_elapsed_time: nil) }
+      .to raise_error(ArgumentError, /max_elapsed_time/)
+  end
 end
