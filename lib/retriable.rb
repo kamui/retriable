@@ -13,7 +13,7 @@ module Retriable
   # break callers that use fiber-based concurrency.
   OVERRIDE_THREAD_KEY = :retriable_override
 
-  RetryPlan = Struct.new(:max_tries, :interval_for, keyword_init: true)
+  RetryPlan = Struct.new(:max_tries, :interval_for)
   private_constant :RetryPlan
 
   module_function
@@ -112,7 +112,7 @@ module Retriable
     return infinite_retry_plan(local_config) if local_config.tries == :infinite
 
     intervals = finite_intervals(local_config)
-    RetryPlan.new(max_tries: intervals.size + 1, interval_for: ->(i) { intervals[i] })
+    RetryPlan.new(intervals.size + 1, ->(i) { intervals[i] })
   end
 
   def infinite_retry_plan(local_config)
@@ -122,7 +122,7 @@ module Retriable
     end
     raise ArgumentError, "intervals must not be empty for infinite retries" if local_config.intervals == []
 
-    RetryPlan.new(max_tries: nil, interval_for: infinite_interval_provider(local_config))
+    RetryPlan.new(nil, infinite_interval_provider(local_config))
   end
 
   def finite_intervals(local_config)
