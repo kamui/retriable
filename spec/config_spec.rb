@@ -65,4 +65,70 @@ describe Retriable::Config do
   it "raises errors when intervals is not an array" do
     expect { described_class.new(intervals: "1") }.to raise_error(ArgumentError, /intervals must be an Array/)
   end
+
+  context "on: option validation" do
+    it "accepts a single Exception subclass" do
+      expect { described_class.new(on: StandardError) }.not_to raise_error
+    end
+
+    it "accepts Exception itself" do
+      expect { described_class.new(on: Exception) }.not_to raise_error
+    end
+
+    it "accepts an array of Exception subclasses" do
+      expect { described_class.new(on: [StandardError, RuntimeError]) }.not_to raise_error
+    end
+
+    it "accepts a hash with nil pattern values" do
+      expect { described_class.new(on: { StandardError => nil }) }.not_to raise_error
+    end
+
+    it "accepts a hash with Regexp pattern values" do
+      expect { described_class.new(on: { StandardError => /boom/ }) }.not_to raise_error
+    end
+
+    it "accepts a hash with Array-of-Regexp pattern values" do
+      expect { described_class.new(on: { StandardError => [/a/, /b/] }) }.not_to raise_error
+    end
+
+    it "rejects Object as on:" do
+      expect { described_class.new(on: Object) }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+
+    it "rejects Kernel as on:" do
+      expect { described_class.new(on: Kernel) }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+
+    it "rejects an array containing a non-Exception class" do
+      expect { described_class.new(on: [StandardError, Kernel]) }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+
+    it "rejects a hash key that is not an Exception class" do
+      expect { described_class.new(on: { Kernel => nil }) }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+
+    it "rejects a hash value that is a String" do
+      expect { described_class.new(on: { StandardError => "boom" }) }
+        .to raise_error(ArgumentError, /on\[StandardError\] must be nil, a Regexp, or an Array of Regexps/)
+    end
+
+    it "rejects a hash value that is an Array containing a non-Regexp" do
+      expect { described_class.new(on: { StandardError => [/a/, "b"] }) }
+        .to raise_error(ArgumentError, /on\[StandardError\] must be nil, a Regexp, or an Array of Regexps/)
+    end
+
+    it "rejects a string passed as on:" do
+      expect { described_class.new(on: "StandardError") }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+
+    it "validates on: even when intervals is provided" do
+      expect { described_class.new(intervals: [0.1], on: Object) }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+  end
 end
