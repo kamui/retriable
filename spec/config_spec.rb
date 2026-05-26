@@ -44,6 +44,10 @@ describe Retriable::Config do
       expect(default_config.on_retry).to be_nil
     end
 
+    it "on_give_up handler defaults to nil" do
+      expect(default_config.on_give_up).to be_nil
+    end
+
     it "contexts defaults to {}" do
       expect(default_config.contexts).to eq({})
     end

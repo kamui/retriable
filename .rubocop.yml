@@ -50,3 +50,6 @@ Gemspec/DevelopmentDependencies:
 
 Gemspec/RequireMFA:
   Enabled: false
+
+Naming/MethodParameterName:
+  MinNameLength: 2
