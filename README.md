@@ -5,6 +5,29 @@
 
 Retriable is a simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff) time intervals. This is especially useful when interacting external APIs, remote services, or file system calls.
 
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Defaults](#defaults)
+  - [Options](#options)
+    - [Configuring Which Options to Retry With :on](#configuring-which-options-to-retry-with-on)
+    - [Advanced Retry Matching With :retry_if](#advanced-retry-matching-with-retry_if)
+  - [Configuration](#configuration)
+  - [Override](#override)
+  - [Example Usage](#example-usage)
+  - [Custom Interval Array](#custom-interval-array)
+  - [Turn off Exponential Backoff](#turn-off-exponential-backoff)
+  - [Callbacks](#callbacks)
+  - [Ensure/Else](#ensureelse)
+- [Contexts](#contexts)
+- [Kernel Extension](#kernel-extension)
+- [Testing](#testing)
+- [Credits](#credits)
+- [Development](#development)
+  - [Running Specs](#running-specs)
+
 ## Requirements
 
 Ruby 2.3.0+
