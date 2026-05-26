@@ -47,6 +47,7 @@ module Retriable
                      Config.new(apply_override_options(config.to_h.merge(opts), @override_config))
                    end
 
+    # Config is mutable through `configure`, so validate again immediately before use.
     local_config.validate!
 
     tries = local_config.tries

@@ -61,4 +61,8 @@ describe Retriable::Config do
     expect { described_class.new(rand_factor: 1.1) }.to raise_error(ArgumentError, /rand_factor/)
     expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
   end
+
+  it "raises errors when intervals is not an array" do
+    expect { described_class.new(intervals: "1") }.to raise_error(ArgumentError, /intervals must be an Array/)
+  end
 end

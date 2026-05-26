@@ -386,8 +386,23 @@ describe Retriable do
         .to raise_error(ArgumentError, /intervals/)
     end
 
+    it "raises ArgumentError when configured timing options become invalid" do
+      described_class.configure { |config| config.tries = 0 }
+
+      expect { described_class.retriable { increment_tries } }
+        .to raise_error(ArgumentError, /tries/)
+    end
+
     it "does not validate generated backoff options when intervals are provided" do
       described_class.retriable(intervals: [0], tries: 0, rand_factor: 1.1) { increment_tries }
+
+      expect(@tries).to eq(1)
+    end
+
+    it "allows an empty interval array as one attempt" do
+      expect do
+        described_class.retriable(intervals: []) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
 
       expect(@tries).to eq(1)
     end
