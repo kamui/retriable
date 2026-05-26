@@ -2,6 +2,7 @@
 
 ## 3.6.1
 
+- Add opt-in infinite retries via `tries: :infinite`, requiring a finite `max_elapsed_time` safety bound.
 - Fix: Validate the `on:` option before retrying. Previously, passing a non-`Exception` value such as `Object`, `Kernel`, or a plain `Module` (which appear in every `Exception`'s ancestor chain) would silently retry process-critical exceptions like `SystemExit` and `Interrupt`. The `on:` option now requires an `Exception` subclass, an array of them, or a hash whose keys are such classes and whose values are `nil`, a `Regexp`, or an array of `Regexp`s. Invalid shapes raise `ArgumentError` before the block runs.
 - Fix: Validate `with_override(contexts:)` shape before applying overrides. `contexts` may be `nil` or a hash, and each per-context override must be a hash.
 - Docs: Document that `on_retry: false` disables a callback set in `Retriable.configure` for a single call.
@@ -28,7 +29,6 @@
 ## 3.4.0
 
 - Add `retry_if` option to support custom retry predicates, including checks against wrapped `exception.cause` values.
-- Add opt-in infinite retries via `tries: :infinite`, requiring a finite `max_elapsed_time` safety bound.
 
 ## 3.3.0
 
