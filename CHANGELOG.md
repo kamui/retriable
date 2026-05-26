@@ -3,6 +3,7 @@
 ## 3.6.1
 
 - Fix: Validate the `on:` option before retrying. Previously, passing a non-`Exception` value such as `Object`, `Kernel`, or a plain `Module` (which appear in every `Exception`'s ancestor chain) would silently retry process-critical exceptions like `SystemExit` and `Interrupt`. The `on:` option now requires an `Exception` subclass, an array of them, or a hash whose keys are such classes and whose values are `nil`, a `Regexp`, or an array of `Regexp`s. Invalid shapes raise `ArgumentError` before the block runs.
+- Fix: Validate `with_override(contexts:)` shape before applying overrides. `contexts` may be `nil` or a hash, and each per-context override must be a hash.
 - Docs: Document that `on_retry: false` disables a callback set in `Retriable.configure` for a single call.
 
 ## 3.6.0

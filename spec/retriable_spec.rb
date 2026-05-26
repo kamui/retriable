@@ -597,28 +597,20 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
-    it "ignores non-hash override contexts values in with_context" do
-      described_class.configure do |c|
-        c.contexts[:api] = { tries: 1 }
-      end
+    it "raises ArgumentError on non-hash override contexts values" do
+      block_called = false
 
-      described_class.with_override(contexts: 123) do
-        described_class.with_context(:api) { increment_tries }
-      end
-
-      expect(@tries).to eq(1)
+      expect { described_class.with_override(contexts: 123) { block_called = true } }
+        .to raise_error(ArgumentError, /contexts must be a Hash or nil/)
+      expect(block_called).to be(false)
     end
 
-    it "ignores non-hash per-context override values in with_context" do
-      described_class.configure do |c|
-        c.contexts[:api] = { tries: 2 }
-      end
+    it "raises ArgumentError on non-hash per-context override values" do
+      block_called = false
 
-      described_class.with_override(contexts: { api: 123 }) do
-        expect { described_class.with_context(:api) { increment_tries_with_exception } }.to raise_error(StandardError)
-      end
-
-      expect(@tries).to eq(2)
+      expect { described_class.with_override(contexts: { api: 123 }) { block_called = true } }
+        .to raise_error(ArgumentError, /contexts\[:api\] must be a Hash/)
+      expect(block_called).to be(false)
     end
 
     it "shows merged context keys in with_context missing-context errors" do
