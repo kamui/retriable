@@ -58,12 +58,12 @@ module Retriable
     # Regexp values explicitly.
     def validate_on(value)
       case value
-      when Hash
+      in Hash
         value.each do |klass, pattern|
           validate_on_class(klass)
           validate_on_hash_value(klass, pattern)
         end
-      when Array
+      in Array
         value.each { |klass| validate_on_class(klass) }
       else
         validate_on_class(value)

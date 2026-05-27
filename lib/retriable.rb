@@ -40,7 +40,7 @@ module Retriable
     end
   end
 
-  def with_context(context_key, options = {}, &block)
+  def with_context(context_key, options = {}, &)
     contexts = available_contexts
 
     if !contexts.key?(context_key)
@@ -50,10 +50,10 @@ module Retriable
 
     return unless block_given?
 
-    retriable(context_options_for(context_key, options), &block)
+    retriable(context_options_for(context_key, options), &)
   end
 
-  def retriable(opts = {}, &block)
+  def retriable(opts = {}, &)
     override_config = current_override
     local_config = if opts.empty? && !override_config
                      config
@@ -80,7 +80,7 @@ module Retriable
       max_tries: plan.max_tries, interval_for: plan.interval_for,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
-      sleep_disabled: sleep_disabled, &block
+      sleep_disabled: sleep_disabled, &
     )
   end
 

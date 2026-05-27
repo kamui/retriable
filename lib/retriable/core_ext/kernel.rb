@@ -3,11 +3,11 @@
 require_relative "../../retriable"
 
 module Kernel
-  def retriable(opts = {}, &block)
-    Retriable.retriable(opts, &block)
+  def retriable(opts = {}, &)
+    Retriable.retriable(opts, &)
   end
 
-  def retriable_with_context(context_key, opts = {}, &block)
-    Retriable.with_context(context_key, opts, &block)
+  def retriable_with_context(context_key, opts = {}, &)
+    Retriable.with_context(context_key, opts, &)
   end
 end
