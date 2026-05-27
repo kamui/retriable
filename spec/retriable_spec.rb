@@ -247,6 +247,28 @@ describe Retriable do
       end
     end
 
+    it "does not call on_retry when explicitly set to nil" do
+      callback_called = false
+      original_on_retry = described_class.config.on_retry
+
+      begin
+        described_class.configure do |c|
+          c.on_retry = proc { |_exception, _try, _elapsed_time, _next_interval| callback_called = true }
+        end
+
+        expect do
+          described_class.retriable(on_retry: nil, tries: 3) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+
+        expect(@tries).to eq(3)
+        expect(callback_called).to be(false)
+      ensure
+        described_class.configure do |c|
+          c.on_retry = original_on_retry
+        end
+      end
+    end
+
     it "calls on_give_up with max elapsed time details before re-raising" do
       described_class.configure { |c| c.sleep_disabled = false }
       give_up_calls = []
@@ -349,6 +371,27 @@ describe Retriable do
 
         expect do
           described_class.retriable(on_give_up: false, tries: 1) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+
+        expect(callback_called).to be(false)
+      ensure
+        described_class.configure do |c|
+          c.on_give_up = original_on_give_up
+        end
+      end
+    end
+
+    it "does not call on_give_up when explicitly set to nil" do
+      callback_called = false
+      original_on_give_up = described_class.config.on_give_up
+
+      begin
+        described_class.configure do |c|
+          c.on_give_up = proc { callback_called = true }
+        end
+
+        expect do
+          described_class.retriable(on_give_up: nil, tries: 1) { increment_tries_with_exception }
         end.to raise_error(StandardError)
 
         expect(callback_called).to be(false)
