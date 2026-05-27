@@ -151,6 +151,11 @@ module Retriable
     on_give_up.call(exception, try, elapsed_time, interval, reason)
   end
 
+  # `:tries_exhausted` is checked first, but the two conditions can't both hold
+  # on the same try in practice: `retry_plan` returns a nil interval whenever
+  # `try >= max_tries`, so `(elapsed_time + interval) > max_elapsed_time` is not
+  # evaluable on the exhausted-tries try. The early return guards against that
+  # nil and also pins precedence in case the plan ever changes.
   def retry_stop_reason(try, max_tries, elapsed_time, interval, max_elapsed_time)
     return :tries_exhausted if max_tries && try >= max_tries
     return nil if max_elapsed_time.nil?
