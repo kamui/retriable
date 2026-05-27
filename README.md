@@ -264,7 +264,7 @@ end
 
 Like the deprecated `timeout:` option, `Timeout.timeout(5)` inside the block is per-try — each retry gets a fresh 5-second budget. If you want an overall cap across all retries instead, prefer `max_elapsed_time:`.
 
-The deprecation warning is emitted at most once per process. If you need to silence it (for example, in tests), wrap the call site in `Gem::Deprecate.skip_during { ... }`.
+The deprecation warning is emitted under the `:deprecated` warning category and at most once per process. To silence it (for example, in tests), use the standard Ruby controls — set `Warning[:deprecated] = false`, run with `ruby -W:no-deprecated`, or override `Warning.warn` to filter the message.
 
 If you need millisecond units of time for the sleep interval:
 

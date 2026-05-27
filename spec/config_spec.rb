@@ -113,17 +113,39 @@ describe Retriable::Config do
       expect(stderr.string.scan("timeout:` option is deprecated").size).to eq(1)
     end
 
-    it "is silenced by Gem::Deprecate.skip_during" do
-      expect do
-        Gem::Deprecate.skip_during do
-          described_class.new(timeout: 5)
-        end
-      end.not_to output.to_stderr
+    it "emits the warning under the :deprecated category when supported", if: WARN_CATEGORY_SUPPORTED do
+      captured = []
+      allow(Warning).to receive(:warn) do |message, category: nil|
+        captured << [message, category]
+      end
+
+      described_class.new(timeout: 5)
+
+      expect(captured.size).to eq(1)
+      message, category = captured.first
+      expect(message).to match(/timeout.*deprecated.*Retriable 4\.0/i)
+      expect(category).to eq(:deprecated)
     end
 
-    it "remains armed after Gem::Deprecate.skip_during so a later call still warns" do
-      Gem::Deprecate.skip_during do
+    it "is silenced by Warning[:deprecated] = false", if: WARN_CATEGORY_SUPPORTED do
+      original = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
+        expect do
+          described_class.new(timeout: 5)
+        end.not_to output.to_stderr
+      ensure
+        Warning[:deprecated] = original
+      end
+    end
+
+    it "remains armed when silenced via Warning[:deprecated]", if: WARN_CATEGORY_SUPPORTED do
+      original = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
         described_class.new(timeout: 5)
+      ensure
+        Warning[:deprecated] = original
       end
 
       expect do

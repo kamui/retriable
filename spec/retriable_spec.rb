@@ -201,10 +201,14 @@ describe Retriable do
       end
 
       it "keeps applying timeout while deprecated" do
-        Gem::Deprecate.skip_during do
+        original_stderr = $stderr
+        begin
+          $stderr = StringIO.new
           expect do
             described_class.retriable(timeout: 0.05, tries: 1) { sleep(0.5) }
           end.to raise_error(Timeout::Error)
+        ensure
+          $stderr = original_stderr
         end
       end
 
@@ -230,12 +234,16 @@ describe Retriable do
         end
       end
 
-      it "is silenced by Gem::Deprecate.skip_during" do
-        expect do
-          Gem::Deprecate.skip_during do
+      it "is silenced by Warning[:deprecated] = false", if: WARN_CATEGORY_SUPPORTED do
+        original = Warning[:deprecated]
+        begin
+          Warning[:deprecated] = false
+          expect do
             described_class.retriable(timeout: 5) { :noop }
-          end
-        end.not_to output.to_stderr
+          end.not_to output.to_stderr
+        ensure
+          Warning[:deprecated] = original
+        end
       end
 
       it "does not warn when timeout is absent" do
