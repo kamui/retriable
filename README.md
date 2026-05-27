@@ -34,7 +34,7 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
 
 Ruby 3.2+
 
-If you need Ruby 2.3.0-3.2.x support, use the [3.8.x branch](https://github.com/kamui/retriable/tree/3.8.x) by specifying `~> 3.8` in your Gemfile.
+If you need Ruby 2.3.0-3.1.x support, use the [3.8.x branch](https://github.com/kamui/retriable/tree/3.8.x) by specifying `~> 3.8` in your Gemfile.
 
 If you need Ruby 2.0.0-2.2.x support, use the [3.1 branch](https://github.com/kamui/retriable/tree/3.1.x) by specifying `~3.1` in your Gemfile.
 
@@ -46,7 +46,7 @@ If you need Ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com
 
 ### Ruby version
 
-Retriable 4.0 requires Ruby 3.2 or later. If you run Ruby 2.3.0-3.2.x and want to stay on the 3.x gem line, use Retriable 3.8.x by specifying `~> 3.8` in your Gemfile.
+Retriable 4.0 requires Ruby 3.2 or later. If you run Ruby 2.3.0-3.1.x, or want to stay on the 3.x gem line, use Retriable 3.8.x by specifying `~> 3.8` in your Gemfile.
 
 ### `timeout:` option removed
 
@@ -364,7 +364,7 @@ end
 
 #### Disabling a Configured Callback Per Call
 
-If `on_retry` is set in `Retriable.configure`, every call uses it by default. To opt a specific call out — for example, a critical call site that should not log on retry — pass `on_retry: false`. Passing `nil` does not work for this purpose because per-call options are merged over configured defaults; `false` is the explicit "disabled" sentinel.
+If `on_retry` is set in `Retriable.configure`, every call uses it by default. To opt a specific call out — for example, a critical call site that should not log on retry — pass `on_retry: false` or `on_retry: nil`.
 
 ```ruby
 Retriable.configure do |c|
