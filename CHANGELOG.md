@@ -1,5 +1,9 @@
 # HEAD
 
+## 3.7.0
+
+- Feature: Opt-in unbounded retries via `tries: Float::INFINITY`. Requires a finite `max_elapsed_time` as a safety bound and is incompatible with custom `intervals:`. Both invalid configurations raise `ArgumentError` from `Config#validate!`.
+
 ## 3.6.1
 
 - Fix: Validate the `on:` option before retrying. Previously, passing a non-`Exception` value such as `Object`, `Kernel`, or a plain `Module` (which appear in every `Exception`'s ancestor chain) would silently retry process-critical exceptions like `SystemExit` and `Interrupt`. The `on:` option now requires an `Exception` subclass, an array of them, or a hash whose keys are such classes and whose values are `nil`, a `Regexp`, or an array of `Regexp`s. Invalid shapes raise `ArgumentError` before the block runs.

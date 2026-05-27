@@ -84,6 +84,90 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
+    it "does not prebuild generated intervals before the first successful try" do
+      interval_for = ->(_index) { raise "interval should not be used" }
+      backoff = instance_double(Retriable::ExponentialBackoff, interval_provider: interval_for)
+      allow(Retriable::ExponentialBackoff).to receive(:new).and_call_original
+      allow(Retriable::ExponentialBackoff).to receive(:new).with(
+        hash_including(:base_interval, :multiplier, :max_interval, :rand_factor),
+      ).and_return(backoff)
+
+      described_class.retriable(tries: 1_000_000) { increment_tries }
+
+      expect(@tries).to eq(1)
+      expect(backoff).to have_received(:interval_provider)
+    end
+
+    it "supports unbounded retries until the block succeeds" do
+      described_class.retriable(tries: Float::INFINITY, max_elapsed_time: 60) do
+        increment_tries
+        raise StandardError if @tries < 5
+      end
+
+      expect(@tries).to eq(5)
+    end
+
+    it "stops unbounded retries at max_elapsed_time" do
+      start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      timeline = [
+        start_time,
+        start_time,
+        start_time,
+        start_time + 0.01,
+        start_time + 0.01,
+        start_time + 0.02,
+        start_time + 0.02,
+      ]
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC) { timeline.shift || timeline.last }
+
+      expect do
+        described_class.retriable(
+          tries: Float::INFINITY,
+          base_interval: 0.01,
+          multiplier: 1.0,
+          rand_factor: 0.0,
+          sleep_disabled: true,
+          max_elapsed_time: 0.015,
+        ) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(3)
+    end
+
+    it "raises ArgumentError when tries is Float::INFINITY without a finite max_elapsed_time" do
+      expect do
+        described_class.retriable(tries: Float::INFINITY, max_elapsed_time: nil) { increment_tries }
+      end.to raise_error(ArgumentError, /max_elapsed_time must be a finite number/)
+    end
+
+    it "raises ArgumentError when tries is Float::INFINITY with infinite max_elapsed_time" do
+      expect do
+        described_class.retriable(tries: Float::INFINITY, max_elapsed_time: Float::INFINITY) { increment_tries }
+      end.to raise_error(ArgumentError, /max_elapsed_time must be a finite number/)
+    end
+
+    it "raises ArgumentError when tries is Float::INFINITY with custom intervals" do
+      expect do
+        described_class.retriable(tries: Float::INFINITY, intervals: [0.1, 0.2], max_elapsed_time: 60) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(ArgumentError, /intervals cannot be used with tries: Float::INFINITY/)
+    end
+
+    it "raises ArgumentError when tries is Float::NAN" do
+      expect do
+        described_class.retriable(tries: Float::NAN) { increment_tries }
+      end.to raise_error(ArgumentError, /tries/)
+    end
+
+    it "raises ArgumentError when tries is negative infinity" do
+      expect do
+        described_class.retriable(tries: -Float::INFINITY) { increment_tries }
+      end.to raise_error(ArgumentError, /tries/)
+    end
+
     it "will timeout after 1 second" do
       expect { described_class.retriable(timeout: 1) { sleep(1.1) } }.to raise_error(Timeout::Error)
     end

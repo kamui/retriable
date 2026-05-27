@@ -38,6 +38,12 @@ module Retriable
       value.is_a?(Numeric) && value.to_f.finite?
     end
 
+    def unbounded_tries?(value)
+      value.is_a?(Numeric) && value.respond_to?(:infinite?) && value.infinite? == 1
+    end
+
+    module_function :unbounded_tries?
+
     # Validates an `on:` value. Acceptable shapes:
     #   - a Class that descends from Exception
     #   - an Array whose elements are Classes that descend from Exception
@@ -73,7 +79,10 @@ module Retriable
     def validate_on_hash_value(klass, pattern)
       return if pattern.nil?
       return if pattern.is_a?(Regexp)
+      # Ruby 2.3 does not support Enumerable#all?(pattern).
+      # rubocop:disable Style/PredicateWithKind
       return if pattern.is_a?(Array) && pattern.all? { |p| p.is_a?(Regexp) }
+      # rubocop:enable Style/PredicateWithKind
 
       raise ArgumentError,
             "on[#{klass}] must be nil, a Regexp, or an Array of Regexps, got #{pattern.inspect}"

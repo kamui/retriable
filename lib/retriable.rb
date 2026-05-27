@@ -13,6 +13,9 @@ module Retriable
   # break callers that use fiber-based concurrency.
   OVERRIDE_THREAD_KEY = :retriable_override
 
+  RetryPlan = Struct.new(:max_tries, :interval_for)
+  private_constant :RetryPlan
+
   module_function
 
   def configure
@@ -62,8 +65,7 @@ module Retriable
     # Config is mutable through `configure`, so validate again immediately before use.
     local_config.validate!
 
-    tries = local_config.tries
-    intervals = build_intervals(local_config, tries)
+    plan = retry_plan(local_config)
     timeout = local_config.timeout
     on = local_config.on
     retry_if = local_config.retry_if
@@ -76,10 +78,8 @@ module Retriable
     start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     elapsed_time = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time }
 
-    tries = intervals.size + 1
-
     execute_tries(
-      tries: tries, intervals: intervals, timeout: timeout,
+      max_tries: plan.max_tries, interval_for: plan.interval_for, timeout: timeout,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &block
@@ -87,38 +87,49 @@ module Retriable
   end
 
   def execute_tries( # rubocop:disable Metrics/ParameterLists
-    tries:, intervals:, timeout:, exception_list:,
+    max_tries:, interval_for:, timeout:, exception_list:,
     on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
   )
-    tries.times do |index|
-      try = index + 1
-
+    try = 0
+    loop do
+      try += 1
       begin
         return call_with_timeout(timeout, try, &block)
       rescue *exception_list => e
         raise unless retriable_exception?(e, on, exception_list, retry_if)
 
-        interval = intervals[index]
+        interval = interval_for.call(try - 1)
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
         elapsed_interval = sleep_disabled == true ? 0 : interval
-        raise unless can_retry?(try, tries, elapsed_time.call, elapsed_interval, max_elapsed_time)
+        raise unless can_retry?(try, max_tries, elapsed_time.call, elapsed_interval, max_elapsed_time)
 
         sleep interval if sleep_disabled != true
       end
     end
   end
 
-  def build_intervals(local_config, tries)
-    return local_config.intervals if local_config.intervals
+  def retry_plan(local_config)
+    return RetryPlan.new(nil, interval_provider(local_config)) if Validation.unbounded_tries?(local_config.tries)
 
+    if local_config.intervals
+      intervals = local_config.intervals
+      return RetryPlan.new(intervals.size + 1, ->(index) { intervals[index] })
+    end
+
+    max_tries = local_config.tries
+    provider = interval_provider(local_config)
+
+    RetryPlan.new(max_tries, ->(index) { index < max_tries - 1 ? provider.call(index) : nil })
+  end
+
+  def interval_provider(local_config)
     ExponentialBackoff.new(
-      tries: tries - 1,
       base_interval: local_config.base_interval,
       multiplier: local_config.multiplier,
       max_interval: local_config.max_interval,
       rand_factor: local_config.rand_factor,
-    ).intervals
+    ).interval_provider
   end
 
   def call_with_timeout(timeout, try)
@@ -133,8 +144,8 @@ module Retriable
     on_retry.call(exception, try, elapsed_time, interval)
   end
 
-  def can_retry?(try, tries, elapsed_time, interval, max_elapsed_time)
-    return false unless try < tries
+  def can_retry?(try, max_tries, elapsed_time, interval, max_elapsed_time)
+    return false if max_tries && try >= max_tries
     return true if max_elapsed_time.nil?
 
     (elapsed_time + interval) <= max_elapsed_time
@@ -231,7 +242,8 @@ module Retriable
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,
-    :build_intervals,
+    :retry_plan,
+    :interval_provider,
     :call_with_timeout,
     :call_on_retry,
     :can_retry?,

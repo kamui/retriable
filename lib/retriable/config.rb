@@ -53,20 +53,43 @@ module Retriable
     end
 
     def validate!
-      validate_optional_non_negative_number(:max_elapsed_time, max_elapsed_time)
       validate_optional_non_negative_number(:timeout, timeout)
       validate_on(on)
       validate_intervals
-      return if intervals
+      if unbounded_tries?(tries)
+        validate_unbounded_tries
+      else
+        validate_optional_non_negative_number(:max_elapsed_time, max_elapsed_time)
+        return if intervals
 
-      validate_positive_integer(:tries, tries)
+        validate_positive_integer(:tries, tries)
+      end
+
+      validate_backoff_options
+    end
+
+    private
+
+    def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
       validate_rand_factor
     end
 
-    private
+    def validate_unbounded_tries
+      if intervals
+        raise ArgumentError,
+              "intervals cannot be used with tries: Float::INFINITY"
+      end
+
+      unless finite_number?(max_elapsed_time)
+        raise ArgumentError,
+              "max_elapsed_time must be a finite number when tries is Float::INFINITY"
+      end
+
+      validate_non_negative_number(:max_elapsed_time, max_elapsed_time)
+    end
 
     def validate_intervals
       return if intervals.nil?
