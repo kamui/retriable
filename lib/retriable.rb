@@ -101,7 +101,7 @@ module Retriable
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
         elapsed_interval = sleep_disabled == true ? 0 : interval
-        # Re-read elapsed_time so time spent inside on_retry counts toward max_elapsed_time.
+        # Snapshot elapsed_time once so the stop check and on_give_up see the same value.
         current_elapsed_time = elapsed_time.call
         stop_reason = retry_stop_reason(try, max_tries, current_elapsed_time, elapsed_interval, max_elapsed_time)
         if stop_reason
