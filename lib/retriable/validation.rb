@@ -46,7 +46,7 @@ module Retriable
 
     # Validates an `on:` value. Acceptable shapes:
     #   - a Class that descends from Exception
-    #   - an Array whose elements are Classes that descend from Exception
+    #   - an Array or Set whose elements are Classes that descend from Exception
     #   - a Hash whose keys are such Classes and whose values are nil,
     #     a Regexp, or an Array of Regexps
     #
@@ -63,7 +63,7 @@ module Retriable
           validate_on_class(klass)
           validate_on_hash_value(klass, pattern)
         end
-      in Array
+      in Array | Set
         value.each { |klass| validate_on_class(klass) }
       else
         validate_on_class(value)

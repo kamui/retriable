@@ -102,6 +102,15 @@ describe Retriable::Config do
       expect { described_class.new(on: [StandardError, RuntimeError]) }.not_to raise_error
     end
 
+    it "accepts a Set of Exception subclasses" do
+      expect { described_class.new(on: Set[StandardError, RuntimeError]) }.not_to raise_error
+    end
+
+    it "rejects a Set containing a non-Exception class" do
+      expect { described_class.new(on: Set[StandardError, Kernel]) }
+        .to raise_error(ArgumentError, /on must be an Exception class/)
+    end
+
     it "accepts a hash with nil pattern values" do
       expect { described_class.new(on: { StandardError => nil }) }.not_to raise_error
     end

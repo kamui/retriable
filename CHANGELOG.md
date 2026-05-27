@@ -12,6 +12,7 @@
 ### Features
 
 - Add `on_give_up` callback that runs when Retriable stops retrying after a rescued retriable exception. Receives `(exception, try, elapsed_time, next_interval, reason)`, where `reason` is `:tries_exhausted` or `:max_elapsed_time`. Does not fire for non-retriable exceptions or `retry_if` rejections. Pass `on_give_up: false` to suppress a configured handler for a single call.
+- Accept a `Set` of `Exception` classes as the `on:` option, in addition to a single class, an `Array`, or a `Hash`.
 
 ### Internal
 

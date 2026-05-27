@@ -160,7 +160,7 @@ Timing options are validated before retrying. `tries` must be a positive integer
 **`:on`** Can take the form:
 
 - An `Exception` class (retry every exception of this type, including subclasses)
-- An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
+- An `Array` or `Set` of `Exception` classes (retry any exception of one of these types, including subclasses)
 - A `Hash` where the keys are `Exception` classes and the values are one of:
   - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
