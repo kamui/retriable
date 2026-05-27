@@ -112,11 +112,11 @@ module Retriable
     end
 
     def deprecated_warning_category_supported?
-      Kernel.method(:warn).parameters.any? { |type, name| type == :key && name == :category }
+      defined?(Warning) && Kernel.method(:warn).parameters.any? { |type, name| type == :key && name == :category }
     end
 
     def deprecated_warnings_enabled?
-      return true unless Warning.respond_to?(:[])
+      return true unless defined?(Warning) && Warning.respond_to?(:[])
 
       Warning[:deprecated]
     end
