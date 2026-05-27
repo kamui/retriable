@@ -11,25 +11,11 @@ module Retriable
       sleep_disabled
       max_elapsed_time
       intervals
-      timeout
       on
       retry_if
       on_retry
       contexts
     ]).freeze
-
-    TIMEOUT_DEPRECATION_MESSAGE = "NOTE: Retriable's `timeout:` option is deprecated and will be removed in " \
-                                  "Retriable 4.0. It is a thin wrapper around `Timeout.timeout`, which " \
-                                  "can interrupt execution at arbitrary lines and corrupt internal state " \
-                                  "in libraries that are not interrupt-safe. Prefer your library's native " \
-                                  "timeout, or wrap your block in `Timeout.timeout(...)` yourself."
-    private_constant :TIMEOUT_DEPRECATION_MESSAGE
-
-    @timeout_deprecation_warned = false
-
-    class << self
-      attr_accessor :timeout_deprecation_warned
-    end
 
     attr_accessor(*ATTRIBUTES)
 
@@ -44,7 +30,6 @@ module Retriable
       @sleep_disabled   = false
       @max_elapsed_time = 900 # 15 min
       @intervals        = nil
-      @timeout          = nil
       @on               = [StandardError]
       @retry_if         = nil
       @on_retry         = nil
@@ -60,14 +45,10 @@ module Retriable
     end
 
     def to_h
-      ATTRIBUTES.each_with_object({}) do |key, hash|
-        hash[key] = public_send(key)
-      end
+      ATTRIBUTES.to_h { |key| [key, public_send(key)] }
     end
 
     def validate!
-      warn_timeout_deprecation
-      validate_optional_non_negative_number(:timeout, timeout)
       validate_on(on)
       validate_intervals
       if unbounded_tries?(tries)
@@ -83,43 +64,6 @@ module Retriable
     end
 
     private
-
-    # Emits the `timeout:` deprecation notice at most once per process.
-    #
-    # On Rubies that support `Kernel#warn(category: :deprecated)` (2.7+), the
-    # notice is emitted under the `:deprecated` category, so callers can use the
-    # standard controls (`Warning[:deprecated] = false`, `-W:no-deprecated`,
-    # `Warning.warn` override) to silence it. On older Rubies the kwarg is not
-    # available and we fall back to plain `Kernel.warn`.
-    #
-    # When the warning is suppressed (either because `Warning[:deprecated]` is
-    # false or the runtime has otherwise muted the category), we deliberately
-    # leave the once-per-process flag unset so a future call with the category
-    # re-enabled still surfaces the notice.
-    def warn_timeout_deprecation
-      return if timeout.nil?
-      return if self.class.timeout_deprecation_warned
-
-      category_supported = deprecated_warning_category_supported?
-      return if category_supported && !deprecated_warnings_enabled?
-
-      self.class.timeout_deprecation_warned = true
-      if category_supported
-        Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE, category: :deprecated)
-      else
-        Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE)
-      end
-    end
-
-    def deprecated_warning_category_supported?
-      defined?(Warning) && Kernel.method(:warn).parameters.any? { |type, name| type == :key && name == :category }
-    end
-
-    def deprecated_warnings_enabled?
-      return true unless defined?(Warning) && Warning.respond_to?(:[])
-
-      Warning[:deprecated]
-    end
 
     def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)

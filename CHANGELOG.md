@@ -1,5 +1,14 @@
 # HEAD
 
+## 4.0.0
+
+**This is a major release with breaking changes. Please read carefully before upgrading.**
+
+### Breaking changes
+
+- Removed `timeout:` option. The `timeout:` option has been removed from `Retriable.retriable`, `Retriable.configure`, and `Retriable.with_override`. It was a thin wrapper around Ruby's `Timeout.timeout`, which has well-documented safety issues: it interrupts execution at arbitrary lines and can corrupt internal state in libraries that are not interrupt-safe (mutexes, file handles, network sockets, allocator state). This was first raised against this gem in [#96](https://github.com/kamui/retriable/issues/96) in 2021; Retriable 3.8.0 deprecated the option, and 4.0 removes the footgun entirely. As a side effect, the historical bug where Retriable's own internal `Timeout::Error` was silently retried by default is no longer reachable, since Retriable no longer raises a timeout itself. User-raised `Timeout::Error` (for example, from a `Timeout.timeout` block you write inside the retried block) is still matched by the default `on: [StandardError]` because `Timeout::Error < RuntimeError < StandardError`. Passing `timeout:` to `Retriable.retriable` or `Retriable.with_override` now raises `ArgumentError`; setting `config.timeout` in `Retriable.configure` now raises `NoMethodError` because the configuration attribute has been removed. See the [4.0 migration section in the README](README.md#migration-from-3x-to-40) for replacement patterns.
+- Minimum Ruby version is now 3.0. Support for Ruby 2.x has been dropped. If you need Retriable on Ruby 2.x, stay on the 3.x line.
+
 ## 3.8.0
 
 ### Deprecations

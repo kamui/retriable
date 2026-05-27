@@ -1,13 +1,13 @@
 # Retriable
 
 ![Build Status](https://github.com/kamui/retriable/actions/workflows/main.yml/badge.svg)
-[![Reviewed by Hound](https://img.shields.io/badge/Reviewed_by-Hound-8E64B0.svg)](https://houndci.com)
 
 Retriable is a simple DSL to retry failed code blocks with randomized [exponential backoff](http://en.wikipedia.org/wiki/Exponential_backoff) time intervals. This is especially useful when interacting external APIs, remote services, or file system calls.
 
 ## Table of Contents
 
 - [Requirements](#requirements)
+- [Migration from 3.x to 4.0](#migration-from-3x-to-40)
 - [Installation](#installation)
 - [Usage](#usage)
   - [Defaults](#defaults)
@@ -17,7 +17,6 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
   - [Configuration](#configuration)
   - [Override](#override)
   - [Example Usage](#example-usage)
-    - [Migrating off `timeout:`](#migrating-off-timeout)
   - [Custom Interval Array](#custom-interval-array)
   - [Turn off Exponential Backoff](#turn-off-exponential-backoff)
   - [Callbacks](#callbacks)
@@ -31,13 +30,47 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
 
 ## Requirements
 
-Ruby 2.3.0+
+Ruby 3.0+
+
+If you need ruby 2.3.0-2.7.x support, use the [3.8.x branch](https://github.com/kamui/retriable/tree/3.8.x) by specifying `~> 3.8` in your Gemfile.
 
 If you need ruby 2.0.0-2.2.x support, use the [3.1 branch](https://github.com/kamui/retriable/tree/3.1.x) by specifying `~3.1` in your Gemfile.
 
 If you need ruby 1.9.3 support, use the [2.x branch](https://github.com/kamui/retriable/tree/2.x) by specifying `~2.1` in your Gemfile.
 
 If you need ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x) by specifying `~1.4` in your Gemfile.
+
+## Migration from 3.x to 4.0
+
+### Ruby version
+
+Retriable 4.0 requires Ruby 3.0 or later. If you are on Ruby 2.x, stay on Retriable 3.x.
+
+### `timeout:` option removed
+
+The `timeout:` option was deprecated in Retriable 3.8.0 and has been removed in Retriable 4.0. It was a thin wrapper around `Timeout.timeout`, which has well-documented safety issues: it interrupts execution at arbitrary lines and can corrupt internal state in libraries that are not interrupt-safe. See [issue #96](https://github.com/kamui/retriable/issues/96) for the original report of this problem.
+
+If you previously used `Retriable.retriable(timeout: 5) { ... }`, you have two recommended alternatives:
+
+1. **Use your library's native timeout** (preferred). For example, configure `Net::HTTP#read_timeout`, Faraday's `request.timeout`, or your database client's statement timeout. Library-native timeouts do not have the safety issues of `Timeout.timeout`.
+
+2. **Manage the timeout yourself inside the block** if no native option exists:
+
+   ```ruby
+   require "timeout"
+
+   Retriable.retriable do
+     Timeout.timeout(5) do
+       # code here...
+     end
+   end
+   ```
+
+   **Note:** This still uses `Timeout.timeout`, which has the same safety issues that motivated removing the option — interruption can happen at any line, including inside non-interrupt-safe library code (mutexes, file handles, network sockets, allocator state). Prefer option 1 wherever possible. For background, see [why Ruby's `Timeout` is dangerous](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/), [Headius on Thread#raise and Timeout](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html), [In Ruby, don't use `Timeout`](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001), and [Timeout: Ruby's most dangerous API](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/).
+
+   Like the removed `timeout:` option, `Timeout.timeout(5)` inside the block is per-try — each retry gets a fresh 5-second budget. For an overall cap across all retries, use `max_elapsed_time:` instead.
+
+Passing `timeout:` to `Retriable.retriable` or `Retriable.with_override` now raises `ArgumentError`. The `timeout` configuration attribute has also been removed, so `Retriable.configure { |c| c.timeout = 5 }` now raises `NoMethodError`.
 
 ## Installation
 
@@ -56,7 +89,7 @@ require 'retriable'
 In your Gemfile:
 
 ```ruby
-gem 'retriable', '~> 3.8'
+gem 'retriable', '~> 4.0'
 ```
 
 ## Usage
@@ -116,9 +149,8 @@ Here are the available options, in some vague order of relevance to most common 
 | **`multiplier`**       | `1.5`             | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.                                                                                                                                                                                     |
 | **`rand_factor`**      | `0.5`             | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])`                                                                                                 |
 | **`intervals`**        | `nil`             | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array).                                                                                                                                                                                                |
-| **`timeout`**          | `nil`             | Deprecated in 3.8.0 and removed in 4.0. Number of seconds to allow the code block to run before raising a `Timeout::Error` inside each try. `nil` means the code block can run forever without raising error. Non-nil values emit a deprecation warning. See [Migrating off `timeout:`](#migrating-off-timeout). |
 
-Timing options are validated before retrying. `tries` must be a positive integer when Retriable generates intervals, or `Float::INFINITY` for unbounded retries. `base_interval`, `max_interval`, `multiplier`, `max_elapsed_time`, and `timeout` must be non-negative numbers, with `max_elapsed_time` and `timeout` also accepting `nil`. `rand_factor` must be a number from `0` through `1`. If provided, `intervals` must be an array of non-negative numbers; because it replaces generated intervals, it also overrides `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` validation. `intervals` cannot be combined with `tries: Float::INFINITY`.
+Timing options are validated before retrying. `tries` must be a positive integer when Retriable generates intervals, or `Float::INFINITY` for unbounded retries. `base_interval`, `max_interval`, `multiplier`, and `max_elapsed_time` must be non-negative numbers, with `max_elapsed_time` also accepting `nil`. `rand_factor` must be a number from `0` through `1`. If provided, `intervals` must be an array of non-negative numbers; because it replaces generated intervals, it also overrides `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` validation. `intervals` cannot be combined with `tries: Float::INFINITY`.
 
 #### Configuring Which Options to Retry With :on
 
@@ -219,6 +251,8 @@ see [docs/testing.md](docs/testing.md).
 This example will only retry on a `Timeout::Error`, retry 3 times and sleep for a full second before each try.
 
 ```ruby
+require "timeout"
+
 Retriable.retriable(on: Timeout::Error, tries: 3, base_interval: 1) do
   # code here...
 end
@@ -227,6 +261,8 @@ end
 You can also specify multiple errors to retry on by passing an array of exceptions.
 
 ```ruby
+require "timeout"
+
 Retriable.retriable(on: [Timeout::Error, Errno::ECONNRESET]) do
   # code here...
 end
@@ -243,28 +279,6 @@ Retriable.retriable(on: {
   # code here...
 end
 ```
-
-#### Migrating off `timeout:`
-
-The `timeout:` option is deprecated in Retriable 3.8.0 and will be removed in Retriable 4.0. It still works in 3.x, but any non-nil value supplied through `Retriable.configure`, `Retriable.retriable(...)`, or `Retriable.with_override(...)` emits a deprecation warning. In Retriable 4.0, passing `timeout:` will raise `ArgumentError` because it will no longer be a valid option.
-
-`timeout:` is deprecated because it is a thin wrapper around `Timeout.timeout`, which may be [unsafe](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/) [and](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html) [even](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001) [dangerous](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/). It can interrupt the retried block at any line, including inside libraries that are not interrupt-safe.
-
-Prefer timeout settings from the library you are calling, such as `Net::HTTP#read_timeout`, `Net::HTTP#open_timeout`, or Faraday's request timeout options. If you still need `Timeout.timeout`, wrap the retried block explicitly so the risk is visible at the call site:
-
-```ruby
-require "timeout"
-
-Retriable.retriable(on: Timeout::Error, tries: 3) do
-  Timeout.timeout(5) do
-    # code here...
-  end
-end
-```
-
-Like the deprecated `timeout:` option, `Timeout.timeout(5)` inside the block is per-try — each retry gets a fresh 5-second budget. If you want an overall cap across all retries instead, prefer `max_elapsed_time:`.
-
-The deprecation warning is emitted under the `:deprecated` warning category and at most once per process. To silence it (for example, in tests), use the standard Ruby controls — set `Warning[:deprecated] = false`, run with `ruby -W:no-deprecated`, or override `Warning.warn` to filter the message.
 
 If you need millisecond units of time for the sleep interval:
 

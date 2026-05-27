@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "timeout"
 require_relative "retriable/config"
 require_relative "retriable/exponential_backoff"
 require_relative "retriable/version"
@@ -66,7 +65,6 @@ module Retriable
     local_config.validate!
 
     plan = retry_plan(local_config)
-    timeout = local_config.timeout
     on = local_config.on
     retry_if = local_config.retry_if
     on_retry = local_config.on_retry
@@ -79,7 +77,7 @@ module Retriable
     elapsed_time = -> { Process.clock_gettime(Process::CLOCK_MONOTONIC) - start_time }
 
     execute_tries(
-      max_tries: plan.max_tries, interval_for: plan.interval_for, timeout: timeout,
+      max_tries: plan.max_tries, interval_for: plan.interval_for,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
       elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &block
@@ -87,14 +85,14 @@ module Retriable
   end
 
   def execute_tries( # rubocop:disable Metrics/ParameterLists
-    max_tries:, interval_for:, timeout:, exception_list:,
-    on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:, &block
+    max_tries:, interval_for:, exception_list:,
+    on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:
   )
     try = 0
     loop do
       try += 1
       begin
-        return call_with_timeout(timeout, try, &block)
+        return yield(try)
       rescue *exception_list => e
         raise unless retriable_exception?(e, on, exception_list, retry_if)
 
@@ -130,12 +128,6 @@ module Retriable
       max_interval: local_config.max_interval,
       rand_factor: local_config.rand_factor,
     ).interval_provider
-  end
-
-  def call_with_timeout(timeout, try)
-    return Timeout.timeout(timeout) { yield(try) } if timeout
-
-    yield(try)
   end
 
   def call_on_retry(on_retry, exception, try, elapsed_time, interval)
@@ -244,7 +236,6 @@ module Retriable
     :execute_tries,
     :retry_plan,
     :interval_provider,
-    :call_with_timeout,
     :call_on_retry,
     :can_retry?,
     :retriable_exception?,
