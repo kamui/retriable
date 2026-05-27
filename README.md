@@ -18,8 +18,10 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
   - [Override](#override)
   - [Example Usage](#example-usage)
   - [Custom Interval Array](#custom-interval-array)
+  - [Unbounded Retries (Opt-in)](#unbounded-retries-opt-in)
   - [Turn off Exponential Backoff](#turn-off-exponential-backoff)
   - [Callbacks](#callbacks)
+    - [Disabling a Configured Callback Per Call](#disabling-a-configured-callback-per-call)
   - [Ensure/Else](#ensureelse)
 - [Contexts](#contexts)
 - [Kernel Extension](#kernel-extension)
@@ -136,19 +138,20 @@ The default interval table with 10 tries looks like this (in seconds, rounded to
 
 Here are the available options, in some vague order of relevance to most common use patterns:
 
-| Option                 | Default           | Definition                                                                                                                                                                                                                                                                                                       |
-| ---------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt). Pass `Float::INFINITY` to keep retrying until success or until `max_elapsed_time` is reached.                                                                                                                                  |
-| **`on`**               | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on).                                                                                                                                                                                                                           |
-| **`retry_if`**         | `nil`             | Callable (for example a `Proc` or lambda) that receives the rescued exception and returns true/false to decide whether to retry. [Read more](#advanced-retry-matching-with-retry_if).                                                                                                                            |
-| **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. Pass `false` to disable a callback set in `#configure` for a single call. [Read more](#callbacks).                                                                                                                                                                     |
-| **`sleep_disabled`**   | `false`           | When true, disable exponential backoff and attempt retries immediately.                                                                                                                                                                                                                                          |
-| **`base_interval`**    | `0.5`             | The initial interval in seconds between tries.                                                                                                                                                                                                                                                                   |
-| **`max_elapsed_time`** | `900` (15 min)    | The maximum amount of total time in seconds that code is allowed to keep being retried. Set to `nil` to disable the time limit and retry based solely on `tries`.                                                                                                                                                |
-| **`max_interval`**     | `60`              | The maximum interval in seconds that any individual retry can reach.                                                                                                                                                                                                                                             |
-| **`multiplier`**       | `1.5`             | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.                                                                                                                                                                                     |
-| **`rand_factor`**      | `0.5`             | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])`                                                                                                 |
-| **`intervals`**        | `nil`             | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array).                                                                                                                                                                                                |
+| Option                 | Default           | Definition                                                                                                                                                                                                                                                        |
+| ---------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`tries`**            | `3`               | Number of attempts to make at running your code block (includes initial attempt). Pass `Float::INFINITY` to keep retrying until success or until `max_elapsed_time` is reached.                                                                                   |
+| **`on`**               | `[StandardError]` | Type of exceptions to retry. [Read more](#configuring-which-options-to-retry-with-on).                                                                                                                                                                            |
+| **`retry_if`**         | `nil`             | Callable (for example a `Proc` or lambda) that receives the rescued exception and returns true/false to decide whether to retry. [Read more](#advanced-retry-matching-with-retry_if).                                                                             |
+| **`on_retry`**         | `nil`             | `Proc` to call after each try is rescued. Pass `false` to disable a callback set in `#configure` for a single call. [Read more](#callbacks).                                                                                                                      |
+| **`on_give_up`**       | `nil`             | `Proc` to call when Retriable stops retrying after a rescued retriable exception. [Read more](#callbacks).                                                                                                                                                        |
+| **`sleep_disabled`**   | `false`           | When true, disable exponential backoff and attempt retries immediately.                                                                                                                                                                                           |
+| **`base_interval`**    | `0.5`             | The initial interval in seconds between tries.                                                                                                                                                                                                                    |
+| **`max_elapsed_time`** | `900` (15 min)    | The maximum amount of total time in seconds that code is allowed to keep being retried. Set to `nil` to disable the time limit and retry based solely on `tries`.                                                                                                 |
+| **`max_interval`**     | `60`              | The maximum interval in seconds that any individual retry can reach.                                                                                                                                                                                              |
+| **`multiplier`**       | `1.5`             | Each successive interval grows by this factor. A multipler of 1.5 means the next interval will be 1.5x the current interval.                                                                                                                                      |
+| **`rand_factor`**      | `0.5`             | The percentage to randomize the next retry interval time. The next interval calculation is `randomized_interval = retry_interval * (random value in range [1 - randomization_factor, 1 + randomization_factor])`                                                  |
+| **`intervals`**        | `nil`             | Skip generated intervals and provide your own array of intervals in seconds. [Read more](#custom-interval-array).                                                                                                                                                 |
 
 Timing options are validated before retrying. `tries` must be a positive integer when Retriable generates intervals, or `Float::INFINITY` for unbounded retries. `base_interval`, `max_interval`, `multiplier`, and `max_elapsed_time` must be non-negative numbers, with `max_elapsed_time` also accepting `nil`. `rand_factor` must be a number from `0` through `1`. If provided, `intervals` must be an array of non-negative numbers; because it replaces generated intervals, it also overrides `tries`, `base_interval`, `max_interval`, `rand_factor`, and `multiplier` validation. `intervals` cannot be combined with `tries: Float::INFINITY`.
 
@@ -379,6 +382,28 @@ Retriable.retriable(on_retry: false) do
 end
 ```
 
+You can also use `:on_give_up` to run a callback when Retriable stops retrying after a rescued retriable exception. This callback receives the `exception`, the `try_number`, the `elapsed_time` for all tries so far, the `next_interval`, and the `reason` Retriable is giving up. The `reason` is either `:tries_exhausted` or `:max_elapsed_time`.
+
+```ruby
+do_this_when_retries_stop = Proc.new do |exception, try, elapsed_time, next_interval, reason|
+  log "#{exception.class}: '#{exception.message}' - gave up after #{try} tries because #{reason}."
+end
+
+Retriable.retriable(on_give_up: do_this_when_retries_stop) do
+  # code here...
+end
+```
+
+When the reason is `:tries_exhausted`, `next_interval` is `nil` because there is no next retry. When the reason is `:max_elapsed_time`, `next_interval` is the interval that would have been slept before the next try. This reason means the next retry would exceed `max_elapsed_time`, not necessarily that the elapsed time has already exceeded it.
+
+If both `:on_retry` and `:on_give_up` are configured, `:on_retry` still runs first for the final rescued retriable exception. This preserves the existing behavior that `:on_retry` runs whenever Retriable rescues an exception that matches its retry rules.
+
+If you configure a default `:on_give_up` callback but want to suppress it for a specific call, pass `on_give_up: false` (or `nil`). Both are treated as "no callback".
+
+`:on_give_up` is invoked only when Retriable rescued an exception that matched the retry rules and then decided to stop. It does **not** fire when the block raises an exception that is not in `:on`, nor when `:retry_if` returns false. Both of those cases are immediate re-raises, not retry exhaustion, and should be handled with normal Ruby `rescue` blocks around the `Retriable.retriable` call.
+
+If `:on_give_up` itself raises, that exception propagates to the caller and replaces the original retried exception. Keep the handler defensive (rescue inside it) if you need the original exception to surface.
+
 ### Ensure/Else
 
 What if I want to execute a code block at the end, whether or not an exception was rescued ([ensure](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-ensure))? Or what if I want to execute a code block if no exception is raised ([else](http://ruby-doc.org/docs/keywords/1.9/Object.html#method-i-else))? Instead of providing more callbacks, I recommend you just wrap retriable in a begin/retry/else/ensure block:
@@ -406,7 +431,8 @@ Retriable.configure do |c|
   c.contexts[:aws] = {
     tries: 3,
     base_interval: 5,
-    on_retry: Proc.new { puts 'Curse you, AWS!' }
+    on_retry: Proc.new { puts 'Curse you, AWS!' },
+    on_give_up: Proc.new { |_e, _try, _elapsed, _interval, reason| puts "Gave up on AWS: #{reason}" }
   }
   c.contexts[:mysql] = {
     tries: 10,
