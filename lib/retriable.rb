@@ -110,27 +110,20 @@ module Retriable
   end
 
   def retry_plan(local_config)
-    if Validation.unbounded_tries?(local_config.tries)
-      return RetryPlan.new(nil, unbounded_interval_provider(local_config))
-    end
+    return RetryPlan.new(nil, interval_provider(local_config)) if Validation.unbounded_tries?(local_config.tries)
 
     if local_config.intervals
       intervals = local_config.intervals
       return RetryPlan.new(intervals.size + 1, ->(index) { intervals[index] })
     end
 
-    intervals = ExponentialBackoff.new(
-      tries: local_config.tries - 1,
-      base_interval: local_config.base_interval,
-      multiplier: local_config.multiplier,
-      max_interval: local_config.max_interval,
-      rand_factor: local_config.rand_factor,
-    ).intervals
+    max_tries = local_config.tries
+    provider = interval_provider(local_config)
 
-    RetryPlan.new(intervals.size + 1, ->(index) { intervals[index] })
+    RetryPlan.new(max_tries, ->(index) { index < max_tries - 1 ? provider.call(index) : nil })
   end
 
-  def unbounded_interval_provider(local_config)
+  def interval_provider(local_config)
     ExponentialBackoff.new(
       base_interval: local_config.base_interval,
       multiplier: local_config.multiplier,
@@ -250,7 +243,7 @@ module Retriable
     :validate_context_override_options,
     :execute_tries,
     :retry_plan,
-    :unbounded_interval_provider,
+    :interval_provider,
     :call_with_timeout,
     :call_on_retry,
     :can_retry?,

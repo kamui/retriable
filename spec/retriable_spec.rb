@@ -84,6 +84,20 @@ describe Retriable do
       expect(@tries).to eq(10)
     end
 
+    it "does not prebuild generated intervals before the first successful try" do
+      interval_for = ->(_index) { raise "interval should not be used" }
+      backoff = instance_double(Retriable::ExponentialBackoff, interval_provider: interval_for)
+      allow(Retriable::ExponentialBackoff).to receive(:new).and_call_original
+      allow(Retriable::ExponentialBackoff).to receive(:new).with(
+        hash_including(:base_interval, :multiplier, :max_interval, :rand_factor),
+      ).and_return(backoff)
+
+      described_class.retriable(tries: 1_000_000) { increment_tries }
+
+      expect(@tries).to eq(1)
+      expect(backoff).to have_received(:interval_provider)
+    end
+
     it "supports unbounded retries until the block succeeds" do
       described_class.retriable(tries: Float::INFINITY, max_elapsed_time: 60) do
         increment_tries
