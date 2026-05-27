@@ -42,6 +42,17 @@ module Retriable
       intervals.map { |i| randomize(i) }
     end
 
+    def interval_provider
+      raw_interval = base_interval
+
+      lambda do |_iteration|
+        interval = [raw_interval, max_interval].min
+        raw_interval = next_raw_interval(raw_interval)
+
+        rand_factor.zero? ? interval : randomize(interval)
+      end
+    end
+
     private
 
     def validate!
@@ -50,6 +61,12 @@ module Retriable
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
       validate_rand_factor
+    end
+
+    def next_raw_interval(raw_interval)
+      return max_interval if multiplier >= 1 && raw_interval >= max_interval
+
+      raw_interval * multiplier
     end
 
     def randomize(interval)

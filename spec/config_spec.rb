@@ -66,6 +66,26 @@ describe Retriable::Config do
     expect { described_class.new(intervals: "1") }.to raise_error(ArgumentError, /intervals must be an Array/)
   end
 
+  it "requires a finite max_elapsed_time when tries is Float::INFINITY" do
+    expect { described_class.new(tries: Float::INFINITY, max_elapsed_time: nil) }
+      .to raise_error(ArgumentError, /max_elapsed_time must be a finite number/)
+  end
+
+  it "rejects intervals combined with tries: Float::INFINITY" do
+    expect do
+      described_class.new(
+        tries: Float::INFINITY,
+        max_elapsed_time: 60,
+        intervals: [0.1, 0.2],
+      )
+    end.to raise_error(ArgumentError, /intervals cannot be used with tries: Float::INFINITY/)
+  end
+
+  it "accepts tries: Float::INFINITY with a finite max_elapsed_time" do
+    expect { described_class.new(tries: Float::INFINITY, max_elapsed_time: 60) }
+      .not_to raise_error
+  end
+
   context "on: option validation" do
     it "accepts a single Exception subclass" do
       expect { described_class.new(on: StandardError) }.not_to raise_error
