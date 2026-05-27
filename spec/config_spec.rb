@@ -62,6 +62,35 @@ describe Retriable::Config do
     expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
   end
 
+  context "timeout deprecation" do
+    it "warns when timeout is configured" do
+      expect do
+        described_class.new(timeout: 5)
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+    end
+
+    it "warns when timeout is set before validation" do
+      config = described_class.new
+      config.timeout = 5
+
+      expect do
+        config.validate!
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+    end
+
+    it "does not warn when timeout is nil" do
+      expect do
+        described_class.new(timeout: nil)
+      end.not_to output.to_stderr
+    end
+
+    it "does not warn when timeout is omitted" do
+      expect do
+        described_class.new
+      end.not_to output.to_stderr
+    end
+  end
+
   it "raises errors when intervals is not an array" do
     expect { described_class.new(intervals: "1") }.to raise_error(ArgumentError, /intervals must be an Array/)
   end
