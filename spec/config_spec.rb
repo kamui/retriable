@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "stringio"
+
 describe Retriable::Config do
   let(:default_config) { described_class.new }
 
@@ -59,7 +61,97 @@ describe Retriable::Config do
 
   it "raises errors on invalid timing configuration" do
     expect { described_class.new(rand_factor: 1.1) }.to raise_error(ArgumentError, /rand_factor/)
-    expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
+    expect do
+      expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
+    end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+  end
+
+  context "timeout deprecation" do
+    it "warns when timeout is configured" do
+      expect do
+        described_class.new(timeout: 5)
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+    end
+
+    it "warns when timeout is set before validation" do
+      config = described_class.new
+      config.timeout = 5
+
+      expect do
+        config.validate!
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+    end
+
+    it "does not warn when timeout is nil" do
+      expect do
+        described_class.new(timeout: nil)
+      end.not_to output.to_stderr
+    end
+
+    it "does not warn when timeout is omitted" do
+      expect do
+        described_class.new
+      end.not_to output.to_stderr
+    end
+
+    it "warns at most once per process" do
+      original_stderr = $stderr
+      stderr = StringIO.new
+      begin
+        $stderr = stderr
+
+        described_class.new(timeout: 5)
+        described_class.new(timeout: 5)
+
+        config = described_class.new
+        config.timeout = 5
+        config.validate!
+      ensure
+        $stderr = original_stderr
+      end
+
+      expect(stderr.string.scan("timeout:` option is deprecated").size).to eq(1)
+    end
+
+    it "emits the warning under the :deprecated category when supported", if: WARN_CATEGORY_SUPPORTED do
+      captured = []
+      allow(Warning).to receive(:warn) do |message, category: nil|
+        captured << [message, category]
+      end
+
+      described_class.new(timeout: 5)
+
+      expect(captured.size).to eq(1)
+      message, category = captured.first
+      expect(message).to match(/timeout.*deprecated.*Retriable 4\.0/i)
+      expect(category).to eq(:deprecated)
+    end
+
+    it "is silenced by Warning[:deprecated] = false", if: WARN_CATEGORY_SUPPORTED do
+      original = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
+        expect do
+          described_class.new(timeout: 5)
+        end.not_to output.to_stderr
+      ensure
+        Warning[:deprecated] = original
+      end
+    end
+
+    it "remains armed when silenced via Warning[:deprecated]", if: WARN_CATEGORY_SUPPORTED do
+      original = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = false
+        described_class.new(timeout: 5)
+      ensure
+        Warning[:deprecated] = original
+      end
+
+      expect do
+        described_class.new(timeout: 5)
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+    end
   end
 
   it "raises errors when intervals is not an array" do
