@@ -14,6 +14,10 @@ jobs:
   ci:
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
+    # Ruby 4.0 is still in preview. Treat its results as informational so a
+    # preview-only regression doesn't block merges. Drop this gate (or update
+    # the version literal) once Ruby 4.0 is released and we treat it as
+    # required.
     continue-on-error: ${{ matrix.ruby == '4.0' }}
     strategy:
       matrix:
