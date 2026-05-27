@@ -10,7 +10,8 @@ group :test do
 end
 
 group :development do
-  gem "rubocop"
+  gem "listen", "~> 3.1"
+  gem "rubocop", "~> 1.86"
 end
 
 group :development, :test do

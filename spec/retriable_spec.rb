@@ -49,6 +49,28 @@ describe Retriable do
 
       expect(received_reason).to eq(:tries_exhausted)
     end
+
+    # These two specs lock in the anonymous block forwarding (`&`) semantics
+    # across both delegation layers: Kernel#retriable_with_context ->
+    # Retriable.with_context. If the `&` is dropped at either layer, the
+    # block is not forwarded and the inner `block_given?` check at
+    # lib/retriable.rb:51 short-circuits, causing the block to never run.
+    it "forwards a block through Kernel#retriable_with_context" do
+      require_relative "../lib/retriable/core_ext/kernel"
+      Retriable.configure { |c| c.contexts[:sql] = { tries: 1 } }
+
+      retriable_with_context(:sql) { increment_tries }
+
+      expect(@tries).to eq(1)
+    end
+
+    it "returns nil when Kernel#retriable_with_context is called without a block" do
+      require_relative "../lib/retriable/core_ext/kernel"
+      Retriable.configure { |c| c.contexts[:sql] = { tries: 1 } }
+
+      expect(retriable_with_context(:sql)).to be_nil
+      expect(@tries).to eq(0)
+    end
   end
 
   context "#retriable" do
@@ -432,6 +454,19 @@ describe Retriable do
     context "with an array :on parameter" do
       it "handles both kinds of exceptions" do
         described_class.retriable(on: [StandardError, NonStandardError]) do
+          increment_tries
+
+          raise StandardError if @tries == 1
+          raise NonStandardError if @tries == 2
+        end
+
+        expect(@tries).to eq(3)
+      end
+    end
+
+    context "with a Set :on parameter" do
+      it "retries each exception class in the Set" do
+        described_class.retriable(on: Set[StandardError, NonStandardError]) do
           increment_tries
 
           raise StandardError if @tries == 1

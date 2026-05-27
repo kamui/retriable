@@ -32,21 +32,21 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
 
 ## Requirements
 
-Ruby 3.0+
+Ruby 3.2+
 
-If you need ruby 2.3.0-2.7.x support, use the [3.8.x branch](https://github.com/kamui/retriable/tree/3.8.x) by specifying `~> 3.8` in your Gemfile.
+If you need Ruby 2.3.0-3.2.x support, use the [3.8.x branch](https://github.com/kamui/retriable/tree/3.8.x) by specifying `~> 3.8` in your Gemfile.
 
-If you need ruby 2.0.0-2.2.x support, use the [3.1 branch](https://github.com/kamui/retriable/tree/3.1.x) by specifying `~3.1` in your Gemfile.
+If you need Ruby 2.0.0-2.2.x support, use the [3.1 branch](https://github.com/kamui/retriable/tree/3.1.x) by specifying `~3.1` in your Gemfile.
 
-If you need ruby 1.9.3 support, use the [2.x branch](https://github.com/kamui/retriable/tree/2.x) by specifying `~2.1` in your Gemfile.
+If you need Ruby 1.9.3 support, use the [2.x branch](https://github.com/kamui/retriable/tree/2.x) by specifying `~2.1` in your Gemfile.
 
-If you need ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x) by specifying `~1.4` in your Gemfile.
+If you need Ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x) by specifying `~1.4` in your Gemfile.
 
 ## Migration from 3.x to 4.0
 
 ### Ruby version
 
-Retriable 4.0 requires Ruby 3.0 or later. If you are on Ruby 2.x, stay on Retriable 3.x.
+Retriable 4.0 requires Ruby 3.2 or later. If you run Ruby 2.3.0-3.2.x and want to stay on the 3.x gem line, use Retriable 3.8.x by specifying `~> 3.8` in your Gemfile.
 
 ### `timeout:` option removed
 
@@ -160,7 +160,7 @@ Timing options are validated before retrying. `tries` must be a positive integer
 **`:on`** Can take the form:
 
 - An `Exception` class (retry every exception of this type, including subclasses)
-- An `Array` of `Exception` classes (retry any exception of one of these types, including subclasses)
+- An `Array` or `Set` of `Exception` classes (retry any exception of one of these types, including subclasses)
 - A `Hash` where the keys are `Exception` classes and the values are one of:
   - `nil` (retry every exception of the key's type, including subclasses)
   - A single `Regexp` pattern (retries exceptions ONLY if their `message` matches the pattern)
