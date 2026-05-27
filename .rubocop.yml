@@ -1,6 +1,6 @@
 AllCops:
   NewCops: enable
-  TargetRubyVersion: 2.3
+  TargetRubyVersion: 3.0
 
 Style/StringLiterals:
   EnforcedStyle: double_quotes
@@ -39,4 +39,14 @@ Metrics/AbcSize:
   Enabled: false
 
 Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+# Deferred to a follow-up PR; out of scope for 4.0 timeout removal.
+Gemspec/DeprecatedAttributeAssignment:
+  Enabled: false
+
+Gemspec/DevelopmentDependencies:
+  Enabled: false
+
+Gemspec/RequireMFA:
   Enabled: false
