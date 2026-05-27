@@ -18,6 +18,13 @@ module Retriable
       contexts
     ]).freeze
 
+    TIMEOUT_DEPRECATION_MESSAGE = "Retriable: the `timeout:` option is deprecated and will be removed in " \
+                                  "Retriable 4.0. It is a thin wrapper around `Timeout.timeout`, which " \
+                                  "can interrupt execution at arbitrary lines and corrupt internal state " \
+                                  "in libraries that are not interrupt-safe. Prefer your library's native " \
+                                  "timeout, or wrap your block in `Timeout.timeout(...)` yourself."
+    private_constant :TIMEOUT_DEPRECATION_MESSAGE
+
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
@@ -53,6 +60,7 @@ module Retriable
     end
 
     def validate!
+      warn_timeout_deprecation
       validate_optional_non_negative_number(:timeout, timeout)
       validate_on(on)
       validate_intervals
@@ -69,6 +77,23 @@ module Retriable
     end
 
     private
+
+    def warn_timeout_deprecation
+      return if timeout.nil?
+
+      if deprecated_warning_category_enabled?
+        Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE, category: :deprecated)
+      else
+        Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE)
+      end
+    end
+
+    def deprecated_warning_category_enabled?
+      return false unless Kernel.method(:warn).parameters.any? { |type, name| type == :key && name == :category }
+      return false unless Warning.respond_to?(:[])
+
+      Warning[:deprecated]
+    end
 
     def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)

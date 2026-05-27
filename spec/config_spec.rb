@@ -59,7 +59,9 @@ describe Retriable::Config do
 
   it "raises errors on invalid timing configuration" do
     expect { described_class.new(rand_factor: 1.1) }.to raise_error(ArgumentError, /rand_factor/)
-    expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
+    expect do
+      expect { described_class.new(timeout: -1) }.to raise_error(ArgumentError, /timeout/)
+    end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
   end
 
   context "timeout deprecation" do

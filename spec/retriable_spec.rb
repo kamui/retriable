@@ -51,7 +51,9 @@ describe Retriable do
 
     it "raises a LocalJumpError if not given a block" do
       expect { described_class.retriable }.to raise_error(LocalJumpError)
-      expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
+      expect do
+        expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
     end
 
     it "stops at first try if the block does not raise an exception" do
@@ -170,10 +172,26 @@ describe Retriable do
     end
 
     it "will timeout after 1 second" do
-      expect { described_class.retriable(timeout: 1) { sleep(1.1) } }.to raise_error(Timeout::Error)
+      expect do
+        expect { described_class.retriable(timeout: 1) { sleep(1.1) } }.to raise_error(Timeout::Error)
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
     end
 
     context "timeout: deprecation" do
+      it "warns once when timeout is passed to retriable" do
+        original_stderr = $stderr
+        stderr = StringIO.new
+        begin
+          $stderr = stderr
+
+          described_class.retriable(timeout: 5) { :noop }
+
+          expect(stderr.string.scan("timeout:` option is deprecated").size).to eq(1)
+        ensure
+          $stderr = original_stderr
+        end
+      end
+
       it "warns when timeout is passed to retriable" do
         expect do
           described_class.retriable(timeout: 5) { :noop }
@@ -182,13 +200,15 @@ describe Retriable do
 
       it "keeps applying timeout while deprecated" do
         original_stderr = $stderr
-        $stderr = StringIO.new
+        begin
+          $stderr = StringIO.new
 
-        expect do
-          described_class.retriable(timeout: 0.05, tries: 1) { sleep(0.5) }
-        end.to raise_error(Timeout::Error)
-      ensure
-        $stderr = original_stderr
+          expect do
+            described_class.retriable(timeout: 0.05, tries: 1) { sleep(0.5) }
+          end.to raise_error(Timeout::Error)
+        ensure
+          $stderr = original_stderr
+        end
       end
 
       it "warns when timeout is supplied through with_override" do
@@ -201,14 +221,15 @@ describe Retriable do
 
       it "warns when timeout is supplied through configure" do
         original_config = described_class.config
-
-        expect do
-          described_class.configure { |config| config.timeout = 5 }
-          described_class.retriable { :noop }
-        end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
-      ensure
-        described_class.configure do |config|
-          original_config.to_h.each { |key, value| config.public_send("#{key}=", value) }
+        begin
+          expect do
+            described_class.configure { |config| config.timeout = 5 }
+            described_class.retriable { :noop }
+          end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
+        ensure
+          described_class.configure do |config|
+            original_config.to_h.each { |key, value| config.public_send("#{key}=", value) }
+          end
         end
       end
 

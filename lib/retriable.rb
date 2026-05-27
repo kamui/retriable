@@ -56,14 +56,15 @@ module Retriable
 
   def retriable(opts = {}, &block)
     override_config = current_override
-    local_config = if opts.empty? && !override_config
+    uses_config_singleton = opts.empty? && !override_config
+    local_config = if uses_config_singleton
                      config
                    else
                      Config.new(apply_override_options(config.to_h.merge(opts), override_config))
                    end
 
     # Config is mutable through `configure`, so validate again immediately before use.
-    local_config.validate!
+    local_config.validate! if uses_config_singleton
 
     plan = retry_plan(local_config)
     timeout = local_config.timeout
