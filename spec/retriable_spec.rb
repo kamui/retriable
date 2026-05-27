@@ -38,6 +38,17 @@ describe Retriable do
       expect { retriable { increment_tries_with_exception } }.to raise_error(StandardError)
       expect(@tries).to eq(3)
     end
+
+    it "passes on_give_up through the kernel extension" do
+      require_relative "../lib/retriable/core_ext/kernel"
+      received_reason = nil
+      handler = proc { |_e, _try, _elapsed, _interval, reason| received_reason = reason }
+
+      expect { retriable(tries: 1, on_give_up: handler) { increment_tries_with_exception } }
+        .to raise_error(StandardError)
+
+      expect(received_reason).to eq(:tries_exhausted)
+    end
   end
 
   context "#retriable" do
@@ -214,6 +225,144 @@ describe Retriable do
       end
     end
 
+    it "calls on_give_up with max elapsed time details before re-raising" do
+      described_class.configure { |c| c.sleep_disabled = false }
+      give_up_calls = []
+      on_give_up = proc do |exception, try, elapsed_time, next_interval, reason|
+        give_up_calls << [exception, try, elapsed_time, next_interval, reason]
+      end
+
+      expect do
+        described_class.retriable(
+          intervals: [1.0, 1.0],
+          max_elapsed_time: 0.5,
+          on_give_up: on_give_up,
+        ) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      exception, try, elapsed_time, next_interval, reason = give_up_calls.fetch(0)
+      expect(give_up_calls.size).to eq(1)
+      expect(exception).to be_a(StandardError)
+      expect(exception.message).to eq("StandardError occurred")
+      expect(try).to eq(1)
+      expect(elapsed_time).to be >= 0
+      expect(next_interval).to eq(1.0)
+      expect(reason).to eq(:max_elapsed_time)
+      expect(@tries).to eq(1)
+    end
+
+    it "calls on_give_up with tries exhausted details before re-raising" do
+      give_up_calls = []
+      on_give_up = proc do |exception, try, elapsed_time, next_interval, reason|
+        give_up_calls << [exception, try, elapsed_time, next_interval, reason]
+      end
+
+      expect do
+        described_class.retriable(tries: 2, on_give_up: on_give_up) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      exception, try, elapsed_time, next_interval, reason = give_up_calls.fetch(0)
+      expect(give_up_calls.size).to eq(1)
+      expect(exception).to be_a(StandardError)
+      expect(exception.message).to eq("StandardError occurred")
+      expect(try).to eq(2)
+      expect(elapsed_time).to be >= 0
+      expect(next_interval).to be_nil
+      expect(reason).to eq(:tries_exhausted)
+      expect(@tries).to eq(2)
+    end
+
+    it "does not call on_give_up when the block eventually succeeds" do
+      callback_called = false
+
+      described_class.retriable(tries: 3, on_give_up: proc { callback_called = true }) do
+        increment_tries
+        raise StandardError if @tries < 2
+      end
+
+      expect(callback_called).to be(false)
+      expect(@tries).to eq(2)
+    end
+
+    it "does not call on_give_up for non-retriable exception types" do
+      callback_called = false
+
+      expect do
+        described_class.retriable(on_give_up: proc { callback_called = true }) do
+          increment_tries_with_exception(NonStandardError)
+        end
+      end.to raise_error(NonStandardError)
+
+      expect(callback_called).to be(false)
+      expect(@tries).to eq(1)
+    end
+
+    it "does not call on_give_up when retry_if rejects the exception" do
+      callback_called = false
+
+      expect do
+        described_class.retriable(
+          tries: 3,
+          retry_if: ->(_exception) { false },
+          on_give_up: proc { callback_called = true },
+        ) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(callback_called).to be(false)
+      expect(@tries).to eq(1)
+    end
+
+    it "does not call on_give_up when explicitly set to false" do
+      callback_called = false
+      original_on_give_up = described_class.config.on_give_up
+
+      begin
+        described_class.configure do |c|
+          c.on_give_up = proc { callback_called = true }
+        end
+
+        expect do
+          described_class.retriable(on_give_up: false, tries: 1) { increment_tries_with_exception }
+        end.to raise_error(StandardError)
+
+        expect(callback_called).to be(false)
+      ensure
+        described_class.configure do |c|
+          c.on_give_up = original_on_give_up
+        end
+      end
+    end
+
+    it "calls on_retry before on_give_up when giving up" do
+      events = []
+
+      expect do
+        described_class.retriable(
+          tries: 1,
+          on_retry: proc { events << :on_retry },
+          on_give_up: proc { events << :on_give_up },
+        ) do
+          increment_tries_with_exception
+        end
+      end.to raise_error(StandardError)
+
+      expect(events).to eq(%i[on_retry on_give_up])
+    end
+
+    it "propagates exceptions raised inside on_give_up, replacing the original exception" do
+      handler = proc { raise "handler exploded" }
+
+      expect do
+        described_class.retriable(tries: 1, on_give_up: handler) { increment_tries_with_exception }
+      end.to raise_error(RuntimeError, "handler exploded")
+
+      expect(@tries).to eq(1)
+    end
+
     context "with rand_factor 0.0 and an on_retry handler" do
       let(:tries) { 6 }
       let(:no_rand_timetable) { { 1 => 0.5, 2 => 0.75, 3 => 1.125 } }
@@ -322,6 +471,20 @@ describe Retriable do
           end
         end.to raise_error(SecondNonStandardError, /not a match/)
 
+        expect(@tries).to eq(1)
+      end
+
+      it "does not call on_give_up when exception class matches but message does not" do
+        callback_called = false
+
+        expect do
+          described_class.retriable(on: on_hash, on_give_up: proc { callback_called = true }) do
+            increment_tries
+            raise SecondNonStandardError, "not a match"
+          end
+        end.to raise_error(SecondNonStandardError, /not a match/)
+
+        expect(callback_called).to be(false)
         expect(@tries).to eq(1)
       end
 
@@ -933,6 +1096,31 @@ describe Retriable do
 
       expect(other_thread_tries).to eq(3)
     end
+
+    it "applies overridden on_give_up handlers" do
+      callback_called = false
+
+      expect do
+        described_class.with_override(on_give_up: proc { callback_called = true }) do
+          described_class.retriable(tries: 1) { increment_tries_with_exception }
+        end
+      end.to raise_error(StandardError)
+
+      expect(callback_called).to be(true)
+    end
+
+    it "applies on_give_up handlers configured via per-context overrides" do
+      received_reason = nil
+      handler = proc { |_e, _try, _elapsed, _interval, reason| received_reason = reason }
+
+      expect do
+        described_class.with_override(contexts: { api: { tries: 1, on_give_up: handler } }) do
+          described_class.with_context(:api) { increment_tries_with_exception }
+        end
+      end.to raise_error(StandardError)
+
+      expect(received_reason).to eq(:tries_exhausted)
+    end
   end
 
   context "#with_context" do
@@ -990,6 +1178,18 @@ describe Retriable do
 
       described_class.with_context(:broken) { increment_tries }
       expect(@tries).to eq(1)
+    end
+
+    it "invokes on_give_up configured on a context" do
+      callback_called = false
+      described_class.configure do |c|
+        c.contexts[:flaky] = { tries: 1, on_give_up: proc { callback_called = true } }
+      end
+
+      expect { described_class.with_context(:flaky) { increment_tries_with_exception } }
+        .to raise_error(StandardError)
+
+      expect(callback_called).to be(true)
     end
   end
 end

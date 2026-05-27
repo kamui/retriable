@@ -10,6 +10,10 @@
 - Minimum Ruby version is now 3.2. Support for Ruby 2.x, 3.0, and 3.1 has been dropped in Retriable 4.0. If you need Retriable on Ruby 2.3.0-3.2.x, the 3.8.x line (`~> 3.8`) remains available.
 - Internal implementation has been updated for Ruby 3.x by switching `Retriable.retriable`, `Retriable.with_context`, and the `Kernel` extension methods to anonymous block forwarding. Behavior is unchanged.
 
+### Features
+
+- Add `on_give_up` callback that runs when Retriable stops retrying after a rescued retriable exception. Receives `(exception, try, elapsed_time, next_interval, reason)`, where `reason` is `:tries_exhausted` or `:max_elapsed_time`. Does not fire for non-retriable exceptions or `retry_if` rejections. Pass `on_give_up: false` to suppress a configured handler for a single call.
+
 ## 3.8.0
 
 ### Deprecations

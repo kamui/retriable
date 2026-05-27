@@ -14,6 +14,7 @@ module Retriable
       on
       retry_if
       on_retry
+      on_give_up
       contexts
     ]).freeze
 
@@ -33,6 +34,7 @@ module Retriable
       @on               = [StandardError]
       @retry_if         = nil
       @on_retry         = nil
+      @on_give_up       = nil
       @contexts         = {}
 
       opts.each do |k, v|

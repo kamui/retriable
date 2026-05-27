@@ -40,3 +40,6 @@ Metrics/AbcSize:
 
 Style/TrailingCommaInArrayLiteral:
   Enabled: false
+
+Naming/MethodParameterName:
+  MinNameLength: 2

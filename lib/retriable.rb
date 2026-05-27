@@ -68,6 +68,7 @@ module Retriable
     on = local_config.on
     retry_if = local_config.retry_if
     on_retry = local_config.on_retry
+    on_give_up = local_config.on_give_up
     sleep_disabled = local_config.sleep_disabled
     max_elapsed_time = local_config.max_elapsed_time
 
@@ -79,14 +80,14 @@ module Retriable
     execute_tries(
       max_tries: plan.max_tries, interval_for: plan.interval_for,
       exception_list: exception_list, on: on, retry_if: retry_if, on_retry: on_retry,
-      elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
+      on_give_up: on_give_up, elapsed_time: elapsed_time, max_elapsed_time: max_elapsed_time,
       sleep_disabled: sleep_disabled, &
     )
   end
 
   def execute_tries( # rubocop:disable Metrics/ParameterLists
     max_tries:, interval_for:, exception_list:,
-    on:, retry_if:, on_retry:, elapsed_time:, max_elapsed_time:, sleep_disabled:
+    on:, retry_if:, on_retry:, on_give_up:, elapsed_time:, max_elapsed_time:, sleep_disabled:
   )
     try = 0
     loop do
@@ -100,7 +101,13 @@ module Retriable
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
         elapsed_interval = sleep_disabled == true ? 0 : interval
-        raise unless can_retry?(try, max_tries, elapsed_time.call, elapsed_interval, max_elapsed_time)
+        # Re-read elapsed_time so time spent inside on_retry counts toward max_elapsed_time.
+        current_elapsed_time = elapsed_time.call
+        stop_reason = retry_stop_reason(try, max_tries, current_elapsed_time, elapsed_interval, max_elapsed_time)
+        if stop_reason
+          call_on_give_up(on_give_up, e, try, current_elapsed_time, interval, stop_reason)
+          raise
+        end
 
         sleep interval if sleep_disabled != true
       end
@@ -136,11 +143,19 @@ module Retriable
     on_retry.call(exception, try, elapsed_time, interval)
   end
 
-  def can_retry?(try, max_tries, elapsed_time, interval, max_elapsed_time)
-    return false if max_tries && try >= max_tries
-    return true if max_elapsed_time.nil?
+  def call_on_give_up( # rubocop:disable Metrics/ParameterLists
+    on_give_up, exception, try, elapsed_time, interval, reason
+  )
+    return unless on_give_up
 
-    (elapsed_time + interval) <= max_elapsed_time
+    on_give_up.call(exception, try, elapsed_time, interval, reason)
+  end
+
+  def retry_stop_reason(try, max_tries, elapsed_time, interval, max_elapsed_time)
+    return :tries_exhausted if max_tries && try >= max_tries
+    return nil if max_elapsed_time.nil?
+
+    :max_elapsed_time if (elapsed_time + interval) > max_elapsed_time
   end
 
   # When `on` is a Hash, we need to verify the exception matches a pattern.
@@ -237,7 +252,8 @@ module Retriable
     :retry_plan,
     :interval_provider,
     :call_on_retry,
-    :can_retry?,
+    :call_on_give_up,
+    :retry_stop_reason,
     :retriable_exception?,
     :hash_exception_match?,
     :apply_override_options,
