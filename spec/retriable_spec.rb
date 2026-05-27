@@ -178,12 +178,14 @@ describe Retriable do
     end
 
     context "timeout: deprecation" do
-      it "warns once when timeout is passed to retriable" do
+      it "warns at most once per process across repeated retriable calls" do
         original_stderr = $stderr
         stderr = StringIO.new
         begin
           $stderr = stderr
 
+          described_class.retriable(timeout: 5) { :noop }
+          described_class.retriable(timeout: 5) { :noop }
           described_class.retriable(timeout: 5) { :noop }
 
           expect(stderr.string.scan("timeout:` option is deprecated").size).to eq(1)
@@ -199,15 +201,10 @@ describe Retriable do
       end
 
       it "keeps applying timeout while deprecated" do
-        original_stderr = $stderr
-        begin
-          $stderr = StringIO.new
-
+        Gem::Deprecate.skip_during do
           expect do
             described_class.retriable(timeout: 0.05, tries: 1) { sleep(0.5) }
           end.to raise_error(Timeout::Error)
-        ensure
-          $stderr = original_stderr
         end
       end
 
@@ -231,6 +228,14 @@ describe Retriable do
             original_config.to_h.each { |key, value| config.public_send("#{key}=", value) }
           end
         end
+      end
+
+      it "is silenced by Gem::Deprecate.skip_during" do
+        expect do
+          Gem::Deprecate.skip_during do
+            described_class.retriable(timeout: 5) { :noop }
+          end
+        end.not_to output.to_stderr
       end
 
       it "does not warn when timeout is absent" do

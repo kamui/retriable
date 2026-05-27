@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "rubygems/deprecate"
+
 require_relative "exponential_backoff"
 require_relative "validation"
 
@@ -18,12 +20,18 @@ module Retriable
       contexts
     ]).freeze
 
-    TIMEOUT_DEPRECATION_MESSAGE = "Retriable: the `timeout:` option is deprecated and will be removed in " \
+    TIMEOUT_DEPRECATION_MESSAGE = "NOTE: Retriable's `timeout:` option is deprecated and will be removed in " \
                                   "Retriable 4.0. It is a thin wrapper around `Timeout.timeout`, which " \
                                   "can interrupt execution at arbitrary lines and corrupt internal state " \
                                   "in libraries that are not interrupt-safe. Prefer your library's native " \
                                   "timeout, or wrap your block in `Timeout.timeout(...)` yourself."
     private_constant :TIMEOUT_DEPRECATION_MESSAGE
+
+    @timeout_deprecation_warned = false
+
+    class << self
+      attr_accessor :timeout_deprecation_warned
+    end
 
     attr_accessor(*ATTRIBUTES)
 
@@ -78,21 +86,19 @@ module Retriable
 
     private
 
+    # Emits the `timeout:` deprecation notice at most once per process, mirroring
+    # the convention used by Gem::Deprecate. Respects `Gem::Deprecate.skip` so
+    # callers (and tests) can suppress the warning via `Gem::Deprecate.skip_during`.
+    # We intentionally call `Kernel.warn` without `category: :deprecated` because
+    # `Warning[:deprecated]` defaults to false in Ruby 3.x, which would hide the
+    # notice from the very users we want to reach.
     def warn_timeout_deprecation
       return if timeout.nil?
+      return if Gem::Deprecate.skip
+      return if self.class.timeout_deprecation_warned
 
-      if deprecated_warning_category_enabled?
-        Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE, category: :deprecated)
-      else
-        Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE)
-      end
-    end
-
-    def deprecated_warning_category_enabled?
-      return false unless Kernel.method(:warn).parameters.any? { |type, name| type == :key && name == :category }
-      return false unless Warning.respond_to?(:[])
-
-      Warning[:deprecated]
+      self.class.timeout_deprecation_warned = true
+      Kernel.warn(TIMEOUT_DEPRECATION_MESSAGE)
     end
 
     def validate_backoff_options

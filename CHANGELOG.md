@@ -4,7 +4,7 @@
 
 ### Deprecations
 
-- Deprecated the `timeout:` option ahead of its removal in Retriable 4.0. Non-nil timeout values supplied through `Retriable.configure`, `Retriable.retriable(...)`, or `Retriable.with_override(...)` now emit a deprecation warning while keeping the existing runtime behavior unchanged. Prefer library-native timeout settings, or wrap the retried block in `Timeout.timeout(...)` directly if you still need that behavior. See the README migration guidance for details.
+- Deprecated the `timeout:` option ahead of its removal in Retriable 4.0. Non-nil timeout values supplied through `Retriable.configure`, `Retriable.retriable(...)`, or `Retriable.with_override(...)` now emit a deprecation warning while keeping the existing runtime behavior unchanged. The warning is emitted at most once per process and respects `Gem::Deprecate.skip_during` for callers (and test suites) that need to silence it. Prefer library-native timeout settings, or wrap the retried block in `Timeout.timeout(...)` directly if you still need that behavior. See the README migration guidance for details.
 
 ## 3.7.0
 

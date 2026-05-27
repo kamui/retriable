@@ -10,5 +10,6 @@ require_relative "support/exceptions"
 RSpec.configure do |config|
   config.before(:each) do
     srand(0)
+    Retriable::Config.timeout_deprecation_warned = false
   end
 end

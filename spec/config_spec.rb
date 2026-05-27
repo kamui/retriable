@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "stringio"
+
 describe Retriable::Config do
   let(:default_config) { described_class.new }
 
@@ -90,6 +92,43 @@ describe Retriable::Config do
       expect do
         described_class.new
       end.not_to output.to_stderr
+    end
+
+    it "warns at most once per process" do
+      original_stderr = $stderr
+      stderr = StringIO.new
+      begin
+        $stderr = stderr
+
+        described_class.new(timeout: 5)
+        described_class.new(timeout: 5)
+
+        config = described_class.new
+        config.timeout = 5
+        config.validate!
+      ensure
+        $stderr = original_stderr
+      end
+
+      expect(stderr.string.scan("timeout:` option is deprecated").size).to eq(1)
+    end
+
+    it "is silenced by Gem::Deprecate.skip_during" do
+      expect do
+        Gem::Deprecate.skip_during do
+          described_class.new(timeout: 5)
+        end
+      end.not_to output.to_stderr
+    end
+
+    it "remains armed after Gem::Deprecate.skip_during so a later call still warns" do
+      Gem::Deprecate.skip_during do
+        described_class.new(timeout: 5)
+      end
+
+      expect do
+        described_class.new(timeout: 5)
+      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
     end
   end
 
