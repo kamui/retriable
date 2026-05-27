@@ -79,7 +79,10 @@ module Retriable
     def validate_on_hash_value(klass, pattern)
       return if pattern.nil?
       return if pattern.is_a?(Regexp)
-      return if pattern.is_a?(Array) && pattern.all?(Regexp)
+      # Ruby 2.3 does not support Enumerable#all?(pattern).
+      # rubocop:disable Style/PredicateWithKind
+      return if pattern.is_a?(Array) && pattern.all? { |p| p.is_a?(Regexp) }
+      # rubocop:enable Style/PredicateWithKind
 
       raise ArgumentError,
             "on[#{klass}] must be nil, a Regexp, or an Array of Regexps, got #{pattern.inspect}"
