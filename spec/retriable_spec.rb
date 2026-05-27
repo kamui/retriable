@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rbconfig"
-require "stringio"
 
 describe Retriable do
   let(:time_table_handler) do
@@ -51,9 +50,6 @@ describe Retriable do
 
     it "raises a LocalJumpError if not given a block" do
       expect { described_class.retriable }.to raise_error(LocalJumpError)
-      expect do
-        expect { described_class.retriable(timeout: 2) }.to raise_error(LocalJumpError)
-      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
     end
 
     it "stops at first try if the block does not raise an exception" do
@@ -171,86 +167,8 @@ describe Retriable do
       end.to raise_error(ArgumentError, /tries/)
     end
 
-    it "will timeout after 1 second" do
-      expect do
-        expect { described_class.retriable(timeout: 1) { sleep(1.1) } }.to raise_error(Timeout::Error)
-      end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
-    end
-
-    context "timeout: deprecation" do
-      it "warns at most once per process across repeated retriable calls" do
-        original_stderr = $stderr
-        stderr = StringIO.new
-        begin
-          $stderr = stderr
-
-          described_class.retriable(timeout: 5) { :noop }
-          described_class.retriable(timeout: 5) { :noop }
-          described_class.retriable(timeout: 5) { :noop }
-
-          expect(stderr.string.scan("timeout:` option is deprecated").size).to eq(1)
-        ensure
-          $stderr = original_stderr
-        end
-      end
-
-      it "warns when timeout is passed to retriable" do
-        expect do
-          described_class.retriable(timeout: 5) { :noop }
-        end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
-      end
-
-      it "keeps applying timeout while deprecated" do
-        original_stderr = $stderr
-        begin
-          $stderr = StringIO.new
-          expect do
-            described_class.retriable(timeout: 0.05, tries: 1) { sleep(0.5) }
-          end.to raise_error(Timeout::Error)
-        ensure
-          $stderr = original_stderr
-        end
-      end
-
-      it "warns when timeout is supplied through with_override" do
-        expect do
-          described_class.with_override(timeout: 5) do
-            described_class.retriable { :noop }
-          end
-        end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
-      end
-
-      it "warns when timeout is supplied through configure" do
-        original_config = described_class.config
-        begin
-          expect do
-            described_class.configure { |config| config.timeout = 5 }
-            described_class.retriable { :noop }
-          end.to output(/timeout.*deprecated.*Retriable 4\.0/i).to_stderr
-        ensure
-          described_class.configure do |config|
-            original_config.to_h.each { |key, value| config.public_send("#{key}=", value) }
-          end
-        end
-      end
-
-      it "is silenced by Warning[:deprecated] = false", if: WARN_CATEGORY_SUPPORTED do
-        original = Warning[:deprecated]
-        begin
-          Warning[:deprecated] = false
-          expect do
-            described_class.retriable(timeout: 5) { :noop }
-          end.not_to output.to_stderr
-        ensure
-          Warning[:deprecated] = original
-        end
-      end
-
-      it "does not warn when timeout is absent" do
-        expect do
-          described_class.retriable { :noop }
-        end.not_to output.to_stderr
-      end
+    it "rejects timeout as an unknown option" do
+      expect { described_class.retriable(timeout: 1) { :noop } }.to raise_error(ArgumentError, /not a valid option/)
     end
 
     it "applies a randomized exponential backoff to each try" do
@@ -737,17 +655,15 @@ describe Retriable do
     end
 
     it "treats non-hash configured contexts as empty when override contexts are hash" do
-      begin
-        described_class.configure { |c| c.contexts = nil }
+      described_class.configure { |c| c.contexts = nil }
 
-        described_class.with_override(contexts: { api: { tries: 1 } }) do
-          described_class.with_context(:api) { increment_tries }
-        end
-
-        expect(@tries).to eq(1)
-      ensure
-        described_class.configure { |c| c.contexts = {} }
+      described_class.with_override(contexts: { api: { tries: 1 } }) do
+        described_class.with_context(:api) { increment_tries }
       end
+
+      expect(@tries).to eq(1)
+    ensure
+      described_class.configure { |c| c.contexts = {} }
     end
 
     it "ignores nil override contexts values in with_context" do
