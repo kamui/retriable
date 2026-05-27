@@ -1,5 +1,11 @@
 # HEAD
 
+## 3.8.0
+
+### Deprecations
+
+- Deprecated the `timeout:` option ahead of its removal in Retriable 4.0. Non-nil timeout values supplied through `Retriable.configure`, `Retriable.retriable(...)`, or `Retriable.with_override(...)` now emit a deprecation warning while keeping the existing runtime behavior unchanged. Prefer library-native timeout settings, or wrap the retried block in `Timeout.timeout(...)` directly if you still need that behavior. See the README migration guidance for details.
+
 ## 3.7.0
 
 - Feature: Opt-in unbounded retries via `tries: Float::INFINITY`. Requires a finite `max_elapsed_time` as a safety bound and is incompatible with custom `intervals:`. Both invalid configurations raise `ArgumentError` from `Config#validate!`.
