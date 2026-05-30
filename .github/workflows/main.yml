@@ -30,8 +30,6 @@ jobs:
             "4.0",
             jruby,
           ]
-    env:
-      CC_TEST_REPORTER_ID: 20a1139ef1830b4f813a10a03d90e8aa179b5226f75e75c5a949b25756ebf558
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
