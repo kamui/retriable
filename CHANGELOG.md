@@ -1,5 +1,25 @@
 # HEAD
 
+## 4.1.1
+
+### Bug fixes
+
+- `retry_if`, `on_retry`, and `on_give_up` are now validated to be callable
+  (respond to `#call`) or falsy. A non-callable truthy value raises
+  `ArgumentError` at configuration time instead of a later `NoMethodError` on a
+  retry path. ([#140](https://github.com/kamui/retriable/pull/140))
+
+### Internal
+
+- Add RBS type signatures for the public API (`Retriable.configure`, `config`,
+  `retriable`, `with_override`, `with_context`, and `Retriable::Config`) and
+  validate them in CI with `rbs validate`.
+  ([#142](https://github.com/kamui/retriable/pull/142))
+- Enforce a minimum test coverage floor and add a `bundler-audit` dependency
+  audit job to CI. ([#143](https://github.com/kamui/retriable/pull/143))
+- Remove an unused `CC_TEST_REPORTER_ID` from the CI workflow.
+  ([#141](https://github.com/kamui/retriable/pull/141))
+
 ## 4.1.0
 
 ### Bug fixes
