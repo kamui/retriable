@@ -12,6 +12,7 @@ end
 group :development do
   gem "bundler-audit", "~> 0.9"
   gem "listen", "~> 3.1"
+  gem "rbs", "~> 3.0", platforms: :ruby
   gem "rubocop", "~> 1.86"
 end
 

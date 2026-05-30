@@ -1,4 +1,32 @@
 module Retriable
   VERSION: String
-  # See the writing guide of rbs: https://github.com/ruby/rbs#guides
+  OVERRIDE_THREAD_KEY: Symbol
+
+  def self.configure: () { (Config) -> void } -> void
+  def self.config: () -> Config
+  def self.with_override: (Hash[Symbol, untyped] options) { () -> untyped } -> untyped
+  def self.with_context: (Symbol context_key, ?Hash[Symbol, untyped] options) ?{ (Integer) -> untyped } -> untyped
+  def self.retriable: (?Hash[Symbol, untyped] options) { (Integer) -> untyped } -> untyped
+
+  class Config
+    ATTRIBUTES: Array[Symbol]
+
+    attr_accessor tries: Numeric
+    attr_accessor base_interval: Numeric
+    attr_accessor max_interval: Numeric
+    attr_accessor rand_factor: Numeric
+    attr_accessor multiplier: Numeric
+    attr_accessor sleep_disabled: bool
+    attr_accessor max_elapsed_time: Numeric?
+    attr_accessor intervals: Array[Numeric]?
+    attr_accessor on: untyped
+    attr_accessor retry_if: untyped
+    attr_accessor on_retry: untyped
+    attr_accessor on_give_up: untyped
+    attr_accessor contexts: Hash[Symbol, untyped]
+
+    def initialize: (?Hash[Symbol, untyped] opts) -> void
+    def to_h: () -> Hash[Symbol, untyped]
+    def validate!: () -> void
+  end
 end
