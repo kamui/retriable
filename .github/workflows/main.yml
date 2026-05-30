@@ -62,6 +62,9 @@ jobs:
       - name: Run rubocop
         run: bundle exec rubocop
 
+      - name: Validate RBS
+        run: bundle exec rbs -I sig validate
+
   audit:
     runs-on: ubuntu-24.04
 
