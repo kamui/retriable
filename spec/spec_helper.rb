@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 require "simplecov"
-SimpleCov.start
+SimpleCov.start do
+  minimum_coverage 95
+end
 
 require "pry"
 require_relative "../lib/retriable"
