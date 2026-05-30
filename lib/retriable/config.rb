@@ -51,6 +51,9 @@ module Retriable
     end
 
     def validate!
+      validate_callable(:retry_if, retry_if)
+      validate_callable(:on_retry, on_retry)
+      validate_callable(:on_give_up, on_give_up)
       validate_on(on)
       validate_intervals
       if unbounded_tries?(tries)

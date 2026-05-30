@@ -163,4 +163,21 @@ describe Retriable::Config do
         .to raise_error(ArgumentError, /on must be an Exception class/)
     end
   end
+
+  context "callable option validation" do
+    %i[retry_if on_retry on_give_up].each do |opt|
+      it "accepts a callable for #{opt}" do
+        expect { described_class.new(opt => ->(*) {}) }.not_to raise_error
+      end
+
+      it "accepts nil and false for #{opt}" do
+        expect { described_class.new(opt => nil) }.not_to raise_error
+        expect { described_class.new(opt => false) }.not_to raise_error
+      end
+
+      it "rejects a non-callable truthy value for #{opt}" do
+        expect { described_class.new(opt => 5) }.to raise_error(ArgumentError, /#{opt}.*#call/)
+      end
+    end
+  end
 end
