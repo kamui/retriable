@@ -28,6 +28,13 @@ module Retriable
       validate_non_negative_number(name, value)
     end
 
+    def validate_callable(name, value)
+      return unless value # nil/false disable the callback
+      return if value.respond_to?(:call)
+
+      raise ArgumentError, "#{name} must respond to #call or be nil"
+    end
+
     def validate_rand_factor
       return if finite_number?(rand_factor) && rand_factor >= 0 && rand_factor <= 1
 
