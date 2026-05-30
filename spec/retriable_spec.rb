@@ -760,6 +760,38 @@ describe Retriable do
     end
   end
 
+  context "#retriable tries/intervals precedence" do
+    it "lets a per-call tries clear globally configured intervals" do
+      described_class.configure { |c| c.intervals = [0.5, 1.0] }
+
+      expect do
+        described_class.retriable(tries: 1) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+    end
+
+    it "still lets per-call intervals win when both intervals and tries are given" do
+      expect do
+        described_class.retriable(intervals: [0.5, 1.0], tries: 1) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(3) # intervals.size + 1
+    end
+
+    it "lets a with_context tries clear context intervals" do
+      described_class.configure do |c|
+        c.contexts[:api] = { intervals: [0.5, 1.0] }
+      end
+
+      expect do
+        described_class.with_context(:api, tries: 1) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+    end
+  end
+
   context "#with_override" do
     it "takes precedence over both global config and local options" do
       described_class.configure { |c| c.tries = 2 }

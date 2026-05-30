@@ -206,6 +206,11 @@ end
 `#configure` sets defaults only. Per-call options passed to `Retriable.retriable` and
 `Retriable.with_context` still take precedence.
 
+When a higher-precedence layer sets `tries:` without `intervals:`, it clears any
+`intervals:` inherited from a lower layer (so `retriable(tries: 1)` runs once even
+if `intervals` was configured). Within a single call, passing `intervals:` still
+overrides `tries:`.
+
 ### Override
 
 `#with_override` is a block-scoped API for forcing retry options that should

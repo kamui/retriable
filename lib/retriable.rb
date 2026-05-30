@@ -58,7 +58,7 @@ module Retriable
     local_config = if opts.empty? && !override_config
                      config
                    else
-                     Config.new(apply_override_options(config.to_h.merge(opts), override_config))
+                     Config.new(apply_override_options(merge_layer(config.to_h, opts), override_config))
                    end
 
     # Config is mutable through `configure`, so validate again immediately before use.
@@ -216,9 +216,17 @@ module Retriable
   def apply_override_options(options, overrides)
     return options unless overrides
 
-    options = options.merge(overrides)
-    options[:intervals] = nil if overrides.key?(:tries) && !overrides.key?(:intervals)
-    options
+    merge_layer(options, overrides)
+  end
+
+  # Merge a higher-precedence option layer onto a base layer. A higher layer
+  # that sets `tries` without `intervals` clears the base layer's inherited
+  # `intervals`, so a caller's `tries:` is never silently ignored. When the
+  # higher layer supplies its own `intervals`, those win (same-call override).
+  def merge_layer(base, higher)
+    merged = base.merge(higher)
+    merged[:intervals] = nil if higher.key?(:tries) && !higher.key?(:intervals)
+    merged
   end
 
   def available_contexts
@@ -228,7 +236,7 @@ module Retriable
   def context_options_for(context_key, options)
     context_options = config_contexts.fetch(context_key, {})
     context_options = {} unless context_options.is_a?(Hash)
-    context_options = context_options.merge(options)
+    context_options = merge_layer(context_options, options)
 
     override_context_options = override_contexts[context_key]
     return context_options unless override_context_options.is_a?(Hash)
@@ -262,6 +270,7 @@ module Retriable
     :retriable_exception?,
     :hash_exception_match?,
     :apply_override_options,
+    :merge_layer,
     :available_contexts,
     :context_options_for,
     :config_contexts,

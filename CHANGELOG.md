@@ -1,5 +1,15 @@
 # HEAD
 
+## 4.1.0
+
+### Bug fixes
+
+- A per-call or `with_context` `tries:` now clears an inherited `intervals:` from
+  global config or a context, matching the documented precedence. Previously
+  `Retriable.retriable(tries: 1)` was silently ignored when `intervals` was
+  configured, running `intervals.size + 1` times. Passing both `intervals:` and
+  `tries:` in the same call still lets `intervals:` win.
+
 ## 4.0.0
 
 **This is a major release with breaking changes. Please read carefully before upgrading.**
