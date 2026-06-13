@@ -97,6 +97,9 @@ module Retriable
       rescue *exception_list => e
         raise unless retriable_exception?(e, on, exception_list, retry_if)
 
+        # On the final attempt `interval_for` returns nil (no next retry), and
+        # `on_retry` intentionally fires before the give-up check below, so it
+        # receives `interval: nil`. See the on_retry/on_give_up README contract.
         interval = interval_for.call(try - 1)
         call_on_retry(on_retry, e, try, elapsed_time.call, interval)
 
