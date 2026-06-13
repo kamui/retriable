@@ -91,19 +91,21 @@ module Retriable
 
     def initialize_copy(other)
       super
-      @on        = dup_collection(other.on)
-      @intervals = other.intervals&.dup
-      @contexts  = dup_contexts(other.contexts)
+      @on        = deep_dup(other.on)
+      @intervals = deep_dup(other.intervals)
+      @contexts  = deep_dup(other.contexts)
     end
 
-    def dup_collection(value)
-      value.is_a?(Array) || value.is_a?(Hash) || value.is_a?(Set) ? value.dup : value
-    end
-
-    def dup_contexts(contexts)
-      return contexts unless contexts.is_a?(Hash)
-
-      contexts.transform_values { |options| options.is_a?(Hash) ? options.dup : options }
+    # Recursively copies the mutable containers (Hash/Array/Set) so a dup is
+    # fully isolated from the original, while leaving leaves (scalars, procs,
+    # exception classes, regexps) shared by reference.
+    def deep_dup(value)
+      case value
+      when Hash then value.each_with_object({}) { |(key, val), copy| copy[key] = deep_dup(val) }
+      when Array then value.map { |val| deep_dup(val) }
+      when Set then value.each_with_object(Set.new) { |val, copy| copy << deep_dup(val) }
+      else value
+      end
     end
 
     def validate_backoff_options

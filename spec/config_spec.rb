@@ -245,5 +245,23 @@ describe Retriable::Config do
 
       expect(original.on).to eq(StandardError => /boom/)
     end
+
+    it "deep-copies mutable values nested inside a context's options" do
+      original = described_class.new(contexts: { api: { intervals: [1, 2] } })
+      copy = original.dup
+
+      copy.contexts[:api][:intervals] << 3
+
+      expect(original.contexts[:api][:intervals]).to eq([1, 2])
+    end
+
+    it "deep-copies the collection values of a Hash on" do
+      original = described_class.new(on: { StandardError => [/boom/] })
+      copy = original.dup
+
+      copy.on[StandardError] << /bang/
+
+      expect(original.on[StandardError]).to eq([/boom/])
+    end
   end
 end
