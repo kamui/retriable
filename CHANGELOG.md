@@ -1,5 +1,15 @@
 # HEAD
 
+### Bug fixes
+
+- The `Kernel` extension methods (`require "retriable/core_ext/kernel"`) are now
+  private, matching idiomatic `Kernel` helpers like `puts` and `rand`.
+  Previously `retriable` and `retriable_with_context` were public instance
+  methods, so they leaked onto every object's public API and could be invoked
+  with an explicit receiver (e.g. `"foo".retriable { ... }`). They remain
+  callable in the documented receiver-less form.
+  ([#146](https://github.com/kamui/retriable/pull/146))
+
 ### Docs
 
 - Document that `on_retry` receives `next_interval: nil` on the final rescued

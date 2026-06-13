@@ -10,4 +10,6 @@ module Kernel
   def retriable_with_context(context_key, opts = {}, &)
     Retriable.with_context(context_key, opts, &)
   end
+
+  private :retriable, :retriable_with_context
 end

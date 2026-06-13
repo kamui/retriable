@@ -71,6 +71,15 @@ describe Retriable do
       expect(retriable_with_context(:sql)).to be_nil
       expect(@tries).to eq(0)
     end
+
+    it "is not callable with an explicit receiver" do
+      require_relative "../lib/retriable/core_ext/kernel"
+
+      expect { "foo".retriable { increment_tries } }
+        .to raise_error(NoMethodError, /private method/)
+      expect { "foo".retriable_with_context(:sql) { increment_tries } }
+        .to raise_error(NoMethodError, /private method/)
+    end
   end
 
   context "#retriable" do
