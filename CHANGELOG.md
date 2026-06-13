@@ -1,5 +1,7 @@
 # HEAD
 
+## 4.2.0
+
 ### Bug fixes
 
 - The `Kernel` extension methods (`require "retriable/core_ext/kernel"`) are now
@@ -21,7 +23,7 @@
   key) now raises `ArgumentError, "<key> is not a valid option"`, matching the
   `with_override` path. Non-Hash `contexts` and non-Hash per-context values
   remain leniently treated as empty options (no behavior change). Option
-  *values* are still validated lazily at retry time, unchanged.
+  _values_ are still validated lazily at retry time, unchanged.
 
 ### Docs
 
