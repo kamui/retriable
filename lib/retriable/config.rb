@@ -89,6 +89,23 @@ module Retriable
       end
     end
 
+    def initialize_copy(other)
+      super
+      @on        = dup_collection(other.on)
+      @intervals = other.intervals&.dup
+      @contexts  = dup_contexts(other.contexts)
+    end
+
+    def dup_collection(value)
+      value.is_a?(Array) || value.is_a?(Hash) || value.is_a?(Set) ? value.dup : value
+    end
+
+    def dup_contexts(contexts)
+      return contexts unless contexts.is_a?(Hash)
+
+      contexts.transform_values { |options| options.is_a?(Hash) ? options.dup : options }
+    end
+
     def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)
       validate_non_negative_number(:multiplier, multiplier)

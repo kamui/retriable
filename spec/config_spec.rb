@@ -209,4 +209,41 @@ describe Retriable::Config do
       expect { described_class.new(contexts: { api: { tries: 3, base_interval: 1.0 } }) }.not_to raise_error
     end
   end
+
+  context "#dup (copy-on-write isolation)" do
+    it "deep-copies contexts so mutating the copy leaves the original intact" do
+      original = described_class.new(contexts: { sql: { tries: 1 } })
+      copy = original.dup
+
+      copy.contexts[:http] = { tries: 2 }
+      copy.contexts[:sql][:tries] = 99
+
+      expect(original.contexts).to eq(sql: { tries: 1 })
+    end
+
+    it "deep-copies on and intervals collections" do
+      original = described_class.new(on: [StandardError], intervals: [1, 2])
+      copy = original.dup
+
+      copy.on << ArgumentError
+      copy.intervals << 3
+
+      expect(original.on).to eq([StandardError])
+      expect(original.intervals).to eq([1, 2])
+    end
+
+    it "preserves a non-collection on value (Exception class) without duping it" do
+      original = described_class.new(on: StandardError)
+      expect(original.dup.on).to be(StandardError)
+    end
+
+    it "deep-copies a Hash on value so the copy is a distinct hash" do
+      original = described_class.new(on: { StandardError => /boom/ })
+      copy = original.dup
+
+      copy.on[ArgumentError] = /other/
+
+      expect(original.on).to eq(StandardError => /boom/)
+    end
+  end
 end
