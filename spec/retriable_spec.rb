@@ -1357,5 +1357,21 @@ describe Retriable do
 
       expect(callback_called).to be(true)
     end
+
+    it "resolves the context against a single config snapshot" do
+      with_ctx = Retriable::Config.new(sleep_disabled: true, contexts: { api: { tries: 1 } })
+      without_ctx = Retriable::Config.new(sleep_disabled: true)
+
+      # Simulate a concurrent #configure publishing a new config between
+      # with_context's existence check and its option resolution: the first
+      # config read sees the context, later reads do not. with_context must
+      # read config once so the context options are never silently dropped.
+      allow(described_class).to receive(:config).and_return(with_ctx, without_ctx)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }
+        .to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+    end
   end
 end
