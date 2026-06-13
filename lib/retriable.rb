@@ -15,14 +15,37 @@ module Retriable
   RetryPlan = Struct.new(:max_tries, :interval_for)
   private_constant :RetryPlan
 
+  # Serializes #configure so concurrent read-modify-write swaps cannot drop one
+  # another's updates. Reads of @config stay lock-free: #configure only ever
+  # publishes a brand-new, never-mutated Config via an atomic reference assignment.
+  CONFIG_MUTEX = Mutex.new
+  private_constant :CONFIG_MUTEX
+
+  # Eagerly initialized at load time. `require` is serialized in MRI, so this runs
+  # exactly once before any thread can reach #config/#configure, closing the
+  # `@config ||= Config.new` check-then-act race.
+  @config = Config.new
+
   module_function
 
+  # Copy-on-write: dup the published config, let the caller mutate the copy, then
+  # atomically publish it. Readers therefore always observe a consistent,
+  # fully-applied snapshot, and a failed/raising block leaves the old config
+  # intact. Does NOT validate (validation stays lazy at #retriable time).
+  # NOTE: CONFIG_MUTEX is non-reentrant — do not call #configure from within a
+  # configure block.
   def configure
-    yield(config)
+    CONFIG_MUTEX.synchronize do
+      new_config = (@config ||= Config.new).dup
+      yield(new_config)
+      @config = new_config
+    end
   end
 
+  # Lock-free read of the eagerly-published config. The guarded fallback only runs
+  # if @config was explicitly reset to nil (e.g. the test suite's before(:each)).
   def config
-    @config ||= Config.new
+    @config || CONFIG_MUTEX.synchronize { @config ||= Config.new }
   end
 
   def with_override(opts = {})
@@ -43,22 +66,27 @@ module Retriable
   def with_context(context_key, options = {}, &)
     raise ArgumentError, "with_context requires a block" unless block_given?
 
-    contexts = available_contexts
+    config_snapshot = config
+    contexts = available_contexts(config_snapshot)
 
     if !contexts.key?(context_key)
       raise ArgumentError,
             "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
-    retriable(context_options_for(context_key, options), &)
+    retriable_with_config(config_snapshot, context_options_for(context_key, options, config_snapshot), &)
   end
 
   def retriable(opts = {}, &)
+    retriable_with_config(config, opts, &)
+  end
+
+  def retriable_with_config(base_config, opts = {}, &)
     override_config = current_override
     local_config = if opts.empty? && !override_config
-                     config
+                     base_config
                    else
-                     Config.new(apply_override_options(merge_layer(config.to_h, opts), override_config))
+                     Config.new(apply_override_options(merge_layer(base_config.to_h, opts), override_config))
                    end
 
     # Config is mutable through `configure`, so validate again immediately before use.
@@ -232,12 +260,12 @@ module Retriable
     merged
   end
 
-  def available_contexts
-    config_contexts.merge(override_contexts)
+  def available_contexts(config_snapshot)
+    config_contexts(config_snapshot).merge(override_contexts)
   end
 
-  def context_options_for(context_key, options)
-    context_options = config_contexts.fetch(context_key, {})
+  def context_options_for(context_key, options, config_snapshot)
+    context_options = config_contexts(config_snapshot).fetch(context_key, {})
     context_options = {} unless context_options.is_a?(Hash)
     context_options = merge_layer(context_options, options)
 
@@ -247,8 +275,8 @@ module Retriable
     apply_override_options(context_options, override_context_options)
   end
 
-  def config_contexts
-    config.contexts.is_a?(Hash) ? config.contexts : {}
+  def config_contexts(config_snapshot)
+    config_snapshot.contexts.is_a?(Hash) ? config_snapshot.contexts : {}
   end
 
   def override_contexts
@@ -262,6 +290,7 @@ module Retriable
   end
 
   private_class_method(
+    :retriable_with_config,
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,

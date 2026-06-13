@@ -89,6 +89,25 @@ module Retriable
       end
     end
 
+    def initialize_copy(other)
+      super
+      @on        = deep_dup(other.on)
+      @intervals = deep_dup(other.intervals)
+      @contexts  = deep_dup(other.contexts)
+    end
+
+    # Recursively copies the mutable containers (Hash/Array/Set) so a dup is
+    # fully isolated from the original, while leaving leaves (scalars, procs,
+    # exception classes, regexps) shared by reference.
+    def deep_dup(value)
+      case value
+      when Hash then value.each_with_object({}) { |(key, val), copy| copy[key] = deep_dup(val) }
+      when Array then value.map { |val| deep_dup(val) }
+      when Set then value.each_with_object(Set.new) { |val, copy| copy << deep_dup(val) }
+      else value
+      end
+    end
+
     def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)
       validate_non_negative_number(:multiplier, multiplier)

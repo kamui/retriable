@@ -770,6 +770,51 @@ describe Retriable do
     end
   end
 
+  context "#configure thread safety (copy-on-write)" do
+    it "eagerly initializes @config at load time, before any configure/config call" do
+      script = "require 'retriable'; " \
+               "exit(Retriable.instance_variable_get(:@config).is_a?(Retriable::Config) ? 0 : 1)"
+      expect(system(RbConfig.ruby, "-Ilib", "-e", script)).to be(true)
+    end
+
+    it "publishes a new Config object on configure instead of mutating in place" do
+      before = described_class.config
+      described_class.configure { |c| c.tries = 7 }
+      after = described_class.config
+
+      expect(after).not_to equal(before)
+      expect(after.tries).to eq(7)
+      expect(before.tries).not_to eq(7)
+    end
+
+    it "keeps an already-captured snapshot stable across later configures" do
+      described_class.configure { |c| c.contexts[:sql] = { tries: 1 } }
+      snapshot = described_class.config
+
+      described_class.configure { |c| c.contexts[:http] = { tries: 2 } }
+      described_class.configure { |c| c.contexts[:sql][:tries] = 99 }
+
+      expect(snapshot.contexts).to eq(sql: { tries: 1 })
+    end
+
+    it "does not drop updates when configured concurrently from many threads" do
+      keys = (0...50).map { |i| :"ctx_#{i}" }
+      release = Queue.new
+
+      threads = keys.map do |key|
+        Thread.new do
+          release.pop
+          described_class.configure { |c| c.contexts[key] = { tries: 1 } }
+        end
+      end
+
+      keys.size.times { release << true }
+      threads.each(&:join)
+
+      expect(described_class.config.contexts.keys).to match_array(keys)
+    end
+  end
+
   context "#retriable tries/intervals precedence" do
     it "lets a per-call tries clear globally configured intervals" do
       described_class.configure { |c| c.intervals = [0.5, 1.0] }
@@ -1324,6 +1369,38 @@ describe Retriable do
         .to raise_error(StandardError)
 
       expect(callback_called).to be(true)
+    end
+
+    it "resolves the context against a single config snapshot" do
+      with_ctx = Retriable::Config.new(sleep_disabled: true, contexts: { api: { tries: 1 } })
+      without_ctx = Retriable::Config.new(sleep_disabled: true)
+
+      # Simulate a concurrent #configure publishing a new config between
+      # with_context's existence check and its option resolution: the first
+      # config read sees the context, later reads do not. with_context must
+      # read config once so the context options are never silently dropped.
+      allow(described_class).to receive(:config).and_return(with_ctx, without_ctx)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }
+        .to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+    end
+
+    it "resolves global options against the same snapshot used for the context" do
+      special_error = Class.new(StandardError)
+      with_ctx = Retriable::Config.new(sleep_disabled: true, on: [special_error], contexts: { api: { tries: 2 } })
+      swapped = Retriable::Config.new(sleep_disabled: true, on: [ArgumentError])
+
+      # A concurrent #configure swaps the global config (here, the retriable
+      # `on` list) after with_context has captured its snapshot. The whole
+      # context execution must use the captured snapshot, not the swapped one.
+      allow(described_class).to receive(:config).and_return(with_ctx, swapped)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception(special_error) } }
+        .to raise_error(special_error)
+
+      expect(@tries).to eq(2)
     end
   end
 end
