@@ -21,13 +21,13 @@ module Retriable
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
-      backoff = ExponentialBackoff.new
+      defaults = ExponentialBackoff::DEFAULTS
 
-      @tries            = backoff.tries
-      @base_interval    = backoff.base_interval
-      @max_interval     = backoff.max_interval
-      @rand_factor      = backoff.rand_factor
-      @multiplier       = backoff.multiplier
+      @tries            = defaults[:tries]
+      @base_interval    = defaults[:base_interval]
+      @max_interval     = defaults[:max_interval]
+      @rand_factor      = defaults[:rand_factor]
+      @multiplier       = defaults[:multiplier]
       @sleep_disabled   = false
       @max_elapsed_time = 900 # 15 min
       @intervals        = nil
