@@ -248,8 +248,13 @@ do not inherit it. This makes `#with_override` safe to use in parallel test
 runners. Fibers running inside the same thread share the thread's active
 override.
 
-`#with_override` stores the provided options directly. Do not mutate the
-options hash or nested values for the duration of the block.
+`#with_override` stores the provided options hash **by reference** and reads
+from it on every attempt while the block runs. Treat the hash and all of its
+nested values as immutable for the duration of the block: do not mutate them
+from inside the block, and do not mutate them from another thread or fiber that
+shares this thread's active override. Mutating the options mid-block results in
+undefined retry behavior. If options must be computed, build the hash before
+calling `#with_override` and do not retain a reference you will later mutate.
 
 For test-integration patterns (RSpec `around`, helper methods, Minitest, etc.),
 see [docs/testing.md](docs/testing.md).
