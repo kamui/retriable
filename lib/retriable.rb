@@ -74,15 +74,19 @@ module Retriable
             "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
-    retriable(context_options_for(context_key, options, config_snapshot), &)
+    retriable_with_config(config_snapshot, context_options_for(context_key, options, config_snapshot), &)
   end
 
   def retriable(opts = {}, &)
+    retriable_with_config(config, opts, &)
+  end
+
+  def retriable_with_config(base_config, opts = {}, &)
     override_config = current_override
     local_config = if opts.empty? && !override_config
-                     config
+                     base_config
                    else
-                     Config.new(apply_override_options(merge_layer(config.to_h, opts), override_config))
+                     Config.new(apply_override_options(merge_layer(base_config.to_h, opts), override_config))
                    end
 
     # Config is mutable through `configure`, so validate again immediately before use.
@@ -286,6 +290,7 @@ module Retriable
   end
 
   private_class_method(
+    :retriable_with_config,
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,

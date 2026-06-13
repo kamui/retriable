@@ -1386,5 +1386,21 @@ describe Retriable do
 
       expect(@tries).to eq(1)
     end
+
+    it "resolves global options against the same snapshot used for the context" do
+      special_error = Class.new(StandardError)
+      with_ctx = Retriable::Config.new(sleep_disabled: true, on: [special_error], contexts: { api: { tries: 2 } })
+      swapped = Retriable::Config.new(sleep_disabled: true, on: [ArgumentError])
+
+      # A concurrent #configure swaps the global config (here, the retriable
+      # `on` list) after with_context has captured its snapshot. The whole
+      # context execution must use the captured snapshot, not the swapped one.
+      allow(described_class).to receive(:config).and_return(with_ctx, swapped)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception(special_error) } }
+        .to raise_error(special_error)
+
+      expect(@tries).to eq(2)
+    end
   end
 end
