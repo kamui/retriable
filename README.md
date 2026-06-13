@@ -473,6 +473,9 @@ Retriable.with_context(:mysql, tries: 30) do
 end
 ```
 
+`#with_context` requires a block and raises `ArgumentError` if called without
+one.
+
 ## Kernel Extension
 
 If you want to call `Retriable.retriable` without the `Retriable` module prefix and you don't mind extending `Kernel`,

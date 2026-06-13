@@ -41,14 +41,14 @@ module Retriable
   end
 
   def with_context(context_key, options = {}, &)
+    raise ArgumentError, "with_context requires a block" unless block_given?
+
     contexts = available_contexts
 
     if !contexts.key?(context_key)
       raise ArgumentError,
             "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
-
-    return unless block_given?
 
     retriable(context_options_for(context_key, options), &)
   end
