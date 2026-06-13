@@ -29,6 +29,7 @@ module Retriable
     raise ArgumentError, "empty override options are not allowed" if opts.empty?
     raise ArgumentError, "with_override requires a block" unless block_given?
 
+    opts = snapshot_override_options(opts)
     validate_override_options(opts)
 
     previous = Thread.current.thread_variable_get(OVERRIDE_THREAD_KEY)
@@ -232,6 +233,24 @@ module Retriable
     merged
   end
 
+  # Isolate the caller's override hash from later mutation. We shallow-dup the
+  # top level and dup :contexts two levels deep (the contexts Hash and each
+  # per-context options Hash) because that is the documented nesting depth.
+  # Values (procs like :on_retry, exception classes in :on, regexps) are shared
+  # by reference and deliberately not duplicated — a Marshal deep-dup would raise
+  # on Proc. Note: :on and :intervals values are shared by reference (only
+  # :contexts is deep-dupped) per the scope of this fix.
+  def snapshot_override_options(opts)
+    snapshot = opts.dup
+    contexts = snapshot[:contexts]
+    if contexts.is_a?(Hash)
+      snapshot[:contexts] = contexts.each_with_object({}) do |(key, value), acc|
+        acc[key] = value.is_a?(Hash) ? value.dup : value
+      end
+    end
+    snapshot
+  end
+
   def available_contexts
     config_contexts.merge(override_contexts)
   end
@@ -274,6 +293,7 @@ module Retriable
     :hash_exception_match?,
     :apply_override_options,
     :merge_layer,
+    :snapshot_override_options,
     :available_contexts,
     :context_options_for,
     :config_contexts,

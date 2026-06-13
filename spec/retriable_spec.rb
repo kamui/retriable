@@ -1087,6 +1087,64 @@ describe Retriable do
         expect(@tries).to eq(2)
       end
     end
+
+    it "snapshots opts so top-level mutation during the block does not change the override" do
+      opts = { tries: 1 }
+      tries = 0
+
+      described_class.with_override(opts) do
+        opts[:tries] = 99 # caller mutates their own hash mid-flight
+        begin
+          described_class.retriable do
+            tries += 1
+            raise StandardError
+          end
+        rescue StandardError
+          # swallow; we only care about attempt count
+        end
+      end
+
+      expect(tries).to eq(1)
+    end
+
+    it "snapshots :contexts so nested mutation during the block does not change the override" do
+      opts = { contexts: { api: { tries: 1 } } }
+      tries = 0
+
+      described_class.with_override(opts) do
+        opts[:contexts][:api][:tries] = 99 # mutate nested per-context options
+        opts[:contexts][:added] = { tries: 99 } # add a new context
+        begin
+          described_class.with_context(:api) do
+            tries += 1
+            raise StandardError
+          end
+        rescue StandardError
+          # swallow
+        end
+      end
+
+      expect(tries).to eq(1)
+    end
+
+    it "preserves procs and exception classes in the override snapshot" do
+      retry_calls = 0
+      on_retry = proc { retry_calls += 1 }
+
+      described_class.with_override(tries: 2, on: { StandardError => nil }, on_retry: on_retry) do
+        described_class.retriable do
+          raise StandardError
+        end
+      rescue StandardError
+        # swallow
+      end
+
+      # on_retry fires on every failed attempt, including the final one (see
+      # lib/retriable.rb on_retry/on_give_up contract), so tries: 2 => 2 calls.
+      # The point of this test is that the proc survives the snapshot and is
+      # still invoked (and the StandardError key in :on still matches).
+      expect(retry_calls).to eq(2)
+    end
   end
 
   context "#with_override thread safety" do
