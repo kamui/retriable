@@ -1,4 +1,23 @@
-# HEAD
+## 4.2.0
+
+### Thread safety
+
+- `Retriable.configure` is now copy-on-write and thread-safe. The global config
+  is eagerly initialized at load time (closing an init race where concurrent
+  boot could create two `Config` objects), and `configure` now mutates a `dup`
+  under a mutex before atomically publishing it. Readers on the `retriable` fast
+  path always observe a single consistent snapshot instead of a live config that
+  another thread could be mutating mid-read (torn reads). `configure` still does
+  not validate; validation remains lazy at `retriable`-call time.
+- `Config#dup` now deep-copies its mutable members (`on`, `intervals`,
+  `contexts`) via `initialize_copy`, so a duplicated config is fully isolated
+  from the original. Scalars, procs, and exception classes stay shared by
+  reference. This underpins the copy-on-write `configure`.
+- `Retriable.with_context` now captures a single config snapshot and threads it
+  through context existence checking and option resolution. Previously it read
+  the published config multiple times, so a concurrent `configure` between reads
+  could pass the existence check on the old snapshot while options resolved
+  against the new one, silently dropping the context's retry options.
 
 ### Bug fixes
 
