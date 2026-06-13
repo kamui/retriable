@@ -8,6 +8,7 @@
   methods, so they leaked onto every object's public API and could be invoked
   with an explicit receiver (e.g. `"foo".retriable { ... }`). They remain
   callable in the documented receiver-less form.
+  ([#146](https://github.com/kamui/retriable/pull/146))
 
 ### Docs
 
