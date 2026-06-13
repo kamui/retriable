@@ -1264,6 +1264,12 @@ describe Retriable do
       expect(@tries).to eq(0)
     end
 
+    it "checks for a block before looking up the context" do
+      expect { described_class.with_context(:missing) }
+        .to raise_error(ArgumentError, /with_context requires a block/)
+      expect(@tries).to eq(0)
+    end
+
     it "passes try count through to the context block" do
       seen_tries = []
 
