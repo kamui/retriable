@@ -15,14 +15,37 @@ module Retriable
   RetryPlan = Struct.new(:max_tries, :interval_for)
   private_constant :RetryPlan
 
+  # Serializes #configure so concurrent read-modify-write swaps cannot drop one
+  # another's updates. Reads of @config stay lock-free: #configure only ever
+  # publishes a brand-new, never-mutated Config via an atomic reference assignment.
+  CONFIG_MUTEX = Mutex.new
+  private_constant :CONFIG_MUTEX
+
+  # Eagerly initialized at load time. `require` is serialized in MRI, so this runs
+  # exactly once before any thread can reach #config/#configure, closing the
+  # `@config ||= Config.new` check-then-act race.
+  @config = Config.new
+
   module_function
 
+  # Copy-on-write: dup the published config, let the caller mutate the copy, then
+  # atomically publish it. Readers therefore always observe a consistent,
+  # fully-applied snapshot, and a failed/raising block leaves the old config
+  # intact. Does NOT validate (validation stays lazy at #retriable time).
+  # NOTE: CONFIG_MUTEX is non-reentrant — do not call #configure from within a
+  # configure block.
   def configure
-    yield(config)
+    CONFIG_MUTEX.synchronize do
+      new_config = (@config ||= Config.new).dup
+      yield(new_config)
+      @config = new_config
+    end
   end
 
+  # Lock-free read of the eagerly-published config. The guarded fallback only runs
+  # if @config was explicitly reset to nil (e.g. the test suite's before(:each)).
   def config
-    @config ||= Config.new
+    @config || CONFIG_MUTEX.synchronize { @config ||= Config.new }
   end
 
   def with_override(opts = {})
