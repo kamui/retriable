@@ -1307,6 +1307,13 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
+    it "surfaces an invalid context on any retriable call before that context is used" do
+      described_class.configure { |c| c.contexts[:unused] = { contexts: {} } }
+
+      expect { described_class.retriable { :ok } }
+        .to raise_error(ArgumentError, /contexts is not a valid option/)
+    end
+
     it "invokes on_give_up configured on a context" do
       callback_called = false
       described_class.configure do |c|

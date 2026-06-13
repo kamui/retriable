@@ -180,4 +180,33 @@ describe Retriable::Config do
       end
     end
   end
+
+  context "context structure validation" do
+    it "rejects a context whose options contain a nested :contexts key" do
+      expect { described_class.new(contexts: { api: { contexts: {} } }) }
+        .to raise_error(ArgumentError, /contexts is not a valid option/)
+    end
+
+    it "rejects a context with an unknown option key" do
+      expect { described_class.new(contexts: { api: { does_not_exist: 1 } }) }
+        .to raise_error(ArgumentError, /does_not_exist is not a valid option/)
+    end
+
+    it "validates context structure even when intervals is provided" do
+      expect { described_class.new(intervals: [0.1], contexts: { api: { contexts: {} } }) }
+        .to raise_error(ArgumentError, /contexts is not a valid option/)
+    end
+
+    it "accepts a non-Hash context value (treated as empty options)" do
+      expect { described_class.new(contexts: { broken: nil }) }.not_to raise_error
+    end
+
+    it "accepts nil contexts" do
+      expect { described_class.new(contexts: nil) }.not_to raise_error
+    end
+
+    it "accepts a valid context" do
+      expect { described_class.new(contexts: { api: { tries: 3, base_interval: 1.0 } }) }.not_to raise_error
+    end
+  end
 end

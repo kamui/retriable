@@ -18,6 +18,9 @@ module Retriable
       contexts
     ]).freeze
 
+    CONTEXT_ATTRIBUTES = (ATTRIBUTES - %i[contexts]).freeze
+    private_constant :CONTEXT_ATTRIBUTES
+
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
@@ -51,6 +54,7 @@ module Retriable
     end
 
     def validate!
+      validate_contexts
       validate_callable(:retry_if, retry_if)
       validate_callable(:on_retry, on_retry)
       validate_callable(:on_give_up, on_give_up)
@@ -69,6 +73,21 @@ module Retriable
     end
 
     private
+
+    def validate_contexts
+      return unless contexts.is_a?(Hash)
+      return if contexts.empty?
+
+      contexts.each_value do |options|
+        next unless options.is_a?(Hash)
+
+        options.each_key do |k|
+          next if CONTEXT_ATTRIBUTES.include?(k)
+
+          raise ArgumentError, "#{k} is not a valid option"
+        end
+      end
+    end
 
     def validate_backoff_options
       validate_non_negative_number(:base_interval, base_interval)

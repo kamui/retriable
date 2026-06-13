@@ -14,6 +14,14 @@
   Previously a missing block was silently ignored: the call returned `nil` and
   the intended block never ran, hiding a caller bug. Behavior change: code that
   relied on the silent no-op will now raise.
+- `Config#validate!` now validates the structure of each entry in `contexts`,
+  so configured contexts are checked on every `Retriable.retriable`/
+  `with_context` call rather than only when a given context is first used. A
+  context whose options contain an unknown key (including a nested `contexts`
+  key) now raises `ArgumentError, "<key> is not a valid option"`, matching the
+  `with_override` path. Non-Hash `contexts` and non-Hash per-context values
+  remain leniently treated as empty options (no behavior change). Option
+  *values* are still validated lazily at retry time, unchanged.
 
 ### Docs
 
