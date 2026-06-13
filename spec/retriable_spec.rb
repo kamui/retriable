@@ -770,6 +770,51 @@ describe Retriable do
     end
   end
 
+  context "#configure thread safety (copy-on-write)" do
+    it "eagerly initializes @config at load time, before any configure/config call" do
+      script = "require 'retriable'; " \
+               "exit(Retriable.instance_variable_get(:@config).is_a?(Retriable::Config) ? 0 : 1)"
+      expect(system(RbConfig.ruby, "-Ilib", "-e", script)).to be(true)
+    end
+
+    it "publishes a new Config object on configure instead of mutating in place" do
+      before = described_class.config
+      described_class.configure { |c| c.tries = 7 }
+      after = described_class.config
+
+      expect(after).not_to equal(before)
+      expect(after.tries).to eq(7)
+      expect(before.tries).not_to eq(7)
+    end
+
+    it "keeps an already-captured snapshot stable across later configures" do
+      described_class.configure { |c| c.contexts[:sql] = { tries: 1 } }
+      snapshot = described_class.config
+
+      described_class.configure { |c| c.contexts[:http] = { tries: 2 } }
+      described_class.configure { |c| c.contexts[:sql][:tries] = 99 }
+
+      expect(snapshot.contexts).to eq(sql: { tries: 1 })
+    end
+
+    it "does not drop updates when configured concurrently from many threads" do
+      keys = (0...50).map { |i| :"ctx_#{i}" }
+      release = Queue.new
+
+      threads = keys.map do |key|
+        Thread.new do
+          release.pop
+          described_class.configure { |c| c.contexts[key] = { tries: 1 } }
+        end
+      end
+
+      keys.size.times { release << true }
+      threads.each(&:join)
+
+      expect(described_class.config.contexts.keys).to match_array(keys)
+    end
+  end
+
   context "#retriable tries/intervals precedence" do
     it "lets a per-call tries clear globally configured intervals" do
       described_class.configure { |c| c.intervals = [0.5, 1.0] }
