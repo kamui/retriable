@@ -66,14 +66,15 @@ module Retriable
   def with_context(context_key, options = {}, &)
     raise ArgumentError, "with_context requires a block" unless block_given?
 
-    contexts = available_contexts
+    config_snapshot = config
+    contexts = available_contexts(config_snapshot)
 
     if !contexts.key?(context_key)
       raise ArgumentError,
             "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
-    retriable(context_options_for(context_key, options), &)
+    retriable(context_options_for(context_key, options, config_snapshot), &)
   end
 
   def retriable(opts = {}, &)
@@ -255,12 +256,12 @@ module Retriable
     merged
   end
 
-  def available_contexts
-    config_contexts.merge(override_contexts)
+  def available_contexts(config_snapshot)
+    config_contexts(config_snapshot).merge(override_contexts)
   end
 
-  def context_options_for(context_key, options)
-    context_options = config_contexts.fetch(context_key, {})
+  def context_options_for(context_key, options, config_snapshot)
+    context_options = config_contexts(config_snapshot).fetch(context_key, {})
     context_options = {} unless context_options.is_a?(Hash)
     context_options = merge_layer(context_options, options)
 
@@ -270,8 +271,8 @@ module Retriable
     apply_override_options(context_options, override_context_options)
   end
 
-  def config_contexts
-    config.contexts.is_a?(Hash) ? config.contexts : {}
+  def config_contexts(config_snapshot)
+    config_snapshot.contexts.is_a?(Hash) ? config_snapshot.contexts : {}
   end
 
   def override_contexts
