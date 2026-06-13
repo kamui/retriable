@@ -23,6 +23,14 @@
   contract is now called out in the `on_retry` documentation so handlers guard
   arithmetic or logging on `next_interval`.
 
+### Performance
+
+- `Config#initialize` no longer allocates a throwaway `ExponentialBackoff` (and
+  runs its redundant `validate!`) just to read default values. Defaults now live
+  in a frozen `ExponentialBackoff::DEFAULTS` constant, removing an allocation and
+  redundant validation from the `retriable` hot path.
+  ([#149](https://github.com/kamui/retriable/pull/149))
+
 ## 4.1.1
 
 ### Bug fixes

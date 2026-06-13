@@ -14,14 +14,22 @@ module Retriable
       rand_factor
     ].freeze
 
+    DEFAULTS = {
+      tries: 3,
+      base_interval: 0.5,
+      max_interval: 60,
+      rand_factor: 0.5,
+      multiplier: 1.5
+    }.freeze
+
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
-      @tries         = 3
-      @base_interval = 0.5
-      @max_interval  = 60
-      @rand_factor   = 0.5
-      @multiplier    = 1.5
+      @tries         = DEFAULTS[:tries]
+      @base_interval = DEFAULTS[:base_interval]
+      @max_interval  = DEFAULTS[:max_interval]
+      @rand_factor   = DEFAULTS[:rand_factor]
+      @multiplier    = DEFAULTS[:multiplier]
 
       opts.each do |k, v|
         raise ArgumentError, "#{k} is not a valid option" if !ATTRIBUTES.include?(k)
