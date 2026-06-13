@@ -367,6 +367,8 @@ Retriable.retriable(on_retry: do_this_on_each_retry) do
 end
 ```
 
+> **Note:** On the final rescued attempt — when Retriable is about to give up because `tries` are exhausted — `on_retry` still fires (before `on_give_up`; see below), but `next_interval` is **`nil`** because there is no next retry. Guard any handler that does arithmetic or formatting on `next_interval` (for example `next_interval&.*(1000)`, or `if next_interval`), and avoid unconditionally logging messages like `"retrying in #{next_interval}s"` since no retry is coming. This mirrors the `nil` contract documented for [`on_give_up`](#callbacks) below.
+
 #### Disabling a Configured Callback Per Call
 
 If `on_retry` is set in `Retriable.configure`, every call uses it by default. To opt a specific call out — for example, a critical call site that should not log on retry — pass `on_retry: false` or `on_retry: nil`.

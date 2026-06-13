@@ -1,5 +1,13 @@
 # HEAD
 
+### Docs
+
+- Document that `on_retry` receives `next_interval: nil` on the final rescued
+  attempt, when Retriable is about to give up because `tries` are exhausted.
+  `on_retry` still fires before `on_give_up` (unchanged behavior); the `nil`
+  contract is now called out in the `on_retry` documentation so handlers guard
+  arithmetic or logging on `next_interval`.
+
 ## 4.1.1
 
 ### Bug fixes
