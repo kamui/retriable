@@ -237,7 +237,7 @@ module Retriable
   # top level and dup :contexts two levels deep (the contexts Hash and each
   # per-context options Hash) because that is the documented nesting depth.
   # Values (procs like :on_retry, exception classes in :on, regexps) are shared
-  # by reference and deliberately not duplicated — a Marshal deep-dup would raise
+  # by reference and deliberately not duplicated - a Marshal deep-dup would raise
   # on Proc. Note: :on and :intervals values are shared by reference (only
   # :contexts is deep-dupped) per the scope of this fix.
   def snapshot_override_options(opts)

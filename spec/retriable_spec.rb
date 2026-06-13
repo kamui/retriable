@@ -1114,6 +1114,12 @@ describe Retriable do
       described_class.with_override(opts) do
         opts[:contexts][:api][:tries] = 99 # mutate nested per-context options
         opts[:contexts][:added] = { tries: 99 } # add a new context
+
+        # The added context must not leak into the snapshotted override, proving
+        # the outer :contexts hash itself was duplicated (not just its values).
+        expect { described_class.with_context(:added) { :noop } }
+          .to raise_error(ArgumentError, /added not found/)
+
         begin
           described_class.with_context(:api) do
             tries += 1
