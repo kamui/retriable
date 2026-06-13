@@ -52,9 +52,9 @@ describe Retriable do
 
     # These two specs lock in the anonymous block forwarding (`&`) semantics
     # across both delegation layers: Kernel#retriable_with_context ->
-    # Retriable.with_context. If the `&` is dropped at either layer, the
-    # block is not forwarded and the inner `block_given?` check at
-    # lib/retriable.rb:51 short-circuits, causing the block to never run.
+    # Retriable.with_context. If the `&` is dropped at either layer, the block
+    # is not forwarded and the `block_given?` guard in with_context raises
+    # ArgumentError instead of running the block.
     it "forwards a block through Kernel#retriable_with_context" do
       require_relative "../lib/retriable/core_ext/kernel"
       Retriable.configure { |c| c.contexts[:sql] = { tries: 1 } }
@@ -64,11 +64,12 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
-    it "returns nil when Kernel#retriable_with_context is called without a block" do
+    it "raises an ArgumentError when Kernel#retriable_with_context is called without a block" do
       require_relative "../lib/retriable/core_ext/kernel"
       Retriable.configure { |c| c.contexts[:sql] = { tries: 1 } }
 
-      expect(retriable_with_context(:sql)).to be_nil
+      expect { retriable_with_context(:sql) }
+        .to raise_error(ArgumentError, /with_context requires a block/)
       expect(@tries).to eq(0)
     end
 
@@ -1257,8 +1258,9 @@ describe Retriable do
       expect(@tries).to eq(1)
     end
 
-    it "returns nil when called without a block" do
-      expect(described_class.with_context(:sql)).to be_nil
+    it "raises an ArgumentError when called without a block" do
+      expect { described_class.with_context(:sql) }
+        .to raise_error(ArgumentError, /with_context requires a block/)
       expect(@tries).to eq(0)
     end
 

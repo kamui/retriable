@@ -5,7 +5,7 @@ module Retriable
   def self.configure: () { (Config) -> void } -> void
   def self.config: () -> Config
   def self.with_override: (Hash[Symbol, untyped] options) { () -> untyped } -> untyped
-  def self.with_context: (Symbol context_key, ?Hash[Symbol, untyped] options) ?{ (Integer) -> untyped } -> untyped
+  def self.with_context: (Symbol context_key, ?Hash[Symbol, untyped] options) { (Integer) -> untyped } -> untyped
   def self.retriable: (?Hash[Symbol, untyped] options) { (Integer) -> untyped } -> untyped
 
   class Config

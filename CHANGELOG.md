@@ -9,6 +9,11 @@
   with an explicit receiver (e.g. `"foo".retriable { ... }`). They remain
   callable in the documented receiver-less form.
   ([#146](https://github.com/kamui/retriable/pull/146))
+- `Retriable.with_context` (and `Kernel#retriable_with_context`) now raises
+  `ArgumentError` when called without a block, matching `with_override`.
+  Previously a missing block was silently ignored: the call returned `nil` and
+  the intended block never ran, hiding a caller bug. Behavior change: code that
+  relied on the silent no-op will now raise.
 
 ### Docs
 
