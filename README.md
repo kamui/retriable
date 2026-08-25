@@ -211,6 +211,50 @@ When a higher-precedence layer sets `tries:` without `intervals:`, it clears any
 if `intervals` was configured). Within a single call, passing `intervals:` still
 overrides `tries:`.
 
+#### Thread safety
+
+`#configure` is the only supported way to change configuration, and it is safe to
+call from multiple threads.
+
+Configuration is copy-on-write. `#configure` duplicates the current config, hands
+your block the copy, and publishes it only if the block returns without raising.
+So a reader in another thread always sees either the whole previous config or the
+whole new one, never a half-applied mix, and a block that raises leaves the
+existing config in place.
+
+Configuration blocks are serialized. Keep them short, and do not wait inside one
+for work that may call `#configure`, because that work cannot begin until the
+current block returns. Readers are unaffected and continue using the last
+published config while a block runs.
+
+The published config is deeply frozen. Reaching around `#configure` to mutate it
+raises `FrozenError`:
+
+```ruby
+Retriable.config.tries = 5              # => FrozenError
+Retriable.config.contexts[:api] = {}    # => FrozenError
+
+Retriable.configure { |c| c.tries = 5 } # this is the supported path
+```
+
+That is deliberate. A published config is shared by every thread reading it, so an
+in-place write is a data race that used to corrupt other threads' retry behaviour
+silently. `Retriable.config` remains fine to **read**.
+
+Two more details:
+
+- `#configure` calls can nest. Nested calls on the configuring thread, including
+  calls from its fibers, share the outer working copy. Only the outermost call
+  publishes. If its block raises, none of the nested changes are published. A
+  nested call does not create an independent commit or savepoint.
+- Inside a `#configure` block, every fiber on the configuring thread sees the
+  in-progress config. Other threads keep seeing the last published one until the
+  block completes.
+
+Thread safety covers the config structure. User-supplied callbacks such as
+`retry_if`, `on_retry`, and `on_give_up` can still hold mutable state. The caller
+must synchronize that state if the callback can run from multiple threads.
+
 ### Override
 
 `#with_override` is a block-scoped API for forcing retry options that should

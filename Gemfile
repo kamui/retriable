@@ -17,6 +17,8 @@ group :development do
 end
 
 group :development, :test do
+  # ostruct left the default gems in Ruby 3.5; pry still requires it.
+  gem "ostruct"
   gem "pry"
   gem "rake", "~> 13.0"
 end

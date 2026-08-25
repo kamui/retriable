@@ -2,7 +2,7 @@ module Retriable
   VERSION: String
   OVERRIDE_THREAD_KEY: Symbol
 
-  def self.configure: () { (Config) -> void } -> void
+  def self.configure: [Result] () { (Config) -> Result } -> Result
   def self.config: () -> Config
   def self.with_override: (Hash[Symbol, untyped] options) { () -> untyped } -> untyped
   def self.with_context: (Symbol context_key, ?Hash[Symbol, untyped] options) { (Integer) -> untyped } -> untyped

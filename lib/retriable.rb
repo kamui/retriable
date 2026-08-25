@@ -12,17 +12,75 @@ module Retriable
   # break callers that use fiber-based concurrency.
   OVERRIDE_THREAD_KEY = :retriable_override
 
+  # True thread-local storage marking the Config this thread is currently
+  # building inside #configure. It answers one question — "am I mid-configure?"
+  # Which snapshot a given #retriable/#with_context call resolves against is a
+  # separate question, answered by passing that snapshot as an argument (see
+  # #retriable_with_config). Keeping the two questions on two mechanisms is
+  # deliberate: a thread-local would otherwise leak the resolved snapshot across
+  # the caller's block and change what `Retriable.config` returns inside it.
+  CONFIGURING_THREAD_KEY = :retriable_configuring
+  private_constant :CONFIGURING_THREAD_KEY
+
   RetryPlan = Struct.new(:max_tries, :interval_for)
   private_constant :RetryPlan
 
+  # Serializes complete #configure transactions so concurrent read-modify-write
+  # swaps cannot drop one another's updates.
+  CONFIG_MUTEX = Mutex.new
+  private_constant :CONFIG_MUTEX
+
+  # Guards the single @config reference. Held only for a reference read or the
+  # publishing write, never across the #configure block, so a writer blocks a
+  # reader for no longer than a pointer swap.
+  #
+  # One path on every engine. MRI's GVL would make an unsynchronized read safe,
+  # but JRuby and TruffleRuby offer no such happens-before guarantee. The common
+  # no-options #retriable path uses the snapshot directly, so this mutex has a
+  # measurable cost. benchmark/config_publication.rb tracks that cost. Replace
+  # this mechanism only when measurements justify a portable alternative.
+  CONFIG_PUBLICATION_MUTEX = Mutex.new
+  private_constant :CONFIG_PUBLICATION_MUTEX
+
+  # Eagerly initialized at load time. `require` is serialized in MRI, so this runs
+  # exactly once before any thread can reach #config/#configure, closing the
+  # `@config ||= Config.new` check-then-act race. Frozen like every snapshot
+  # published after it, so reads are immutable from the very first one.
+  @config = Config.new.freeze
+
   module_function
 
+  # Copy-on-write: dup the published config, let the caller mutate the copy, then
+  # atomically publish it, deeply frozen. Readers therefore always observe a
+  # consistent, fully-applied snapshot that nothing can mutate underneath them,
+  # and a failed/raising block leaves the old config intact. Does NOT validate
+  # (validation stays lazy at #retriable time).
+  # Nested calls on the configuring thread share the outer candidate. Only the
+  # outermost call takes CONFIG_MUTEX and publishes, so nesting remains safe even
+  # though the mutex is not reentrant.
   def configure
-    yield(config)
+    candidate = configuring_config
+    return yield(candidate) if candidate
+
+    CONFIG_MUTEX.synchronize do
+      candidate = config.dup
+      Thread.current.thread_variable_set(CONFIGURING_THREAD_KEY, candidate)
+      begin
+        result = yield(candidate)
+        publish_config(candidate)
+        result
+      ensure
+        Thread.current.thread_variable_set(CONFIGURING_THREAD_KEY, nil)
+      end
+    end
   end
 
+  # The configuring thread sees its own candidate, still mutable and mid-build.
+  # Every other reader sees the last fully published snapshot, which is deeply
+  # frozen: mutating it raises FrozenError instead of silently corrupting the
+  # config other threads are reading. Use #configure to change configuration.
   def config
-    @config ||= Config.new
+    configuring_config || published_config
   end
 
   def with_override(opts = {})
@@ -43,22 +101,32 @@ module Retriable
   def with_context(context_key, options = {}, &)
     raise ArgumentError, "with_context requires a block" unless block_given?
 
-    contexts = available_contexts
+    # Resolve the whole call against one snapshot and one traversal of its
+    # contexts. Re-reading `config` here would let a concurrent #configure pass
+    # the existence check on the old snapshot while options resolve against the
+    # new one, silently dropping the context's retry options.
+    config_snapshot = config
+    configured_contexts = config_contexts(config_snapshot)
+    contexts = configured_contexts.merge(override_contexts)
 
     if !contexts.key?(context_key)
       raise ArgumentError,
             "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
-    retriable(context_options_for(context_key, options), &)
+    retriable_with_config(config_snapshot, context_options_for(context_key, configured_contexts, options), &)
   end
 
   def retriable(opts = {}, &)
+    retriable_with_config(config, opts, &)
+  end
+
+  def retriable_with_config(base_config, opts = {}, &)
     override_config = current_override
     local_config = if opts.empty? && !override_config
-                     config
+                     base_config
                    else
-                     Config.new(apply_override_options(merge_layer(config.to_h, opts), override_config))
+                     Config.new(apply_override_options(merge_layer(base_config.to_h, opts), override_config))
                    end
 
     # Config is mutable through `configure`, so validate again immediately before use.
@@ -232,12 +300,11 @@ module Retriable
     merged
   end
 
-  def available_contexts
-    config_contexts.merge(override_contexts)
-  end
-
-  def context_options_for(context_key, options)
-    context_options = config_contexts.fetch(context_key, {})
+  # Takes the already-resolved contexts hash rather than the config snapshot, so
+  # the snapshot travels exactly one hop (into #retriable_with_config) instead of
+  # through every private helper that happens to need a corner of it.
+  def context_options_for(context_key, contexts, options)
+    context_options = contexts.fetch(context_key, {})
     context_options = {} unless context_options.is_a?(Hash)
     context_options = merge_layer(context_options, options)
 
@@ -247,8 +314,8 @@ module Retriable
     apply_override_options(context_options, override_context_options)
   end
 
-  def config_contexts
-    config.contexts.is_a?(Hash) ? config.contexts : {}
+  def config_contexts(config_snapshot)
+    config_snapshot.contexts.is_a?(Hash) ? config_snapshot.contexts : {}
   end
 
   def override_contexts
@@ -261,7 +328,28 @@ module Retriable
     Thread.current.thread_variable_get(OVERRIDE_THREAD_KEY)
   end
 
+  def configuring_config
+    Thread.current.thread_variable_get(CONFIGURING_THREAD_KEY)
+  end
+
+  def published_config
+    CONFIG_PUBLICATION_MUTEX.synchronize { @config }
+  end
+
+  # Publishes a deeply frozen deep copy of the candidate. The copy matters: it
+  # keeps the freeze off objects the caller still owns, so `c.on = my_array`
+  # inside a #configure block never leaves my_array frozen. The mutex covers the
+  # reference swap only; the copy and freeze happen outside it.
+  def publish_config(candidate)
+    snapshot = candidate.dup.freeze
+    CONFIG_PUBLICATION_MUTEX.synchronize { @config = snapshot }
+  end
+
   private_class_method(
+    :retriable_with_config,
+    :configuring_config,
+    :published_config,
+    :publish_config,
     :validate_override_options,
     :validate_context_override_options,
     :execute_tries,
@@ -274,7 +362,6 @@ module Retriable
     :hash_exception_match?,
     :apply_override_options,
     :merge_layer,
-    :available_contexts,
     :context_options_for,
     :config_contexts,
     :override_contexts,

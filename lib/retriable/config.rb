@@ -21,6 +21,9 @@ module Retriable
     CONTEXT_ATTRIBUTES = (ATTRIBUTES - %i[contexts]).freeze
     private_constant :CONTEXT_ATTRIBUTES
 
+    OWNED_CONTAINER_ATTRIBUTES = %i[on intervals contexts].freeze
+    private_constant :OWNED_CONTAINER_ATTRIBUTES
+
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
@@ -72,6 +75,23 @@ module Retriable
       validate_backoff_options
     end
 
+    # Deep-freezes the containers this Config owns, then itself. Without the deep
+    # part a "frozen" Config stays mutable one level down
+    # (`config.contexts[:api][:tries] = 1`), which is precisely the corruption a
+    # published snapshot exists to rule out. Leaves — procs, exception classes,
+    # regexps, scalars — are shared by reference and left untouched.
+    #
+    # Retriable only ever freezes a #dup it produced itself, so this never
+    # freezes a container the caller still holds.
+    def freeze
+      return self if frozen?
+
+      OWNED_CONTAINER_ATTRIBUTES.each do |attribute|
+        deep_freeze(instance_variable_get(:"@#{attribute}"))
+      end
+      super
+    end
+
     private
 
     def validate_contexts
@@ -87,6 +107,90 @@ module Retriable
           raise ArgumentError, "#{k} is not a valid option"
         end
       end
+    end
+
+    def initialize_copy(other)
+      super
+      OWNED_CONTAINER_ATTRIBUTES.each do |attribute|
+        instance_variable_set(:"@#{attribute}", deep_dup(other.public_send(attribute)))
+      end
+    end
+
+    # Recursively copies the mutable containers (Hash/Array/Set) so a dup is fully
+    # isolated from the original, leaving leaves (scalars, procs, exception
+    # classes, regexps) shared by reference.
+    #
+    # Copies start from #dup rather than a fresh literal. Rebuilding into a bare
+    # `{}` silently downgrades a Hash subclass to Hash and drops its
+    # default/default_proc, so a `contexts` hash with indifferent access would
+    # stop resolving string keys after the first #configure.
+    #
+    # Frozen state is deliberately not carried over: a dup is the mutable working
+    # copy that a #configure block mutates, and Retriable re-freezes it on
+    # publish.
+    #
+    # `seen` maps each source container to its copy so a self-referential
+    # structure terminates instead of recursing until the stack blows.
+    def deep_dup(value, seen = {}.compare_by_identity)
+      case value
+      when Hash, Array, Set
+        return seen[value] if seen.key?(value)
+
+        copy = value.dup
+        seen[value] = copy
+        deep_dup_into(value, copy, seen)
+        copy
+      else value
+      end
+    end
+
+    def deep_dup_into(value, copy, seen)
+      case value
+      when Hash then deep_dup_hash(value, copy, seen)
+      when Array then value.each_with_index { |val, index| copy[index] = deep_dup(val, seen) }
+      when Set then copy.replace(value.map { |val| deep_dup(val, seen) })
+      end
+    end
+
+    # Keys are deliberately left alone. Ruby already dups and freezes an unfrozen
+    # String key on assignment, and the supported key types (Symbols for
+    # `contexts`, exception classes for `on`) are immutable already.
+    #
+    # A mutable default value is part of the copied graph, because a shared one
+    # would let `config.contexts[:absent] << x` mutate the caller's object. A
+    # default_proc stays shared: it is a callable leaf, like every other proc a
+    # Config holds.
+    def deep_dup_hash(value, copy, seen)
+      value.each { |key, val| copy[key] = deep_dup(val, seen) }
+      copy.default = deep_dup(value.default, seen) unless value.default_proc
+    end
+
+    # Freezes exactly what #deep_dup treats as a container, so the two agree on
+    # where a Config's mutable surface ends. `seen` guards the same
+    # self-referential case.
+    def deep_freeze(value, seen = {}.compare_by_identity)
+      case value
+      when Hash then deep_freeze_hash(value, seen)
+      when Array, Set then deep_freeze_collection(value, seen)
+      else value
+      end
+    end
+
+    def deep_freeze_hash(value, seen)
+      return value if seen[value]
+
+      seen[value] = true
+      value.each_value { |val| deep_freeze(val, seen) }
+      deep_freeze(value.default, seen) unless value.default_proc
+      value.freeze
+    end
+
+    def deep_freeze_collection(value, seen)
+      return value if seen[value]
+
+      seen[value] = true
+      value.each { |val| deep_freeze(val, seen) }
+      value.freeze
     end
 
     def validate_backoff_options

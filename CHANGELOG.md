@@ -1,5 +1,53 @@
 # HEAD
 
+## 5.0.0
+
+### Upgrading
+
+Retriable 5.0 makes the thread-safety change below. Because it changes direct
+config mutation, it is released as a major version.
+([#151](https://github.com/kamui/retriable/pull/151))
+
+The published config is frozen. Mutating `Retriable.config` directly
+raises `FrozenError`:
+
+```ruby
+Retriable.config.sleep_disabled = true # => FrozenError
+Retriable.config.contexts[:api] = {}   # => FrozenError
+```
+
+Go through `configure` instead:
+
+```ruby
+Retriable.configure { |c| c.sleep_disabled = true }
+```
+
+Check your test setup first: `Retriable.config.sleep_disabled = true` in a
+`spec_helper` or `rails_helper` is the likeliest place this bites. Reading
+`Retriable.config` is unaffected.
+
+A published config is shared by every thread reading it, so an in-place write
+was a data race that could corrupt another thread's retry behaviour with no sign
+anything had gone wrong. Freezing it is what makes the copy-on-write guarantee
+below hold in practice rather than only on paper.
+
+### Bug fixes
+
+- `Retriable.configure` is now thread-safe. Configuration is copy-on-write: the
+  block mutates a duplicate, which is published atomically only if the block
+  returns without raising. Concurrent readers therefore see either the whole
+  previous config or the whole new one, never a half-applied mix, and a raising
+  block leaves the existing config in place. Nested mutable values (`on`,
+  `intervals`, `contexts`, and anything inside them) are deep-copied, so a
+  mutation inside a `configure` block can no longer reach back into the config
+  other threads are reading. `Retriable.with_context` now resolves the context
+  lookup and the global options against a single snapshot, closing a race where
+  a concurrent `configure` could drop a context's retry options. Nested
+  `configure` calls remain supported: they share the outer working copy and
+  publish once when the outermost block returns. See **Upgrading** above for the
+  direct-mutation behavior change this required.
+  ([#151](https://github.com/kamui/retriable/pull/151))
+
 ## 4.2.0
 
 ### Bug fixes
