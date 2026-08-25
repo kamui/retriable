@@ -71,17 +71,28 @@ configuration writes are common. Reading `Retriable.config` is unchanged.
 
 ### Ruby version
 
-Retriable 4.0 requires Ruby 3.2 or later. If you run Ruby 2.3.0-3.1.x, or want to stay on the 3.x gem line, use Retriable 3.8.x by specifying `~> 3.8` in your Gemfile.
+Retriable 4.0 requires Ruby 3.2 or later. If your application still runs Ruby
+2.3.0 through 3.1.x, pin Retriable to the 3.8 release line in your Gemfile:
+
+```ruby
+gem "retriable", "~> 3.8"
+```
 
 ### `timeout:` option removed
 
-The `timeout:` option was deprecated in Retriable 3.8.0 and has been removed in Retriable 4.0. It was a thin wrapper around `Timeout.timeout`, which has well-documented safety issues: it interrupts execution at arbitrary lines and can corrupt internal state in libraries that are not interrupt-safe. See [issue #96](https://github.com/kamui/retriable/issues/96) for the original report of this problem.
+Retriable 4.0 removes the `timeout:` option deprecated in 3.8.0. The option
+called `Timeout.timeout`, which can interrupt code at any line and leave
+non-interrupt-safe libraries in a corrupt state. [Issue #96](https://github.com/kamui/retriable/issues/96)
+has the original bug report.
 
-If you previously used `Retriable.retriable(timeout: 5) { ... }`, you have two recommended alternatives:
+Replace code such as `Retriable.retriable(timeout: 5) { ... }` with one of the
+following approaches.
 
-1. **Use your library's native timeout** (preferred). For example, configure `Net::HTTP#read_timeout`, Faraday's `request.timeout`, or your database client's statement timeout. Library-native timeouts do not have the safety issues of `Timeout.timeout`.
+1. Prefer the library's own timeout setting, such as `Net::HTTP#read_timeout`,
+   Faraday's `request.timeout`, or a database statement timeout. These settings
+   avoid the arbitrary interruption caused by `Timeout.timeout`.
 
-2. **Manage the timeout yourself inside the block** if no native option exists:
+2. If the library has no timeout setting, wrap the operation yourself:
 
    ```ruby
    require "timeout"
@@ -93,11 +104,21 @@ If you previously used `Retriable.retriable(timeout: 5) { ... }`, you have two r
    end
    ```
 
-   **Note:** This still uses `Timeout.timeout`, which has the same safety issues that motivated removing the option — interruption can happen at any line, including inside non-interrupt-safe library code (mutexes, file handles, network sockets, allocator state). Prefer option 1 wherever possible. For background, see [why Ruby's `Timeout` is dangerous](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/), [Headius on Thread#raise and Timeout](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html), [In Ruby, don't use `Timeout`](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001), and [Timeout: Ruby's most dangerous API](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/).
+   This keeps the old behavior, including its risks. `Timeout.timeout` may
+   interrupt code while it holds a mutex, file handle, network socket, or other
+   internal state. Use it only when the library offers no safer timeout. For more
+   detail, read [why Ruby's `Timeout` is dangerous](https://jvns.ca/blog/2015/11/27/why-rubys-timeout-is-dangerous-and-thread-dot-raise-is-terrifying/),
+   [Headius on `Thread#raise` and `Timeout`](http://blog.headius.com/2008/02/ruby-threadraise-threadkill-timeoutrb.html),
+   [In Ruby, don't use `Timeout`](https://adamhooper.medium.com/in-ruby-dont-use-timeout-77d9d4e5a001), or
+   [Timeout: Ruby's most dangerous API](https://www.mikeperham.com/2015/05/08/timeout-rubys-most-dangerous-api/).
 
-   Like the removed `timeout:` option, `Timeout.timeout(5)` inside the block is per-try — each retry gets a fresh 5-second budget. For an overall cap across all retries, use `max_elapsed_time:` instead.
+   `Timeout.timeout(5)` applies to each attempt, so every retry gets a new
+   five-second limit. Use `max_elapsed_time:` to cap the total time spent across
+   all attempts.
 
-Passing `timeout:` to `Retriable.retriable` or `Retriable.with_override` now raises `ArgumentError`. The `timeout` configuration attribute has also been removed, so `Retriable.configure { |c| c.timeout = 5 }` now raises `NoMethodError`.
+Passing `timeout:` to `Retriable.retriable` or `Retriable.with_override` now
+raises `ArgumentError`. Setting `timeout` in `Retriable.configure` now raises
+`NoMethodError` because the configuration attribute no longer exists.
 
 ## Installation
 
