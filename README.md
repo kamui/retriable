@@ -137,7 +137,7 @@ require 'retriable'
 In your Gemfile:
 
 ```ruby
-gem 'retriable', '~> 4.0'
+gem 'retriable', '~> 5.0'
 ```
 
 ## Usage
@@ -284,7 +284,7 @@ Retriable.configure { |c| c.tries = 5 } # this is the supported path
 ```
 
 That is deliberate. A published config is shared by every thread reading it, so an
-in-place write is a data race that used to corrupt other threads' retry behaviour
+in-place write is a data race that used to corrupt other threads' retry behavior
 silently. `Retriable.config` remains fine to **read**.
 
 Two more details:

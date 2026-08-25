@@ -2,7 +2,10 @@
 
 ## 5.0.0
 
-### Upgrading
+**This is a major release with a breaking change. Please read carefully before
+upgrading.**
+
+### Breaking changes
 
 Retriable 5.0 makes the thread-safety change below. Because it changes direct
 config mutation, it is released as a major version.
@@ -27,7 +30,7 @@ Check your test setup first: `Retriable.config.sleep_disabled = true` in a
 `Retriable.config` is unaffected.
 
 A published config is shared by every thread reading it, so an in-place write
-was a data race that could corrupt another thread's retry behaviour with no sign
+was a data race that could corrupt another thread's retry behavior with no sign
 anything had gone wrong. Freezing it is what makes the copy-on-write guarantee
 below hold in practice rather than only on paper.
 
@@ -44,8 +47,8 @@ below hold in practice rather than only on paper.
   lookup and the global options against a single snapshot, closing a race where
   a concurrent `configure` could drop a context's retry options. Nested
   `configure` calls remain supported: they share the outer working copy and
-  publish once when the outermost block returns. See **Upgrading** above for the
-  direct-mutation behavior change this required.
+  publish once when the outermost block returns. See **Breaking changes** above
+  for the direct-mutation behavior change this required.
   ([#151](https://github.com/kamui/retriable/pull/151))
 
 ## 4.2.0
