@@ -7,6 +7,7 @@ Retriable is a simple DSL to retry failed code blocks with randomized [exponenti
 ## Table of Contents
 
 - [Requirements](#requirements)
+- [Migration from 4.x to 5.x](#migration-from-4x-to-5x)
 - [Migration from 3.x to 4.0](#migration-from-3x-to-40)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -41,6 +42,30 @@ If you need Ruby 2.0.0-2.2.x support, use the [3.1 branch](https://github.com/ka
 If you need Ruby 1.9.3 support, use the [2.x branch](https://github.com/kamui/retriable/tree/2.x) by specifying `~2.1` in your Gemfile.
 
 If you need Ruby 1.8.x to 1.9.2 support, use the [1.x branch](https://github.com/kamui/retriable/tree/1.x) by specifying `~1.4` in your Gemfile.
+
+## Migration from 4.x to 5.x
+
+Retriable 5.0 makes configuration copy-on-write so that concurrent readers see
+one complete configuration. As part of that change, `Retriable.config` returns a
+deeply frozen snapshot. Code that mutates this snapshot directly now raises
+`FrozenError`:
+
+```ruby
+Retriable.config.sleep_disabled = true # => FrozenError
+Retriable.config.contexts[:api] = {}   # => FrozenError
+```
+
+Move these writes into a `Retriable.configure` block:
+
+```ruby
+Retriable.configure do |config|
+  config.sleep_disabled = true
+  config.contexts[:api] = {}
+end
+```
+
+Check test setup files such as `spec_helper` and `rails_helper`, where direct
+configuration writes are common. Reading `Retriable.config` is unchanged.
 
 ## Migration from 3.x to 4.0
 
