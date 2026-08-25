@@ -209,4 +209,153 @@ describe Retriable::Config do
       expect { described_class.new(contexts: { api: { tries: 3, base_interval: 1.0 } }) }.not_to raise_error
     end
   end
+
+  context "#dup (copy-on-write isolation)" do
+    it "deep-copies contexts so mutating the copy leaves the original intact" do
+      original = described_class.new(contexts: { sql: { tries: 1 } })
+      copy = original.dup
+
+      copy.contexts[:http] = { tries: 2 }
+      copy.contexts[:sql][:tries] = 99
+
+      expect(original.contexts).to eq(sql: { tries: 1 })
+    end
+
+    it "deep-copies on and intervals collections" do
+      original = described_class.new(on: [StandardError], intervals: [1, 2])
+      copy = original.dup
+
+      copy.on << ArgumentError
+      copy.intervals << 3
+
+      expect(original.on).to eq([StandardError])
+      expect(original.intervals).to eq([1, 2])
+    end
+
+    it "preserves a non-collection on value (Exception class) without duping it" do
+      original = described_class.new(on: StandardError)
+      expect(original.dup.on).to be(StandardError)
+    end
+
+    it "deep-copies a Hash on value so the copy is a distinct hash" do
+      original = described_class.new(on: { StandardError => /boom/ })
+      copy = original.dup
+
+      copy.on[ArgumentError] = /other/
+
+      expect(original.on).to eq(StandardError => /boom/)
+    end
+
+    it "deep-copies mutable values nested inside a context's options" do
+      original = described_class.new(contexts: { api: { intervals: [1, 2] } })
+      copy = original.dup
+
+      copy.contexts[:api][:intervals] << 3
+
+      expect(original.contexts[:api][:intervals]).to eq([1, 2])
+    end
+
+    it "deep-copies the collection values of a Hash on" do
+      original = described_class.new(on: { StandardError => [/boom/] })
+      copy = original.dup
+
+      copy.on[StandardError] << /bang/
+
+      expect(original.on[StandardError]).to eq([/boom/])
+    end
+
+    it "preserves the container class of a Hash subclass" do
+      subclass = Class.new(Hash)
+      contexts = subclass.new
+      contexts[:api] = { tries: 1 }
+
+      expect(described_class.new(contexts: contexts).dup.contexts).to be_a(subclass)
+    end
+
+    it "preserves a contexts default_proc so absent keys still resolve" do
+      contexts = Hash.new { |hash, key| hash[key] = { tries: 7 } }
+      copy = described_class.new(contexts: contexts).dup
+
+      expect(copy.contexts[:never_set]).to eq(tries: 7)
+    end
+
+    it "deep-copies a mutable Hash default" do
+      fallback = []
+      contexts = Hash.new(fallback)
+      copy = described_class.new(contexts: contexts).dup
+
+      copy.contexts.default << :copy_only
+
+      expect(copy.contexts.default).not_to equal(fallback)
+      expect(fallback).to be_empty
+    end
+
+    it "preserves a self-referential Hash default" do
+      contexts = {}
+      contexts.default = contexts
+      copy = described_class.new(contexts: contexts).dup
+
+      expect(copy.contexts.default).to equal(copy.contexts)
+    end
+
+    it "unfreezes copied containers so a configure block can mutate them" do
+      original = described_class.new(contexts: { api: { tries: 1 } }.freeze)
+
+      expect { original.dup.contexts[:added] = { tries: 2 } }.not_to raise_error
+    end
+
+    it "terminates on a self-referential contexts structure" do
+      original = described_class.new
+      original.contexts[:api] = { tries: 1 }
+      original.contexts[:api][:cycle] = original.contexts
+
+      copy = original.dup
+
+      expect(copy.contexts).not_to equal(original.contexts)
+      expect(copy.contexts[:api][:cycle]).to equal(copy.contexts)
+    end
+  end
+
+  context "#freeze (published snapshot immutability)" do
+    it "rejects mutation of the config itself" do
+      config = described_class.new.freeze
+
+      expect { config.tries = 99 }.to raise_error(FrozenError)
+    end
+
+    it "rejects mutation one level down, inside contexts" do
+      config = described_class.new(contexts: { api: { tries: 1 } }).freeze
+
+      expect { config.contexts[:api][:tries] = 99 }.to raise_error(FrozenError)
+    end
+
+    it "rejects mutation of the on collection" do
+      config = described_class.new(on: [StandardError]).freeze
+
+      expect { config.on << ArgumentError }.to raise_error(FrozenError)
+    end
+
+    it "freezes a mutable Hash default" do
+      fallback = []
+      contexts = Hash.new(fallback)
+      contexts[:api] = { tries: 1 }
+      config = described_class.new(contexts: contexts).freeze
+
+      expect(config.contexts.default).to be_frozen
+    end
+
+    it "leaves leaves such as procs untouched" do
+      handler = ->(_exception) { true }
+      described_class.new(retry_if: handler).freeze
+
+      expect(handler).not_to be_frozen
+    end
+
+    it "is idempotent" do
+      config = described_class.new.freeze
+
+      expect { config.freeze }.not_to raise_error
+      expect(config.freeze).to equal(config)
+    end
+  end
 end

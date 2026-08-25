@@ -8,7 +8,10 @@ describe Retriable do
   end
 
   before(:each) do
-    described_class.instance_variable_set(:@config, nil)
+    # Reset to a pristine published snapshot, matching what load-time init
+    # publishes. Resetting to nil instead would force #config to carry a
+    # nil-guard that only the suite can reach.
+    described_class.instance_variable_set(:@config, Retriable::Config.new.freeze)
     Thread.current.thread_variable_set(Retriable::OVERRIDE_THREAD_KEY, nil)
     described_class.configure { |c| c.sleep_disabled = true }
     @tries = 0
@@ -23,6 +26,31 @@ describe Retriable do
     exception_class ||= StandardError
     increment_tries
     raise exception_class, "#{exception_class} occurred"
+  end
+
+  # Wall clock appears in the concurrency specs only as a deadlock backstop,
+  # never as a timing assertion. Every worker they start finishes in
+  # milliseconds, so this budget is approached only when a regression leaves a
+  # thread genuinely stuck.
+  let(:deadlock_backstop_seconds) { 10 }
+
+  # Joins each thread within the backstop, failing the example instead of hanging
+  # the suite when one never finishes. A bare Thread#join turns a serialization
+  # regression into a run that never terminates, which CI reports as a timeout
+  # with no failing example to point at.
+  #
+  # The kill matters for the examples that follow: Ruby releases a Mutex held by
+  # a killed thread, so one stuck worker cannot wedge every later `configure`.
+  # Kill is asynchronous, so wait briefly for it to land before failing —
+  # otherwise the mutex is still held when the next example starts.
+  def join_without_deadlock(*threads)
+    threads.flatten.compact.each do |thread|
+      next if thread.join(deadlock_backstop_seconds)
+
+      thread.kill
+      thread.join(1)
+      raise "a worker thread did not finish within #{deadlock_backstop_seconds}s; suspect a deadlock"
+    end
   end
 
   context "global scope extension" do
@@ -768,6 +796,242 @@ describe Retriable do
     it "raises NoMethodError on invalid configuration" do
       expect { described_class.configure { |c| c.does_not_exist = 123 } }.to raise_error(NoMethodError)
     end
+
+    it "returns the configure block's result" do
+      result = described_class.configure do |c|
+        c.tries = 7
+        :configured
+      end
+
+      expect(result).to eq(:configured)
+      expect(described_class.config.tries).to eq(7)
+    end
+  end
+
+  context "#configure thread safety (copy-on-write)" do
+    it "eagerly initializes @config at load time, before any configure/config call" do
+      script = "require 'retriable'; " \
+               "exit(Retriable.instance_variable_get(:@config).is_a?(Retriable::Config) ? 0 : 1)"
+      expect(system(RbConfig.ruby, "-Ilib", "-e", script)).to be(true)
+    end
+
+    it "publishes a new Config object on configure instead of mutating in place" do
+      before = described_class.config
+      described_class.configure { |c| c.tries = 7 }
+      after = described_class.config
+
+      expect(after).not_to equal(before)
+      expect(after.tries).to eq(7)
+      expect(before.tries).not_to eq(7)
+    end
+
+    it "keeps an already-captured snapshot stable across later configures" do
+      described_class.configure { |c| c.contexts[:sql] = { tries: 1 } }
+      snapshot = described_class.config
+
+      described_class.configure { |c| c.contexts[:http] = { tries: 2 } }
+      described_class.configure { |c| c.contexts[:sql][:tries] = 99 }
+
+      expect(snapshot.contexts).to eq(sql: { tries: 1 })
+    end
+
+    it "publishes a frozen snapshot, so direct mutation fails loudly" do
+      described_class.configure { |c| c.contexts[:api] = { tries: 1 } }
+
+      expect { described_class.config.tries = 99 }.to raise_error(FrozenError)
+      expect { described_class.config.contexts[:api][:tries] = 99 }.to raise_error(FrozenError)
+      expect(described_class.config.contexts[:api]).to eq(tries: 1)
+    end
+
+    it "still hands the configure block a mutable candidate" do
+      expect do
+        described_class.configure do |c|
+          c.contexts[:api] = { tries: 1 }
+          c.contexts[:api][:tries] = 2
+          c.on = [StandardError]
+          c.on << ArgumentError
+        end
+      end.not_to raise_error
+
+      expect(described_class.config.contexts[:api]).to eq(tries: 2)
+    end
+
+    it "does not freeze collections the caller still owns" do
+      caller_owned = [StandardError]
+
+      described_class.configure { |c| c.on = caller_owned }
+
+      expect(caller_owned).not_to be_frozen
+      expect(described_class.config.on).to be_frozen
+      expect(described_class.config.on).not_to equal(caller_owned)
+    end
+
+    it "owns and freezes a copy of a mutable Hash default" do
+      fallback = []
+      contexts = Hash.new(fallback)
+      contexts[:api] = { tries: 1 }
+
+      described_class.configure { |c| c.contexts = contexts }
+      published_default = described_class.config.contexts.default
+
+      expect(published_default).not_to equal(fallback)
+      expect(published_default).to be_frozen
+      expect(fallback).not_to be_frozen
+    end
+
+    it "does not let a published default leak mutations into the caller's object" do
+      fallback = []
+      described_class.configure { |c| c.contexts = Hash.new(fallback) }
+
+      expect { described_class.config.contexts[:absent] << :leaked }.to raise_error(FrozenError)
+      expect(fallback).to be_empty
+    end
+
+    it "does not drop updates when configured concurrently from many threads" do
+      keys = (0...50).map { |i| :"ctx_#{i}" }
+      release = Queue.new
+
+      threads = keys.map do |key|
+        Thread.new do
+          release.pop
+          described_class.configure { |c| c.contexts[key] = { tries: 1 } }
+        end
+      end
+
+      keys.size.times { release << true }
+      join_without_deadlock(threads)
+
+      expect(described_class.config.contexts.keys).to match_array(keys)
+    end
+
+    it "lets nested configure calls join the outer transaction" do
+      inner_candidate = nil
+
+      result = described_class.configure do |outer|
+        outer.tries = 7
+        nested_result = described_class.configure do |inner|
+          inner_candidate = inner
+          inner.base_interval = 1
+          :nested_result
+        end
+
+        expect(nested_result).to eq(:nested_result)
+        expect(inner_candidate).to equal(outer)
+        :outer_result
+      end
+
+      expect(result).to eq(:outer_result)
+      expect(described_class.config.tries).to eq(7)
+      expect(described_class.config.base_interval).to eq(1)
+    end
+
+    it "rolls back nested changes when the outer configure raises" do
+      described_class.configure { |c| c.tries = 4 }
+
+      expect do
+        described_class.configure do |outer|
+          outer.tries = 7
+          described_class.configure { |inner| inner.base_interval = 1 }
+          raise "outer failed"
+        end
+      end.to raise_error(RuntimeError, "outer failed")
+
+      expect(described_class.config.tries).to eq(4)
+      expect(described_class.config.base_interval).to eq(0.5)
+    end
+
+    it "lets configure calls from a fiber join the outer transaction" do
+      described_class.configure do |outer|
+        fiber_candidate = Fiber.new do
+          described_class.configure do |inner|
+            inner.tries = 9
+            inner
+          end
+        end.resume
+
+        expect(fiber_candidate).to equal(outer)
+      end
+
+      expect(described_class.config.tries).to eq(9)
+    end
+
+    it "exposes the in-progress config to the configuring thread" do
+      described_class.configure do |c|
+        c.tries = 7
+        expect(described_class.config.tries).to eq(7)
+      end
+
+      expect(described_class.config.tries).to eq(7)
+    end
+
+    it "uses the in-progress config for retriable" do
+      attempts = 0
+
+      described_class.configure do |c|
+        c.tries = 1
+        c.sleep_disabled = true
+
+        expect do
+          described_class.retriable do
+            attempts += 1
+            raise StandardError
+          end
+        end.to raise_error(StandardError)
+      end
+
+      expect(attempts).to eq(1)
+    end
+
+    it "uses candidate-only contexts for with_context" do
+      described_class.configure do |c|
+        c.contexts[:candidate] = { tries: 1 }
+
+        expect(described_class.with_context(:candidate) { :found }).to eq(:found)
+      end
+    end
+
+    it "shares the in-progress config with fibers in the configuring thread" do
+      described_class.configure do |c|
+        c.tries = 7
+
+        expect(Fiber.new { described_class.config.tries }.resume).to eq(7)
+      end
+    end
+
+    it "does not block readers while configure is in progress" do
+      published_tries = described_class.config.tries
+      published_base_interval = described_class.config.base_interval
+      configuring = Queue.new
+      release = Queue.new
+      writer = Thread.new do
+        described_class.configure do |c|
+          c.tries = published_tries + 1
+          described_class.configure { |inner| inner.base_interval = published_base_interval + 1 }
+          configuring << true
+          release.pop
+        end
+      end
+      reader = nil
+
+      begin
+        configuring.pop
+        reader = Thread.new do
+          snapshot = described_class.config
+          [snapshot.tries, snapshot.base_interval]
+        end
+        # The timeout is a deadlock backstop, not the assertion. A reader that
+        # is not blocked returns immediately, so this budget is only ever
+        # approached if #config starts waiting on the in-progress #configure.
+        expect(reader.join(deadlock_backstop_seconds)).to be(reader),
+                                                          "reader blocked while configure was in progress"
+        # Thread#value re-raises anything the reader raised, so a broken reader
+        # fails loudly instead of hanging on an empty queue.
+        expect(reader.value).to eq([published_tries, published_base_interval])
+      ensure
+        release << true
+        join_without_deadlock(writer, reader)
+      end
+    end
   end
 
   context "#retriable tries/intervals precedence" do
@@ -1120,7 +1384,7 @@ describe Retriable do
 
       2.times { ready.pop }
       2.times { proceed << true }
-      threads.each(&:join)
+      join_without_deadlock(threads)
 
       expect(results).to eq(1 => 1, 2 => 2)
     end
@@ -1151,7 +1415,7 @@ describe Retriable do
         sibling_done << true
       end
 
-      [setter, sibling].each(&:join)
+      join_without_deadlock(setter, sibling)
       expect(sibling_tries).to eq(3)
     end
 
@@ -1159,7 +1423,7 @@ describe Retriable do
       child_tries = nil
 
       described_class.with_override(tries: 1) do
-        Thread.new do
+        child = Thread.new do
           tries = 0
           begin
             described_class.retriable(tries: 3) do
@@ -1169,7 +1433,8 @@ describe Retriable do
           rescue StandardError
             child_tries = tries
           end
-        end.join
+        end
+        join_without_deadlock(child)
       end
 
       expect(child_tries).to eq(3)
@@ -1178,7 +1443,7 @@ describe Retriable do
     it "shares the active override with fibers in the same thread" do
       fiber_tries = nil
 
-      Thread.new do
+      worker = Thread.new do
         described_class.with_override(tries: 1) do
           Fiber.new do
             tries = 0
@@ -1192,7 +1457,8 @@ describe Retriable do
             end
           end.resume
         end
-      end.join
+      end
+      join_without_deadlock(worker)
 
       expect(fiber_tries).to eq(1)
     end
@@ -1201,7 +1467,7 @@ describe Retriable do
       other_thread_tries = nil
 
       described_class.with_override(tries: 1) do
-        Thread.new do
+        other = Thread.new do
           tries = 0
           begin
             described_class.retriable(tries: 3) do
@@ -1211,7 +1477,8 @@ describe Retriable do
           rescue StandardError
             other_thread_tries = tries
           end
-        end.join
+        end
+        join_without_deadlock(other)
       end
 
       expect(other_thread_tries).to eq(3)
@@ -1324,6 +1591,38 @@ describe Retriable do
         .to raise_error(StandardError)
 
       expect(callback_called).to be(true)
+    end
+
+    it "resolves the context against a single config snapshot" do
+      with_ctx = Retriable::Config.new(sleep_disabled: true, contexts: { api: { tries: 1 } })
+      without_ctx = Retriable::Config.new(sleep_disabled: true)
+
+      # Simulate a concurrent #configure publishing a new config between
+      # with_context's existence check and its option resolution: the first
+      # config read sees the context, later reads do not. with_context must
+      # read config once so the context options are never silently dropped.
+      allow(described_class).to receive(:config).and_return(with_ctx, without_ctx)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception } }
+        .to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+    end
+
+    it "resolves global options against the same snapshot used for the context" do
+      special_error = Class.new(StandardError)
+      with_ctx = Retriable::Config.new(sleep_disabled: true, on: [special_error], contexts: { api: { tries: 2 } })
+      swapped = Retriable::Config.new(sleep_disabled: true, on: [ArgumentError])
+
+      # A concurrent #configure swaps the global config (here, the retriable
+      # `on` list) after with_context has captured its snapshot. The whole
+      # context execution must use the captured snapshot, not the swapped one.
+      allow(described_class).to receive(:config).and_return(with_ctx, swapped)
+
+      expect { described_class.with_context(:api) { increment_tries_with_exception(special_error) } }
+        .to raise_error(special_error)
+
+      expect(@tries).to eq(2)
     end
   end
 end
