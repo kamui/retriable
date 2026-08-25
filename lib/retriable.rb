@@ -106,15 +106,15 @@ module Retriable
     # the existence check on the old snapshot while options resolve against the
     # new one, silently dropping the context's retry options.
     config_snapshot = config
-    configured = config_contexts(config_snapshot)
-    contexts = configured.merge(override_contexts)
+    configured_contexts = config_contexts(config_snapshot)
+    contexts = configured_contexts.merge(override_contexts)
 
     if !contexts.key?(context_key)
       raise ArgumentError,
             "#{context_key} not found in Retriable contexts (including overrides). Available contexts: #{contexts.keys}"
     end
 
-    retriable_with_config(config_snapshot, context_options_for(context_key, configured, options), &)
+    retriable_with_config(config_snapshot, context_options_for(context_key, configured_contexts, options), &)
   end
 
   def retriable(opts = {}, &)

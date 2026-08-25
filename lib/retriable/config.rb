@@ -21,6 +21,9 @@ module Retriable
     CONTEXT_ATTRIBUTES = (ATTRIBUTES - %i[contexts]).freeze
     private_constant :CONTEXT_ATTRIBUTES
 
+    OWNED_CONTAINER_ATTRIBUTES = %i[on intervals contexts].freeze
+    private_constant :OWNED_CONTAINER_ATTRIBUTES
+
     attr_accessor(*ATTRIBUTES)
 
     def initialize(opts = {})
@@ -83,9 +86,9 @@ module Retriable
     def freeze
       return self if frozen?
 
-      deep_freeze(@on)
-      deep_freeze(@intervals)
-      deep_freeze(@contexts)
+      OWNED_CONTAINER_ATTRIBUTES.each do |attribute|
+        deep_freeze(instance_variable_get(:"@#{attribute}"))
+      end
       super
     end
 
@@ -108,9 +111,9 @@ module Retriable
 
     def initialize_copy(other)
       super
-      @on        = deep_dup(other.on)
-      @intervals = deep_dup(other.intervals)
-      @contexts  = deep_dup(other.contexts)
+      OWNED_CONTAINER_ATTRIBUTES.each do |attribute|
+        instance_variable_set(:"@#{attribute}", deep_dup(other.public_send(attribute)))
+      end
     end
 
     # Recursively copies the mutable containers (Hash/Array/Set) so a dup is fully

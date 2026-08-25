@@ -222,6 +222,11 @@ So a reader in another thread always sees either the whole previous config or th
 whole new one, never a half-applied mix, and a block that raises leaves the
 existing config in place.
 
+Configuration blocks are serialized. Keep them short, and do not wait inside one
+for work that may call `#configure`, because that work cannot begin until the
+current block returns. Readers are unaffected and continue using the last
+published config while a block runs.
+
 The published config is deeply frozen. Reaching around `#configure` to mutate it
 raises `FrozenError`:
 

@@ -1,9 +1,11 @@
 # HEAD
 
+## 5.0.0
+
 ### Upgrading
 
-The thread-safety fix below changes direct config mutation. It must ship in a
-major release or follow a deprecation cycle.
+Retriable 5.0 makes the thread-safety change below. Because it changes direct
+config mutation, it is released as a major version.
 ([#151](https://github.com/kamui/retriable/pull/151))
 
 The published config is frozen. Mutating `Retriable.config` directly

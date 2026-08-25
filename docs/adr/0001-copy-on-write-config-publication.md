@@ -102,10 +102,14 @@ local.
 
 - Direct mutation of `Retriable.config` now raises `FrozenError`. This is a
   breaking change for code that reached around `configure`; the migration is to
-  use `configure`. Reading `Retriable.config` is unaffected. This must ship in a
-  major release or follow a deprecation cycle.
+  use `configure`. Reading `Retriable.config` is unaffected. This change will
+  ship in Retriable 5.0.
 - Nested `configure` remains supported. Nested blocks mutate the outer working
   copy and do not publish separately.
+- Writer blocks are serialized for their full duration. A block must not wait
+  for work that may call `configure`, because that work cannot acquire
+  `CONFIG_MUTEX` until the current block returns. Readers do not take that mutex
+  and continue using the last published snapshot.
 - `configure` pays two deep copies per call (one to build the candidate, one to
   take ownership before freezing). `configure` is a rare, usually boot-time
   operation, so this is not on any hot path.
