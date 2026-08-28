@@ -158,7 +158,7 @@ module Retriable
     on:, retry_if:, on_retry:, on_give_up:, elapsed_time:, max_elapsed_time:, sleep_disabled:
   )
     try = 0
-    loop do
+    while true # rubocop:disable Style/InfiniteLoop -- Kernel#loop swallows StopIteration.
       try += 1
       begin
         return yield(try)
