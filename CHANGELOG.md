@@ -1,5 +1,22 @@
 # HEAD
 
+## 5.0.1
+
+### Bug fixes
+
+- `Retriable.retriable` now propagates `StopIteration` instead of reporting it as
+  retry exhaustion. The retry loop used `Kernel#loop`, which rescues
+  `StopIteration`, so a block or callback (`on_retry`, `on_give_up`) raising it
+  was converted into a `Retriable::ExhaustedError` even when retries remained.
+  The loop no longer goes through `Kernel#loop`, so `StopIteration` reaches the
+  caller as any other exception would.
+  ([#155](https://github.com/kamui/retriable/pull/155))
+- A reused configuration is now validated once, when it is picked up for an
+  attempt, instead of being validated again immediately before every use. The
+  validation guarantee is unchanged; this only removes the duplicate work on
+  each retry.
+  ([#156](https://github.com/kamui/retriable/pull/156))
+
 ## 5.0.0
 
 **This is a major release with a breaking change. Please read carefully before
