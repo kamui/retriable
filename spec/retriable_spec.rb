@@ -141,7 +141,7 @@ describe Retriable do
           increment_tries
           raise failure
         end
-      end.to raise_error { |error| expect(error).to equal(failure) }
+      end.to(raise_error { |error| expect(error).to equal(failure) })
 
       expect(@tries).to eq(2)
     end
