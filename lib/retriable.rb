@@ -124,13 +124,12 @@ module Retriable
   def retriable_with_config(base_config, opts = {}, &)
     override_config = current_override
     local_config = if opts.empty? && !override_config
+                     # A reused config may have been mutated inside configure.
+                     base_config.validate!
                      base_config
                    else
                      Config.new(apply_override_options(merge_layer(base_config.to_h, opts), override_config))
                    end
-
-    # Config is mutable through `configure`, so validate again immediately before use.
-    local_config.validate!
 
     plan = retry_plan(local_config)
     on = local_config.on
