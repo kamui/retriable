@@ -133,6 +133,19 @@ describe Retriable do
       expect(@tries).to eq(3)
     end
 
+    it "re-raises StopIteration after the configured tries" do
+      failure = StopIteration.new("end of input")
+
+      expect do
+        described_class.retriable(tries: 2) do
+          increment_tries
+          raise failure
+        end
+      end.to(raise_error { |error| expect(error).to equal(failure) })
+
+      expect(@tries).to eq(2)
+    end
+
     it "makes only 1 try when exception raised is not descendent of StandardError" do
       expect do
         described_class.retriable { increment_tries_with_exception(NonStandardError) }
