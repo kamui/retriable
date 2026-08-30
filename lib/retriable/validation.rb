@@ -41,6 +41,12 @@ module Retriable
       raise ArgumentError, "rand_factor must be between 0 and 1"
     end
 
+    def validate_finite_randomized_interval
+      return if (max_interval.to_f * (1 + rand_factor.to_f)).finite?
+
+      raise ArgumentError, "max_interval and rand_factor must produce finite randomized intervals"
+    end
+
     def finite_number?(value)
       value.is_a?(Numeric) && value.to_f.finite?
     end
