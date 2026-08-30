@@ -42,7 +42,7 @@ module Retriable
     end
 
     def finite_number?(value)
-      value.is_a?(Numeric) && value.to_f.finite?
+      value.is_a?(Numeric) && value.real? && value.to_f.finite?
     end
 
     def unbounded_tries?(value)
