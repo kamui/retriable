@@ -188,7 +188,7 @@ module Retriable
     return RetryPlan.new(nil, interval_provider(local_config)) if Validation.unbounded_tries?(local_config.tries)
 
     if local_config.intervals
-      intervals = local_config.intervals
+      intervals = local_config.intervals.dup
       return RetryPlan.new(intervals.size + 1, ->(index) { intervals[index] })
     end
 
