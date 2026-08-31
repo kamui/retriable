@@ -516,6 +516,24 @@ describe Retriable do
         expect(@tries).to eq(intervals.size + 1)
       end
 
+      it "snapshots custom intervals before retry callbacks mutate them" do
+        intervals = [0.1, 0.2]
+        observed_intervals = []
+        on_retry = proc do |_exception, _try, _elapsed_time, next_interval|
+          observed_intervals << next_interval
+          intervals.shift
+        end
+
+        expect do
+          described_class.retriable(intervals: intervals, on_retry: on_retry) do
+            increment_tries_with_exception
+          end
+        end.to raise_error(StandardError)
+
+        expect(observed_intervals).to eq([0.1, 0.2, nil])
+        expect(@tries).to eq(3)
+      end
+
       it "intervals option overrides tries, base_interval, max_interval, rand_factor, and multiplier" do
         # Even though we specify tries: 10, base_interval: 1.0, max_interval: 100.0,
         # rand_factor: 0.8, and multiplier: 2.0, the explicit intervals should take precedence
