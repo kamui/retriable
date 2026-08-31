@@ -65,6 +65,18 @@ describe Retriable::Config do
     expect { described_class.new(rand_factor: 1.1) }.to raise_error(ArgumentError, /rand_factor/)
   end
 
+  it "rejects complex timing values" do
+    expect { described_class.new(base_interval: Complex(1, 0)) }
+      .to raise_error(ArgumentError, /base_interval/)
+    expect { described_class.new(intervals: [Complex(1, 0)]) }
+      .to raise_error(ArgumentError, /intervals/)
+  end
+
+  it "does not treat complex infinity as unbounded tries" do
+    expect { described_class.new(tries: Complex(Float::INFINITY, 0), max_elapsed_time: 60) }
+      .to raise_error(ArgumentError, /tries/)
+  end
+
   it "raises errors when intervals is not an array" do
     expect { described_class.new(intervals: "1") }.to raise_error(ArgumentError, /intervals must be an Array/)
   end
