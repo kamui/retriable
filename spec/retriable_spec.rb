@@ -703,6 +703,25 @@ describe Retriable do
       expect(@tries).to eq(2)
     end
 
+    it "stops before another attempt when sleep overshoots max elapsed time" do
+      described_class.configure { |c| c.sleep_disabled = false }
+      clock = 0.0
+      give_up_reason = nil
+      allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC) { clock }
+      allow(described_class).to receive(:sleep) { clock = 2.0 }
+
+      expect do
+        described_class.retriable(
+          intervals: [0.5],
+          max_elapsed_time: 1.0,
+          on_give_up: proc { |_exception, _try, _elapsed_time, _interval, reason| give_up_reason = reason },
+        ) { increment_tries_with_exception }
+      end.to raise_error(StandardError)
+
+      expect(@tries).to eq(1)
+      expect(give_up_reason).to eq(:max_elapsed_time)
+    end
+
     it "does not count skipped sleep intervals against max elapsed time" do
       allow(Process).to receive(:clock_gettime).with(Process::CLOCK_MONOTONIC).and_return(0.0)
 
