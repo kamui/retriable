@@ -432,7 +432,7 @@ Retriable.retriable(on_give_up: do_this_when_retries_stop) do
 end
 ```
 
-When the reason is `:tries_exhausted`, `next_interval` is `nil` because there is no next retry. When the reason is `:max_elapsed_time`, `next_interval` is the interval that would have been slept before the next try. This reason means the next retry would exceed `max_elapsed_time`, not necessarily that the elapsed time has already exceeded it.
+When the reason is `:tries_exhausted`, `next_interval` is `nil` because there is no next retry. When the reason is `:max_elapsed_time`, `next_interval` is the interval associated with the prevented next try. Retriable may detect this before sleeping, when the projected elapsed time would exceed the limit, or after sleeping, if the scheduler or a custom sleep overshoots it. In the first case the interval has not been slept; in the second it has already elapsed.
 
 If both `:on_retry` and `:on_give_up` are configured, `:on_retry` still runs first for the final rescued retriable exception. This preserves the existing behavior that `:on_retry` runs whenever Retriable rescues an exception that matches its retry rules.
 
