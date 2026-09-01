@@ -64,6 +64,7 @@ module Retriable
       validate_non_negative_number(:multiplier, multiplier)
       validate_non_negative_number(:max_interval, max_interval)
       validate_rand_factor
+      validate_finite_randomized_interval
     end
 
     def next_raw_interval(raw_interval)
