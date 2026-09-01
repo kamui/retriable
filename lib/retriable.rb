@@ -179,7 +179,10 @@ module Retriable
           raise
         end
 
-        sleep interval if sleep_disabled != true
+        if sleep_disabled != true
+          sleep interval
+          enforce_elapsed_time_limit(on_give_up, e, try, elapsed_time.call, interval, max_elapsed_time)
+        end
       end
     end
   end
@@ -220,6 +223,15 @@ module Retriable
     return unless on_give_up
 
     on_give_up.call(exception, try, elapsed_time, interval, reason)
+  end
+
+  def enforce_elapsed_time_limit( # rubocop:disable Metrics/ParameterLists
+    on_give_up, exception, try, elapsed_time, interval, max_elapsed_time
+  )
+    return unless max_elapsed_time && elapsed_time > max_elapsed_time
+
+    call_on_give_up(on_give_up, exception, try, elapsed_time, interval, :max_elapsed_time)
+    raise exception
   end
 
   # `:tries_exhausted` is checked first, but the two conditions can't both hold
@@ -357,6 +369,7 @@ module Retriable
     :interval_provider,
     :call_on_retry,
     :call_on_give_up,
+    :enforce_elapsed_time_limit,
     :retry_stop_reason,
     :retriable_exception?,
     :hash_exception_match?,
