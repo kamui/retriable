@@ -65,6 +65,20 @@ describe Retriable::ExponentialBackoff do
     expect(described_class.new(max_interval: 1.0, rand_factor: 0.0).intervals).to eq([0.5, 0.75, 1.0])
   end
 
+  it "rejects randomized intervals whose runtime upper bound is infinite" do
+    max_interval = Float("0x1.0d79435e50d79p+1023")
+
+    expect { described_class.new(max_interval: max_interval, rand_factor: 0.9) }
+      .to raise_error(ArgumentError, /finite randomized intervals/)
+  end
+
+  it "accepts randomized intervals whose runtime upper bound stays finite" do
+    max_interval = Float("0x1.89d89d89d89d8p+1023")
+
+    expect { described_class.new(max_interval: max_interval, rand_factor: 0.3) }
+      .not_to raise_error
+  end
+
   it "generates intervals with a defined rand_factor" do
     expect(described_class.new(rand_factor: 0.2).intervals).to eq(
       [
