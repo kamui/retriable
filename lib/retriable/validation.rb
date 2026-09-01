@@ -42,7 +42,7 @@ module Retriable
     end
 
     def validate_finite_randomized_interval
-      return if finite_number?(max_interval + rand_factor * max_interval.to_f)
+      return if finite_number?(max_interval + (rand_factor * max_interval.to_f))
 
       raise ArgumentError, "max_interval and rand_factor must produce finite randomized intervals"
     end
