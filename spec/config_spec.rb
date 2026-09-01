@@ -65,6 +65,13 @@ describe Retriable::Config do
     expect { described_class.new(rand_factor: 1.1) }.to raise_error(ArgumentError, /rand_factor/)
   end
 
+  it "rejects randomized intervals whose runtime upper bound is infinite" do
+    max_interval = Float("0x1.0d79435e50d79p+1023")
+
+    expect { described_class.new(max_interval: max_interval, rand_factor: 0.9) }
+      .to raise_error(ArgumentError, /finite randomized intervals/)
+  end
+
   it "raises errors when intervals is not an array" do
     expect { described_class.new(intervals: "1") }.to raise_error(ArgumentError, /intervals must be an Array/)
   end
