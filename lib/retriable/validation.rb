@@ -42,14 +42,18 @@ module Retriable
     end
 
     def finite_number?(value)
-      value.is_a?(Numeric) && value.to_f.finite?
+      real_numeric?(value) && value.to_f.finite?
+    end
+
+    def real_numeric?(value)
+      value.is_a?(Numeric) && value.real?
     end
 
     def unbounded_tries?(value)
-      value.is_a?(Numeric) && value.respond_to?(:infinite?) && value.infinite? == 1
+      real_numeric?(value) && value.respond_to?(:infinite?) && value.infinite? == 1
     end
 
-    module_function :unbounded_tries?
+    module_function :real_numeric?, :unbounded_tries?
 
     # Validates an `on:` value. Acceptable shapes:
     #   - a Class that descends from Exception
