@@ -12,6 +12,4 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
-Edit the right-hand column to match whatever vocabulary you actually use.
-
-None of these labels exist in `kamui/retriable` yet. Create one on first use with `gh label create <name>`; the repo's existing labels (`question`, `dependencies`, `ruby`) don't collide with any of them.
+Edit the "Label in our tracker" column to match whatever vocabulary you actually use.
